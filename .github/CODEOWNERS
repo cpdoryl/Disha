@@ -1,0 +1,38 @@
+# Disha Codeowners
+# This file defines who is responsible for code reviews in different areas
+
+# Global fallback
+* @cpdoryl
+
+# Backend API
+/backend/ @cpdoryl
+
+# Frontend Admin Dashboard
+/frontend/admin/ @cpdoryl
+
+# Mobile Apps
+/mobile/ @cpdoryl
+
+# Extraction Service
+/extraction/ @cpdoryl
+
+# Infrastructure & DevOps
+/terraform/ @cpdoryl
+/.github/workflows/ @cpdoryl
+
+# Documentation
+/docs/ @cpdoryl
+*.md @cpdoryl
+
+# Database
+/backend/src/database/ @cpdoryl
+
+# Authentication & Security
+/backend/src/guards/ @cpdoryl
+/backend/src/interceptors/ @cpdoryl
+
+# Tests
+/backend/test/ @cpdoryl
+/frontend/admin/__tests__/ @cpdoryl
+/mobile/__tests__/ @cpdoryl
+/extraction/tests/ @cpdoryl

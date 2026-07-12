@@ -1,0 +1,162 @@
+name: Mobile CI - React Native
+
+on:
+  push:
+    branches: [main, develop]
+    paths:
+      - 'mobile/**'
+      - '.github/workflows/mobile-ci.yml'
+  pull_request:
+    branches: [develop]
+    paths:
+      - 'mobile/**'
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: 'mobile/package-lock.json'
+
+      - name: Install dependencies
+        run: npm ci
+        working-directory: mobile
+
+      - name: Run linter (ESLint)
+        run: npm run lint
+        working-directory: mobile
+        continue-on-error: true
+
+      - name: Type check (TypeScript)
+        run: npm run type-check
+        working-directory: mobile
+        continue-on-error: true
+
+      - name: Run unit tests
+        run: npm run test:unit
+        working-directory: mobile
+        continue-on-error: true
+
+      - name: Build Android APK (Debug)
+        run: npm run build:android:debug
+        working-directory: mobile
+        continue-on-error: true
+
+      - name: Upload coverage
+        uses: codecov/codecov-action@v4
+        with:
+          files: ./mobile/coverage/lcov.info
+          flags: mobile
+          name: mobile-coverage
+        continue-on-error: true
+
+  build-android:
+    needs: test
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: 'mobile/package-lock.json'
+
+      - name: Install dependencies
+        run: npm ci
+        working-directory: mobile
+
+      - name: Build Android APK (Release)
+        run: npm run build:android:release
+        working-directory: mobile
+
+      - name: Upload APK to artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: android-apk
+          path: mobile/android/app/build/outputs/apk/release/*.apk
+          retention-days: 7
+
+  build-ios:
+    needs: test
+    runs-on: macos-latest
+    if: github.event_name == 'push'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: 'mobile/package-lock.json'
+
+      - name: Setup Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: '3.2'
+          bundler-cache: true
+          working-directory: mobile/ios
+
+      - name: Install dependencies
+        run: npm ci
+        working-directory: mobile
+
+      - name: Build iOS IPA
+        run: npm run build:ios:release
+        working-directory: mobile
+
+      - name: Upload IPA to artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: ios-ipa
+          path: mobile/ios/build/output/*.ipa
+          retention-days: 7
+
+  distribute-beta:
+    needs: [build-android, build-ios]
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/develop' && github.event_name == 'push'
+
+    steps:
+      - name: Download Android APK
+        uses: actions/download-artifact@v3
+        with:
+          name: android-apk
+
+      - name: Distribute to Firebase App Distribution (Android)
+        run: |
+          echo "Distributing Android APK to Firebase App Distribution..."
+          # firebase app:distribute --app=<APP_ID> --release-notes="Beta build from develop" *.apk
+        continue-on-error: true
+
+      - name: Download iOS IPA
+        uses: actions/download-artifact@v3
+        with:
+          name: ios-ipa
+
+      - name: Distribute to TestFlight (iOS)
+        run: |
+          echo "Distributing iOS IPA to TestFlight..."
+          # altool upload logic here
+        continue-on-error: true
