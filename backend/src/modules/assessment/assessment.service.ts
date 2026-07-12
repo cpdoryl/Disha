@@ -58,8 +58,7 @@ export class AssessmentService {
       });
     });
 
-    const questions = Array.from(questionsMap.values())
-      .sort((a, b) => a.orderInAssessment - b.orderInAssessment);
+    const questions = Array.from(questionsMap.values()).sort((a, b) => a.orderInAssessment - b.orderInAssessment);
 
     // Create assessment
     const assessment = this.assessmentRepository.create({

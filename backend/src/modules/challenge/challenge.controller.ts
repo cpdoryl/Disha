@@ -1,7 +1,7 @@
 import { Controller, Get, Post, Param, Body } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { ChallengeService } from './challenge.service';
-import { Challenge, ChallengeCategory } from 'src/database/entities/challenge.entity';
+import { Challenge } from 'src/database/entities/challenge.entity';
 
 @Controller('challenges')
 @ApiTags('Challenges')

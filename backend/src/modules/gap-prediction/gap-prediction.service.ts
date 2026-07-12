@@ -43,17 +43,14 @@ export class GapPredictionService {
     if (numericAnswers.length === 0) return 0;
 
     const average = numericAnswers.reduce((a, b) => a + b, 0) / numericAnswers.length;
-    return Math.min(1, average / 5);  // Normalize 5-point scale to 0-1
+    return Math.min(1, average / 5); // Normalize 5-point scale to 0-1
   }
 
   /**
    * Calculate data-confirmed severity by comparing actual metrics to sector benchmarks
    * Returns null if no data available
    */
-  private calculateDataConfirmedSeverity(
-    challengeCode: string,
-    schoolData: any,
-  ): number | null {
+  private calculateDataConfirmedSeverity(): number | null {
     // Phase 1: Placeholder for full benchmark integration
     // In Phase 2+, this will compare against Business & Operations Market Survey benchmarks
     return null;
@@ -81,11 +78,7 @@ export class GapPredictionService {
   /**
    * Calculate combined score = severity × urgency × confidence
    */
-  private calculateCombinedScore(
-    severity: number,
-    urgency: number,
-    confidence: number,
-  ): number {
+  private calculateCombinedScore(severity: number, urgency: number, confidence: number): number {
     return severity * urgency * confidence;
   }
 
@@ -116,7 +109,7 @@ export class GapPredictionService {
 
       // Calculate scores
       const selfReportedSeverity = this.calculateSelfReportedSeverity(responses);
-      const dataConfirmedSeverity = this.calculateDataConfirmedSeverity(challenge.code, null);
+      const dataConfirmedSeverity = this.calculateDataConfirmedSeverity();
       const trendDirection = this.determineTrendDirection();
       const confidenceTier = this.determineConfidenceTier(['survey']);
 
@@ -139,7 +132,7 @@ export class GapPredictionService {
         trendDirection,
         confidenceTier,
         combinedScore,
-        priorityRank: 0,  // Will be set after sorting
+        priorityRank: 0, // Will be set after sorting
         urgencyFactor,
         dataSources: ['assessment_survey'],
       };
