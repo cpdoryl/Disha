@@ -100,7 +100,9 @@ export class GapPredictionService {
     assessmentResponses: Map<string, AssessmentResponse[]>,
   ): Promise<PriorityGapResult[]> {
     // Get selected challenges
-    const challenges = await this.challengeRepository.findByIds(selectedChallengeIds);
+    const challenges = await this.challengeRepository.find({
+      where: selectedChallengeIds.map((id) => ({ id })),
+    });
     const challengeMap = new Map(challenges.map((c) => [c.id, c]));
 
     // Calculate gap for each selected challenge
@@ -128,20 +130,21 @@ export class GapPredictionService {
       const usedSeverity = dataConfirmedSeverity !== null ? dataConfirmedSeverity : selfReportedSeverity;
       const combinedScore = this.calculateCombinedScore(usedSeverity, urgencyFactor, confidenceMultiplier);
 
-      const gap = this.gapPredictionRepository.create({
+      const gapData: Partial<GapPrediction> = {
         schoolId,
         academicYear,
         challengeId,
         selfReportedSeverity,
-        dataConfirmedSeverity,
+        dataConfirmedSeverity: dataConfirmedSeverity ?? undefined,
         trendDirection,
         confidenceTier,
         combinedScore,
         priorityRank: 0,  // Will be set after sorting
         urgencyFactor,
         dataSources: ['assessment_survey'],
-      });
+      };
 
+      const gap = this.gapPredictionRepository.create(gapData);
       gaps.push(gap);
     }
 
@@ -159,17 +162,17 @@ export class GapPredictionService {
     const results: PriorityGapResult[] = [];
 
     for (const gap of topGaps) {
-      const challenge = challengeMap.get(gap.challengeId);
+      const challenge = challengeMap.get(gap.challengeId)!;
       results.push({
         challengeId: gap.challengeId,
         challengeName: challenge.displayName,
-        selfReportedSeverity: gap.selfReportedSeverity,
-        dataConfirmedSeverity: gap.dataConfirmedSeverity,
+        selfReportedSeverity: gap.selfReportedSeverity || 0,
+        dataConfirmedSeverity: gap.dataConfirmedSeverity || null,
         trendDirection: gap.trendDirection,
         confidenceTier: gap.confidenceTier,
-        combinedScore: gap.combinedScore,
-        priorityRank: gap.priorityRank,
-        urgencyFactor: gap.urgencyFactor,
+        combinedScore: gap.combinedScore || 0,
+        priorityRank: gap.priorityRank || 0,
+        urgencyFactor: gap.urgencyFactor || 1.0,
         evidence: gap.dataSources || ['Assessment responses'],
       });
     }

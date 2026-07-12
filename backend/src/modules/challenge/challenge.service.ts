@@ -1,7 +1,7 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { Challenge, PREDEFINED_CHALLENGES } from 'src/database/entities/challenge.entity';
+import { Challenge, PREDEFINED_CHALLENGES, ChallengeCategory } from 'src/database/entities/challenge.entity';
 
 @Injectable()
 export class ChallengeService {
@@ -29,23 +29,31 @@ export class ChallengeService {
 
   async getChallengesByCategory(category: string): Promise<Challenge[]> {
     return this.challengeRepository.find({
-      where: { category },
+      where: { category: category as ChallengeCategory },
       order: { displayName: 'ASC' },
     });
   }
 
   async getChallengeById(id: string): Promise<Challenge> {
-    return this.challengeRepository.findOne({
+    const challenge = await this.challengeRepository.findOne({
       where: { id },
       relations: ['questions'],
     });
+    if (!challenge) {
+      throw new NotFoundException(`Challenge with ID ${id} not found`);
+    }
+    return challenge;
   }
 
   async getChallengeByCode(code: string): Promise<Challenge> {
-    return this.challengeRepository.findOne({
+    const challenge = await this.challengeRepository.findOne({
       where: { code },
       relations: ['questions'],
     });
+    if (!challenge) {
+      throw new NotFoundException(`Challenge with code ${code} not found`);
+    }
+    return challenge;
   }
 
   async getSelectedChallenges(challengeIds: string[]): Promise<Challenge[]> {

@@ -7,7 +7,7 @@ export enum ReportType {
 }
 
 @Entity('health_reports')
-@Index(['schoolId', 'createdAt'], { order: { createdAt: 'DESC' } })
+@Index('idx_school_created', ['schoolId', 'createdAt'])
 export class HealthReport {
   @PrimaryGeneratedColumn('uuid')
   id: string;

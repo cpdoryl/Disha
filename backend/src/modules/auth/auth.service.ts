@@ -42,7 +42,7 @@ export class AuthService {
       accessToken,
       refreshToken,
       tokenType: 'Bearer',
-      expiresIn: parseInt(this.configService.get('jwt.expiresIn')),
+      expiresIn: parseInt(this.configService.get('jwt.expiresIn') || '900'),
     };
   }
 
