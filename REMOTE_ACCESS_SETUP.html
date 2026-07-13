@@ -1,0 +1,638 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Disha Remote Access Setup Guide</title>
+    <style>
+        :root {
+            --bg-primary: #0f172a;
+            --bg-secondary: #1a2744;
+            --bg-tertiary: #243456;
+            --text-primary: #f1f5f9;
+            --text-secondary: #cbd5e1;
+            --accent: #06b6d4;
+            --accent-dark: #0891b2;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --error: #ef4444;
+            --code-bg: #1e293b;
+            --border: #334155;
+
+            --font-display: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            --font-body: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            --font-mono: "Monaco", "Menlo", "Ubuntu Mono", monospace;
+
+            --spacing-xs: 0.5rem;
+            --spacing-sm: 1rem;
+            --spacing-md: 1.5rem;
+            --spacing-lg: 2rem;
+            --spacing-xl: 3rem;
+        }
+
+        @media (prefers-color-scheme: light) {
+            :root {
+                --bg-primary: #ffffff;
+                --bg-secondary: #f8fafc;
+                --bg-tertiary: #f1f5f9;
+                --text-primary: #0f172a;
+                --text-secondary: #475569;
+                --accent: #0891b2;
+                --accent-dark: #0e7490;
+                --code-bg: #f1f5f9;
+                --border: #e2e8f0;
+            }
+        }
+
+        :root[data-theme="light"] {
+            --bg-primary: #ffffff;
+            --bg-secondary: #f8fafc;
+            --bg-tertiary: #f1f5f9;
+            --text-primary: #0f172a;
+            --text-secondary: #475569;
+            --accent: #0891b2;
+            --accent-dark: #0e7490;
+            --code-bg: #f1f5f9;
+            --border: #e2e8f0;
+        }
+
+        :root[data-theme="dark"] {
+            --bg-primary: #0f172a;
+            --bg-secondary: #1a2744;
+            --bg-tertiary: #243456;
+            --text-primary: #f1f5f9;
+            --text-secondary: #cbd5e1;
+            --accent: #06b6d4;
+            --accent-dark: #0891b2;
+            --code-bg: #1e293b;
+            --border: #334155;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html, body {
+            font-family: var(--font-body);
+            background-color: var(--bg-primary);
+            color: var(--text-primary);
+            line-height: 1.6;
+        }
+
+        body {
+            padding: var(--spacing-lg);
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+
+        header {
+            margin-bottom: var(--spacing-xl);
+            border-bottom: 2px solid var(--border);
+            padding-bottom: var(--spacing-lg);
+        }
+
+        h1 {
+            font-family: var(--font-display);
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: var(--spacing-sm);
+            color: var(--accent);
+            letter-spacing: -0.02em;
+        }
+
+        .subtitle {
+            font-size: 1.125rem;
+            color: var(--text-secondary);
+        }
+
+        .quick-start {
+            background: var(--bg-secondary);
+            border: 2px solid var(--accent);
+            border-radius: 12px;
+            padding: var(--spacing-lg);
+            margin-bottom: var(--spacing-xl);
+            position: relative;
+        }
+
+        .quick-start-label {
+            position: absolute;
+            top: -12px;
+            left: var(--spacing-lg);
+            background: var(--accent);
+            color: var(--bg-primary);
+            padding: var(--spacing-xs) var(--spacing-md);
+            border-radius: 6px;
+            font-weight: 600;
+            font-size: 0.875rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .quick-start h2 {
+            font-family: var(--font-display);
+            font-size: 1.5rem;
+            margin-bottom: var(--spacing-md);
+            margin-top: var(--spacing-sm);
+        }
+
+        .steps {
+            display: grid;
+            gap: var(--spacing-lg);
+        }
+
+        .step {
+            display: flex;
+            gap: var(--spacing-md);
+        }
+
+        .step-number {
+            background: var(--accent);
+            color: var(--bg-primary);
+            width: 3rem;
+            height: 3rem;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 1.25rem;
+            flex-shrink: 0;
+        }
+
+        .step-content h3 {
+            font-size: 1.125rem;
+            margin-bottom: var(--spacing-xs);
+            color: var(--text-primary);
+        }
+
+        .step-content p {
+            color: var(--text-secondary);
+            margin-bottom: var(--spacing-sm);
+        }
+
+        .code-block {
+            background: var(--code-bg);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: var(--spacing-md);
+            overflow-x: auto;
+            font-family: var(--font-mono);
+            font-size: 0.95rem;
+            margin-top: var(--spacing-sm);
+        }
+
+        .code-block code {
+            color: var(--accent);
+        }
+
+        .section {
+            margin-bottom: var(--spacing-xl);
+        }
+
+        .section h2 {
+            font-family: var(--font-display);
+            font-size: 1.75rem;
+            font-weight: 700;
+            margin-bottom: var(--spacing-md);
+            color: var(--text-primary);
+            position: relative;
+            padding-left: var(--spacing-md);
+        }
+
+        .section h2::before {
+            content: "";
+            position: absolute;
+            left: 0;
+            width: 4px;
+            height: 1.75rem;
+            background: var(--accent);
+            border-radius: 2px;
+        }
+
+        .cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: var(--spacing-md);
+            margin-top: var(--spacing-md);
+        }
+
+        .card {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: var(--spacing-md);
+            transition: all 0.3s ease;
+        }
+
+        .card:hover {
+            border-color: var(--accent);
+            box-shadow: 0 4px 12px rgba(6, 182, 212, 0.15);
+        }
+
+        .card h3 {
+            font-size: 1.125rem;
+            margin-bottom: var(--spacing-sm);
+            color: var(--accent);
+        }
+
+        .card p {
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+            line-height: 1.6;
+        }
+
+        .status-indicator {
+            display: inline-flex;
+            align-items: center;
+            gap: var(--spacing-xs);
+            padding: var(--spacing-xs) var(--spacing-sm);
+            background: var(--bg-tertiary);
+            border-radius: 6px;
+            font-size: 0.875rem;
+            margin-top: var(--spacing-sm);
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        .status-dot.online {
+            background: var(--success);
+        }
+
+        .status-dot.offline {
+            background: var(--error);
+            animation: none;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .checklist {
+            list-style: none;
+            margin-top: var(--spacing-md);
+        }
+
+        .checklist li {
+            padding: var(--spacing-sm);
+            margin-bottom: var(--spacing-xs);
+            background: var(--bg-tertiary);
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-sm);
+        }
+
+        .checklist input[type="checkbox"] {
+            width: 20px;
+            height: 20px;
+            cursor: pointer;
+            accent-color: var(--accent);
+        }
+
+        .info-box {
+            background: rgba(6, 182, 212, 0.1);
+            border-left: 4px solid var(--accent);
+            padding: var(--spacing-md);
+            border-radius: 6px;
+            margin: var(--spacing-md) 0;
+        }
+
+        .info-box strong {
+            color: var(--accent);
+        }
+
+        .warning-box {
+            background: rgba(245, 158, 11, 0.1);
+            border-left: 4px solid var(--warning);
+            padding: var(--spacing-md);
+            border-radius: 6px;
+            margin: var(--spacing-md) 0;
+        }
+
+        .warning-box strong {
+            color: var(--warning);
+        }
+
+        .feature-list {
+            list-style: none;
+            margin-top: var(--spacing-md);
+        }
+
+        .feature-list li {
+            padding: var(--spacing-sm) 0;
+            padding-left: var(--spacing-md);
+            position: relative;
+            color: var(--text-secondary);
+        }
+
+        .feature-list li::before {
+            content: "✓";
+            position: absolute;
+            left: 0;
+            color: var(--success);
+            font-weight: 700;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: var(--spacing-md);
+        }
+
+        th, td {
+            padding: var(--spacing-sm);
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+        }
+
+        th {
+            background: var(--bg-secondary);
+            font-weight: 600;
+            color: var(--accent);
+        }
+
+        tr:hover {
+            background: var(--bg-secondary);
+        }
+
+        footer {
+            margin-top: var(--spacing-xl);
+            padding-top: var(--spacing-lg);
+            border-top: 1px solid var(--border);
+            text-align: center;
+            color: var(--text-secondary);
+            font-size: 0.875rem;
+        }
+
+        .repo-link {
+            color: var(--accent);
+            text-decoration: none;
+            font-weight: 500;
+        }
+
+        .repo-link:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🚀 Disha Remote Access</h1>
+            <p class="subtitle">Access your development environment from any device, anywhere in the world</p>
+        </header>
+
+        <div class="quick-start">
+            <div class="quick-start-label">Quick Start</div>
+            <h2>3 Steps to Cloud Access</h2>
+
+            <div class="steps">
+                <div class="step">
+                    <div class="step-number">1</div>
+                    <div class="step-content">
+                        <h3>Start Remote Session (Local Machine)</h3>
+                        <p>Open Terminal/PowerShell and run:</p>
+                        <div class="code-block"><code>cd C:\Disha\temp_repo
+claude remote-control --name "Disha Development"</code></div>
+                        <div class="warning-box">
+                            <strong>⚠️ Important:</strong> Keep this terminal window OPEN while working
+                        </div>
+                    </div>
+                </div>
+
+                <div class="step">
+                    <div class="step-number">2</div>
+                    <div class="step-content">
+                        <h3>Open Browser (Any Device)</h3>
+                        <p>Go to any browser on any device:</p>
+                        <div class="code-block"><code>https://claude.ai/code</code></div>
+                        <p>Log in with your Anthropic account</p>
+                    </div>
+                </div>
+
+                <div class="step">
+                    <div class="step-number">3</div>
+                    <div class="step-content">
+                        <h3>Connect to Session</h3>
+                        <p>Find <strong>"🖥️ Disha Development"</strong> with a <span class="status-indicator"><span class="status-dot online"></span>green dot</span></p>
+                        <p>Click to connect. ✅ You're in!</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <section class="section">
+            <h2>What You Can Do</h2>
+            <ul class="feature-list">
+                <li><strong>From Phone:</strong> Browse code, ask questions, review architecture</li>
+                <li><strong>From Laptop:</strong> Make edits, run builds, check CI/CD</li>
+                <li><strong>From Tablet:</strong> Review code, understand modules, plan features</li>
+                <li><strong>Multi-Device:</strong> All connected to same project, real-time sync</li>
+                <li><strong>Work Anywhere:</strong> Office, home, coffee shop, traveling</li>
+            </ul>
+        </section>
+
+        <section class="section">
+            <h2>Common Commands</h2>
+            <div class="cards">
+                <div class="card">
+                    <h3>🔨 Build</h3>
+                    <p>"Build the backend"<br><code style="color: var(--text-secondary); font-size: 0.85rem;">"Run npm run type-check"</code></p>
+                </div>
+                <div class="card">
+                    <h3>📖 Explore</h3>
+                    <p>"Show me the gap prediction service"<br><code style="color: var(--text-secondary); font-size: 0.85rem;">"List all API endpoints"</code></p>
+                </div>
+                <div class="card">
+                    <h3>🎯 Understand</h3>
+                    <p>"How does adaptive assessment work?"<br><code style="color: var(--text-secondary); font-size: 0.85rem;">"Explain the 4-score model"</code></p>
+                </div>
+                <div class="card">
+                    <h3>🔧 Edit</h3>
+                    <p>"Fix the TypeScript error"<br><code style="color: var(--text-secondary); font-size: 0.85rem;">"Add this feature"</code></p>
+                </div>
+                <div class="card">
+                    <h3>🔍 Search</h3>
+                    <p>"Find where Challenge is used"<br><code style="color: var(--text-secondary); font-size: 0.85rem;">"Search for TODO comments"</code></p>
+                </div>
+                <div class="card">
+                    <h3>📊 Status</h3>
+                    <p>"Show git status"<br><code style="color: var(--text-secondary); font-size: 0.85rem;">"What's in Phase 2?"</code></p>
+                </div>
+            </div>
+        </section>
+
+        <section class="section">
+            <h2>Multi-Device Access</h2>
+            <p>You can connect from multiple devices simultaneously. All changes sync in real-time:</p>
+            <div class="info-box">
+                <strong>🌐 Connect from anywhere:</strong> Desktop terminal running locally, phone browsing the code, laptop editing files, tablet checking status — all seeing the same project and all changes instantly synchronized.
+            </div>
+
+            <h3 style="margin-top: var(--spacing-md); margin-bottom: var(--spacing-sm);">Example Workflow</h3>
+            <table>
+                <tr>
+                    <th>Device</th>
+                    <th>Action</th>
+                    <th>Result</th>
+                </tr>
+                <tr>
+                    <td>Desktop</td>
+                    <td>Terminal: Remote control running</td>
+                    <td>Session online & ready</td>
+                </tr>
+                <tr>
+                    <td>Laptop</td>
+                    <td>Browser: Connect to session</td>
+                    <td>Browse files & ask questions</td>
+                </tr>
+                <tr>
+                    <td>Phone</td>
+                    <td>Browser: Same session</td>
+                    <td>See updates in real-time</td>
+                </tr>
+                <tr>
+                    <td>Edit anywhere</td>
+                    <td>Change file in VS Code</td>
+                    <td>All devices see change instantly</td>
+                </tr>
+            </table>
+        </section>
+
+        <section class="section">
+            <h2>Setup Checklist</h2>
+
+            <h3 style="margin-top: var(--spacing-md); margin-bottom: var(--spacing-sm);">📋 Local Machine (One Time)</h3>
+            <ul class="checklist">
+                <li><input type="checkbox"> Open Terminal/PowerShell</li>
+                <li><input type="checkbox"> Navigate: <code style="color: var(--text-secondary);">cd C:\Disha\temp_repo</code></li>
+                <li><input type="checkbox"> Run: <code style="color: var(--text-secondary);">claude remote-control --name "Disha Development"</code></li>
+                <li><input type="checkbox"> Note the session URL</li>
+                <li><input type="checkbox"> ✅ Keep terminal OPEN</li>
+            </ul>
+
+            <h3 style="margin-top: var(--spacing-lg); margin-bottom: var(--spacing-sm);">🌐 Browser (Each Time)</h3>
+            <ul class="checklist">
+                <li><input type="checkbox"> Open web browser</li>
+                <li><input type="checkbox"> Go to: <code style="color: var(--text-secondary);">https://claude.ai/code</code></li>
+                <li><input type="checkbox"> Log in with Anthropic account</li>
+                <li><input type="checkbox"> Find "Disha Development" (green dot)</li>
+                <li><input type="checkbox"> Click to connect</li>
+            </ul>
+
+            <h3 style="margin-top: var(--spacing-lg); margin-bottom: var(--spacing-sm);">💬 Start Working</h3>
+            <ul class="checklist">
+                <li><input type="checkbox"> Type your request in chat</li>
+                <li><input type="checkbox"> Press Ctrl+Enter to send</li>
+                <li><input type="checkbox"> Read Claude's response</li>
+                <li><input type="checkbox"> Ask follow-up questions</li>
+                <li><input type="checkbox"> Make code changes</li>
+            </ul>
+        </section>
+
+        <section class="section">
+            <h2>Troubleshooting</h2>
+            <div class="cards">
+                <div class="card">
+                    <h3>❓ Session Not Showing?</h3>
+                    <p><strong>Check:</strong> Is terminal still running? Refresh browser. Log out and log back in. Check internet connection.</p>
+                </div>
+                <div class="card">
+                    <h3>❌ Connection Dropped?</h3>
+                    <p><strong>Fix:</strong> Restart terminal with remote control command. Refresh browser. Reconnect to session.</p>
+                </div>
+                <div class="card">
+                    <h3>🐢 Slow Response?</h3>
+                    <p><strong>Try:</strong> Check internet speed. Verify local machine isn't busy. Restart the session.</p>
+                </div>
+                <div class="card">
+                    <h3>🔄 Changes Not Syncing?</h3>
+                    <p><strong>Solution:</strong> Refresh browser. Wait 3-5 seconds. Verify file is saved locally. Restart session.</p>
+                </div>
+            </div>
+        </section>
+
+        <section class="section">
+            <h2>Keyboard Shortcuts</h2>
+            <table>
+                <tr>
+                    <th>Shortcut</th>
+                    <th>Action</th>
+                </tr>
+                <tr>
+                    <td><code>Ctrl + Enter</code></td>
+                    <td>Send message to Claude</td>
+                </tr>
+                <tr>
+                    <td><code>Ctrl + L</code></td>
+                    <td>Clear chat history</td>
+                </tr>
+                <tr>
+                    <td><code>Ctrl + K</code></td>
+                    <td>Search files</td>
+                </tr>
+                <tr>
+                    <td><code>/</code></td>
+                    <td>Show slash commands menu</td>
+                </tr>
+                <tr>
+                    <td><code>?</code></td>
+                    <td>Show help & shortcuts</td>
+                </tr>
+            </table>
+        </section>
+
+        <section class="section">
+            <h2>Status Indicators</h2>
+            <div class="info-box">
+                <strong>🟢 GREEN dot:</strong> Session ONLINE & CONNECTED (ready to work)<br>
+                <strong>🟡 YELLOW dot:</strong> Session CONNECTING (wait a moment)<br>
+                <strong>🔴 RED dot:</strong> Session OFFLINE (terminal closed)<br>
+                <strong>⚪ GRAY dot:</strong> Session INACTIVE (not running)
+            </div>
+        </section>
+
+        <section class="section">
+            <h2>Security & Privacy</h2>
+            <ul class="feature-list">
+                <li>Your code stays on your local machine (not uploaded)</li>
+                <li>Browser is just a "viewing window" into local code</li>
+                <li>Only your account can connect to this session</li>
+                <li>Session ends when you close the terminal</li>
+                <li>No code stored in cloud, encrypted connection</li>
+                <li>Don't share session with others (they'd see all code)</li>
+                <li>Log out and close terminal when done</li>
+            </ul>
+        </section>
+
+        <section class="section">
+            <h2>Full Documentation</h2>
+            <div class="info-box">
+                Complete guide available on GitHub:<br>
+                <a href="https://github.com/cpdoryl/Disha/blob/main/DISHA_REMOTE_ACCESS_GUIDE.md" class="repo-link" target="_blank">
+                    📖 DISHA_REMOTE_ACCESS_GUIDE.md
+                </a>
+                <br><br>
+                <strong>Contains:</strong> 17 detailed sections, multi-device workflows, advanced tips, Disha-specific examples, and more
+            </div>
+        </section>
+
+        <footer>
+            <p>🎓 <strong>Disha Remote Development Access</strong></p>
+            <p>Work from anywhere • Full code access • Real-time sync</p>
+            <p style="margin-top: var(--spacing-md); opacity: 0.7;">Built for productive remote development</p>
+        </footer>
+    </div>
+</body>
+</html>
