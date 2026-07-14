@@ -7,10 +7,13 @@ import {
   Query,
   HttpCode,
   HttpStatus,
+  UseGuards,
 } from '@nestjs/common';
 import { ReportingService } from '../../services/reporting.service';
+import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
 
 @Controller('api/v2/reports')
+@UseGuards(JwtAuthGuard)
 export class ReportingController {
   constructor(private reportingService: ReportingService) {}
 

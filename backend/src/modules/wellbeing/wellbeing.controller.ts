@@ -7,10 +7,13 @@ import {
   Body,
   HttpCode,
   HttpStatus,
+  UseGuards,
 } from '@nestjs/common';
 import { WellbeingService } from '../../services/wellbeing.service';
+import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
 
 @Controller('api/v2/wellbeing')
+@UseGuards(JwtAuthGuard)
 export class WellbeingController {
   constructor(private wellbeingService: WellbeingService) {}
 

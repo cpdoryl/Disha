@@ -8,10 +8,13 @@ import {
   Query,
   HttpCode,
   HttpStatus,
+  UseGuards,
 } from '@nestjs/common';
 import { StudentService } from '../../services/student.service';
+import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
 
 @Controller('api/v2/students')
+@UseGuards(JwtAuthGuard)
 export class StudentController {
   constructor(private studentService: StudentService) {}
 

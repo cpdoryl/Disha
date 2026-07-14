@@ -1,6 +1,9 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { Injectable, UnauthorizedException, BadRequestException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { User } from 'src/database/entities';
 import * as bcrypt from 'bcrypt';
 
 export interface JwtPayload {
@@ -17,6 +20,8 @@ export class AuthService {
   constructor(
     private jwtService: JwtService,
     private configService: ConfigService,
+    @InjectRepository(User)
+    private userRepository: Repository<User>,
   ) {}
 
   async generateTokens(userId: string, schoolId: string, role: string, email: string) {
@@ -63,5 +68,75 @@ export class AuthService {
 
   async comparePasswords(password: string, hash: string): Promise<boolean> {
     return bcrypt.compare(password, hash);
+  }
+
+  async validateUser(email: string, password: string): Promise<User> {
+    const user = await this.userRepository.findOne({ where: { email } });
+    if (!user) {
+      throw new UnauthorizedException('Invalid credentials');
+    }
+
+    if (!user.isActive) {
+      throw new UnauthorizedException('User account is inactive');
+    }
+
+    const isPasswordValid = await this.comparePasswords(password, user.passwordHash);
+    if (!isPasswordValid) {
+      throw new UnauthorizedException('Invalid credentials');
+    }
+
+    return user;
+  }
+
+  async login(email: string, password: string) {
+    const user = await this.validateUser(email, password);
+
+    const tokens = await this.generateTokens(
+      user.id,
+      user.schoolId || '',
+      user.roleType,
+      user.email,
+    );
+
+    // Update last login timestamp
+    user.lastLoginAt = new Date();
+    await this.userRepository.save(user);
+
+    return {
+      ...tokens,
+      user: {
+        id: user.id,
+        email: user.email,
+        firstName: user.firstName,
+        lastName: user.lastName || '',
+        role: user.roleType,
+      },
+    };
+  }
+
+  async refreshTokens(refreshToken: string, userId: string) {
+    try {
+      const payload = await this.jwtService.verifyAsync(refreshToken, {
+        secret: this.configService.get('jwt.secret'),
+      });
+
+      if (payload.sub !== userId) {
+        throw new UnauthorizedException('Token user mismatch');
+      }
+
+      const user = await this.userRepository.findOne({ where: { id: userId } });
+      if (!user || !user.isActive) {
+        throw new UnauthorizedException('User not found or inactive');
+      }
+
+      return this.generateTokens(
+        user.id,
+        user.schoolId || '',
+        user.roleType,
+        user.email,
+      );
+    } catch (error: any) {
+      throw new UnauthorizedException('Invalid refresh token');
+    }
   }
 }

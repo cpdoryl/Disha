@@ -7,10 +7,13 @@ import {
   Query,
   HttpCode,
   HttpStatus,
+  UseGuards,
 } from '@nestjs/common';
 import { DataService } from '../../services/data.service';
+import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
 
 @Controller('api/v2/data')
+@UseGuards(JwtAuthGuard)
 export class DataController {
   constructor(private dataService: DataService) {}
 

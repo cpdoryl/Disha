@@ -6,10 +6,13 @@ import {
   Body,
   HttpCode,
   HttpStatus,
+  UseGuards,
 } from '@nestjs/common';
 import { NotificationService } from '../../services/notification.service';
+import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
 
 @Controller('api/v2/notifications')
+@UseGuards(JwtAuthGuard)
 export class NotificationController {
   constructor(private notificationService: NotificationService) {}
 
