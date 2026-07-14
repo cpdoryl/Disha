@@ -8,6 +8,7 @@ import {
   StudentAcademicAssessment,
 } from 'src/database/entities';
 import { DataService } from 'src/services/data.service';
+import { DataController } from './data.controller';
 
 @Module({
   imports: [
@@ -19,6 +20,7 @@ import { DataService } from 'src/services/data.service';
       StudentAcademicAssessment,
     ]),
   ],
+  controllers: [DataController],
   providers: [DataService],
   exports: [DataService],
 })

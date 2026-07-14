@@ -7,6 +7,7 @@ import {
   CounsellorReferral,
 } from 'src/database/entities';
 import { StudentService } from 'src/services/student.service';
+import { StudentController } from './student.controller';
 
 @Module({
   imports: [
@@ -17,6 +18,7 @@ import { StudentService } from 'src/services/student.service';
       CounsellorReferral,
     ]),
   ],
+  controllers: [StudentController],
   providers: [StudentService],
   exports: [StudentService],
 })
