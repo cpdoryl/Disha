@@ -1,0 +1,193 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database (Staging)
+  postgres-staging:
+    image: postgres:16-alpine
+    container_name: disha-staging-postgres
+    environment:
+      POSTGRES_USER: ${DB_USERNAME:-staging_user}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-staging_password_change_me}
+      POSTGRES_DB: ${DB_NAME:-disha_staging_db}
+      POSTGRES_INITDB_ARGS: "--encoding=UTF8 --locale=en_US.UTF-8"
+    ports:
+      - "${DB_PORT:-5432}:5432"
+    volumes:
+      - postgres_staging_data:/var/lib/postgresql/data
+      - ./backend/database/migrations:/docker-entrypoint-initdb.d
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USERNAME:-staging_user}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - disha-staging-network
+    restart: unless-stopped
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # Disha API (Staging)
+  api-staging:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+      args:
+        - NODE_ENV=staging
+    container_name: disha-staging-api
+    environment:
+      NODE_ENV: staging
+      PORT: ${PORT:-3000}
+      DB_HOST: postgres-staging
+      DB_PORT: 5432
+      DB_USERNAME: ${DB_USERNAME:-staging_user}
+      DB_PASSWORD: ${DB_PASSWORD:-staging_password_change_me}
+      DB_NAME: ${DB_NAME:-disha_staging_db}
+      JWT_SECRET: ${JWT_SECRET:-staging-secret-key-change-in-production}
+      JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-15m}
+      JWT_REFRESH_EXPIRES_IN: ${JWT_REFRESH_EXPIRES_IN:-7d}
+      CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost:3001,http://localhost:3000,https://staging.example.com}
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+      RATE_LIMIT_WINDOW_MS: 900000
+      RATE_LIMIT_MAX_REQUESTS: 100
+    ports:
+      - "${PORT:-3000}:3000"
+    depends_on:
+      postgres-staging:
+        condition: service_healthy
+    volumes:
+      - ./backend/src:/app/src
+      - /app/node_modules
+    networks:
+      - disha-staging-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:3000/health/ready', (r) => {if (r.statusCode !== 200) throw new Error(r.statusCode)})"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # Nginx Reverse Proxy (Staging)
+  nginx-staging:
+    image: nginx:alpine
+    container_name: disha-staging-nginx
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx-staging.conf:/etc/nginx/conf.d/default.conf:ro
+      # SSL certificates (if using HTTPS)
+      # - /etc/letsencrypt/live/staging.example.com/fullchain.pem:/etc/ssl/certs/cert.pem:ro
+      # - /etc/letsencrypt/live/staging.example.com/privkey.pem:/etc/ssl/private/key.pem:ro
+    depends_on:
+      - api-staging
+    networks:
+      - disha-staging-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # Prometheus Monitoring (Staging)
+  prometheus-staging:
+    image: prom/prometheus:latest
+    container_name: disha-staging-prometheus
+    volumes:
+      - ./monitoring/prometheus-staging.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_staging_data:/prometheus
+    ports:
+      - "9090:9090"
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+    depends_on:
+      - api-staging
+    networks:
+      - disha-staging-network
+    restart: unless-stopped
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # Grafana Dashboards (Staging)
+  grafana-staging:
+    image: grafana/grafana:latest
+    container_name: disha-staging-grafana
+    environment:
+      GF_SECURITY_ADMIN_USER: ${GRAFANA_USER:-admin}
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_PASSWORD:-admin_change_me}
+      GF_INSTALL_PLUGINS: 'grafana-piechart-panel'
+    volumes:
+      - grafana_staging_data:/var/lib/grafana
+      - ./monitoring/grafana-dashboards:/etc/grafana/provisioning/dashboards
+      - ./monitoring/grafana-datasources.yml:/etc/grafana/provisioning/datasources/datasources.yml:ro
+    ports:
+      - "3001:3000"
+    depends_on:
+      - prometheus-staging
+    networks:
+      - disha-staging-network
+    restart: unless-stopped
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # Optional: Redis Cache (Staging)
+  redis-staging:
+    image: redis:7-alpine
+    container_name: disha-staging-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_staging_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - disha-staging-network
+    restart: unless-stopped
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    profiles:
+      - with-cache
+
+volumes:
+  postgres_staging_data:
+    driver: local
+  prometheus_staging_data:
+    driver: local
+  grafana_staging_data:
+    driver: local
+  redis_staging_data:
+    driver: local
+
+networks:
+  disha-staging-network:
+    driver: bridge
