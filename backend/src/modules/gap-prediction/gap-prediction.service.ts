@@ -1,9 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { AssessmentResponse } from 'src/database/entities';
-import { GapPrediction, TrendDirection, ConfidenceTier } from 'src/database/entities/gap-prediction.entity';
-import { Challenge } from 'src/database/entities/challenge.entity';
+import { AssessmentResponse, GapPrediction, TrendDirection, ConfidenceTier, Challenge } from 'src/database/entities';
 
 export interface PriorityGapResult {
   challengeId: string;

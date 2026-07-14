@@ -24,6 +24,8 @@ import { DataRetentionPolicy, DataClassification, RetentionAction } from './data
 import { AuditLog, ActionType, ResourceType } from './auditlog.entity';
 import { RemediationIntervention, InterventionType, InterventionStatus } from './remediationintervention.entity';
 import { Admission, AdmissionStatus, AdmissionSource } from './admission.entity';
+import { Challenge, ChallengeCategory, PREDEFINED_CHALLENGES } from './Challenge.entity';
+import { GapPrediction, TrendDirection, ConfidenceTier } from './gap-prediction.entity';
 
 // Core Entity Exports
 export { Assessment, AssessmentStatus };
@@ -51,6 +53,8 @@ export { DataRetentionPolicy, DataClassification, RetentionAction };
 export { AuditLog, ActionType, ResourceType };
 export { RemediationIntervention, InterventionType, InterventionStatus };
 export { Admission, AdmissionStatus, AdmissionSource };
+export { Challenge, ChallengeCategory, PREDEFINED_CHALLENGES };
+export { GapPrediction, TrendDirection, ConfidenceTier };
 
 // Array of all entities for TypeORM configuration
 export const DISHA_ENTITIES = [
@@ -77,4 +81,6 @@ export const DISHA_ENTITIES = [
   AuditLog,
   RemediationIntervention,
   Admission,
+  Challenge,
+  GapPrediction,
 ];

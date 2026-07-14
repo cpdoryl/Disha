@@ -1,7 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { Challenge, PREDEFINED_CHALLENGES, ChallengeCategory } from 'src/database/entities/challenge.entity';
+import { Challenge, PREDEFINED_CHALLENGES, ChallengeCategory } from 'src/database/entities';
 
 @Injectable()
 export class ChallengeService {
