@@ -9,9 +9,12 @@ import {
   HttpStatus,
   UseGuards,
 } from '@nestjs/common';
+import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
 import { DataService } from '../../services/data.service';
 import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
 
+@ApiTags('Data')
+@ApiBearerAuth()
 @Controller('api/v2/data')
 @UseGuards(JwtAuthGuard)
 export class DataController {

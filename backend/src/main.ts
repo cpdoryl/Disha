@@ -37,15 +37,26 @@ async function bootstrap() {
   // Global logging interceptor
   app.useGlobalInterceptors(new LoggingInterceptor());
 
-  // API versioning
-  app.setGlobalPrefix('api/v1');
-
   // Swagger documentation
   const config = new DocumentBuilder()
-    .setTitle('Disha - Adaptive School Diagnostic Engine')
-    .setDescription('Challenge-first assessment and gap prediction API')
-    .setVersion('1.0.0')
-    .addBearerAuth()
+    .setTitle('Disha API v2 - Adaptive School Diagnostic Engine')
+    .setDescription('Challenge-first assessment and gap prediction API for RYL schools')
+    .setVersion('2.0.0')
+    .addBearerAuth({
+      type: 'http',
+      scheme: 'bearer',
+      bearerFormat: 'JWT',
+      description: 'Enter JWT token',
+    })
+    .addTag('Auth', 'Authentication endpoints')
+    .addTag('Schools', 'School management')
+    .addTag('Students', 'Student data management')
+    .addTag('Data', 'Operational and monitoring data')
+    .addTag('Notifications', 'Parent and staff communications')
+    .addTag('Reports', 'Assessment and performance reports')
+    .addTag('Audit', 'Audit logs and security events')
+    .addTag('Wellbeing', 'Student wellbeing and interventions')
+    .addTag('Assessments', 'Challenge assessments')
     .build();
 
   const document = SwaggerModule.createDocument(app, config);
