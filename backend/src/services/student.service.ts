@@ -224,12 +224,52 @@ export class StudentService {
     lowAttendanceStudents: number;
     academiclyStruggling: number;
   }> {
-    // Simplified - full implementation would aggregate across multiple metrics
+    const [openReferrals, attendanceRecords, academicRecords] = await Promise.all([
+      this.counsellorRepository.find({ where: { schoolId, resolutionStatus: ResolutionStatus.ONGOING } }),
+      this.attendanceRepository.find({ where: { schoolId } }),
+      this.academicRepository.find({ where: { schoolId } }),
+    ]);
+
+    const highRiskStudentIds = new Set(
+      openReferrals
+        .filter((r) => r.severity === ReferralSeverity.HIGH || r.severity === ReferralSeverity.CRITICAL)
+        .map((r) => r.studentId),
+    );
+    const atRiskStudentIds = new Set(
+      openReferrals.filter((r) => !highRiskStudentIds.has(r.studentId)).map((r) => r.studentId),
+    );
+
+    const attendanceByStudent = new Map<string, { total: number; present: number }>();
+    attendanceRecords.forEach((record) => {
+      const bucket = attendanceByStudent.get(record.studentId) || { total: 0, present: 0 };
+      bucket.total++;
+      if (record.status === 'present') bucket.present++;
+      attendanceByStudent.set(record.studentId, bucket);
+    });
+    const lowAttendanceStudentIds = new Set(
+      Array.from(attendanceByStudent.entries())
+        .filter(([, { total, present }]) => total > 0 && present / total < 0.75)
+        .map(([studentId]) => studentId),
+    );
+
+    const latestAcademicByStudent = new Map<string, StudentAcademicAssessment>();
+    academicRecords.forEach((record) => {
+      const existing = latestAcademicByStudent.get(record.studentId);
+      if (!existing || new Date(record.assessmentDate) > new Date(existing.assessmentDate)) {
+        latestAcademicByStudent.set(record.studentId, record);
+      }
+    });
+    const strugglingStudentIds = new Set(
+      Array.from(latestAcademicByStudent.values())
+        .filter((record) => record.status === AcademicStatus.BELOW)
+        .map((record) => record.studentId),
+    );
+
     return {
-      highRiskStudents: 0,
-      atRiskStudents: 0,
-      lowAttendanceStudents: 0,
-      academiclyStruggling: 0,
+      highRiskStudents: highRiskStudentIds.size,
+      atRiskStudents: atRiskStudentIds.size,
+      lowAttendanceStudents: lowAttendanceStudentIds.size,
+      academiclyStruggling: strugglingStudentIds.size,
     };
   }
 }

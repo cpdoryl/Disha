@@ -12,6 +12,8 @@ describe('GapPredictionService', () => {
   let responseRepo: MockRepo<AssessmentResponse>;
   let challengeRepo: MockRepo<Challenge>;
 
+  // Each fixture challenge owns exactly one question, `${id}-q1`, so
+  // responses can be routed to a challenge via questionId.
   const challenge = (id: string, displayName: string): Challenge =>
     ({
       id,
@@ -19,7 +21,11 @@ describe('GapPredictionService', () => {
       code: id,
       category: ChallengeCategory.PEOPLE,
       description: '',
+      questions: [{ id: `${id}-q1` }],
     }) as Challenge;
+
+  const response = (questionId: string, responseNumeric: number): AssessmentResponse =>
+    ({ questionId, responseNumeric }) as AssessmentResponse;
 
   beforeEach(async () => {
     gapRepo = createMockRepo<GapPrediction>();
@@ -49,17 +55,16 @@ describe('GapPredictionService', () => {
         challenge('c4', 'Infrastructure Gaps'),
       ];
       (challengeRepo.find as jest.Mock).mockResolvedValue(challenges);
+      (responseRepo.find as jest.Mock).mockResolvedValue([
+        response('c1-q1', 5),
+        response('c1-q1', 5),
+        response('c2-q1', 1),
+        response('c4-q1', 3),
+      ]);
       (gapRepo.create as jest.Mock).mockImplementation((entity) => entity as GapPrediction);
       (gapRepo.save as jest.Mock).mockImplementation((entities) => Promise.resolve(entities));
 
-      const responses = new Map<string, AssessmentResponse[]>([
-        ['c1', [{ responseNumeric: 5 } as AssessmentResponse, { responseNumeric: 5 } as AssessmentResponse]],
-        ['c2', [{ responseNumeric: 1 } as AssessmentResponse]],
-        ['c3', []],
-        ['c4', [{ responseNumeric: 3 } as AssessmentResponse]],
-      ]);
-
-      const results = await service.generatePriorityGaps('school-1', '2026', ['c1', 'c2', 'c3', 'c4'], responses);
+      const results = await service.generatePriorityGaps('school-1', '2026', ['c1', 'c2', 'c3', 'c4']);
 
       expect(results).toHaveLength(3);
       expect(results[0].challengeId).toBe('c1');
@@ -68,17 +73,26 @@ describe('GapPredictionService', () => {
       expect(results[1].priorityRank).toBe(2);
     });
 
-    it('skips challenge ids that are not found', async () => {
+    it('only queries responses for questions belonging to the selected challenges', async () => {
       (challengeRepo.find as jest.Mock).mockResolvedValue([challenge('c1', 'Teacher Attrition')]);
+      (responseRepo.find as jest.Mock).mockResolvedValue([]);
       (gapRepo.create as jest.Mock).mockImplementation((entity) => entity as GapPrediction);
       (gapRepo.save as jest.Mock).mockImplementation((entities) => Promise.resolve(entities));
 
-      const results = await service.generatePriorityGaps(
-        'school-1',
-        '2026',
-        ['c1', 'unknown'],
-        new Map([['c1', [{ responseNumeric: 4 } as AssessmentResponse]]]),
-      );
+      await service.generatePriorityGaps('school-1', '2026', ['c1']);
+
+      expect(responseRepo.find).toHaveBeenCalledWith({
+        where: { schoolId: 'school-1', questionId: expect.anything() },
+      });
+    });
+
+    it('skips challenge ids that are not found', async () => {
+      (challengeRepo.find as jest.Mock).mockResolvedValue([challenge('c1', 'Teacher Attrition')]);
+      (responseRepo.find as jest.Mock).mockResolvedValue([response('c1-q1', 4)]);
+      (gapRepo.create as jest.Mock).mockImplementation((entity) => entity as GapPrediction);
+      (gapRepo.save as jest.Mock).mockImplementation((entities) => Promise.resolve(entities));
+
+      const results = await service.generatePriorityGaps('school-1', '2026', ['c1', 'unknown']);
 
       expect(results).toHaveLength(1);
       expect(results[0].challengeId).toBe('c1');
@@ -86,6 +100,7 @@ describe('GapPredictionService', () => {
 
     it('defaults to tier C confidence for Phase 1 (only survey data available)', async () => {
       (challengeRepo.find as jest.Mock).mockResolvedValue([challenge('c1', 'Teacher Attrition')]);
+      (responseRepo.find as jest.Mock).mockResolvedValue([]);
       let savedGap: Partial<GapPrediction> | undefined;
       (gapRepo.create as jest.Mock).mockImplementation((entity) => {
         savedGap = entity;
@@ -93,7 +108,7 @@ describe('GapPredictionService', () => {
       });
       (gapRepo.save as jest.Mock).mockImplementation((entities) => Promise.resolve(entities));
 
-      await service.generatePriorityGaps('school-1', '2026', ['c1'], new Map());
+      await service.generatePriorityGaps('school-1', '2026', ['c1']);
 
       expect(savedGap?.confidenceTier).toBe(ConfidenceTier.TIER_C);
     });

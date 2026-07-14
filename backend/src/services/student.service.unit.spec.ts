@@ -188,4 +188,32 @@ describe('StudentService', () => {
       expect(result.referralDate).toBeInstanceOf(Date);
     });
   });
+
+  describe('getStudentRiskProfile', () => {
+    it('aggregates high-risk referrals, low attendance, and academic struggles', async () => {
+      (counsellorRepo.find as jest.Mock).mockResolvedValue([
+        { studentId: 'student-1', severity: ReferralSeverity.CRITICAL },
+        { studentId: 'student-2', severity: ReferralSeverity.MEDIUM },
+      ]);
+      (attendanceRepo.find as jest.Mock).mockResolvedValue([
+        { studentId: 'student-3', status: 'present' },
+        { studentId: 'student-3', status: 'absent' },
+        { studentId: 'student-3', status: 'absent' },
+        { studentId: 'student-3', status: 'absent' },
+        { studentId: 'student-4', status: 'present' },
+      ]);
+      (academicRepo.find as jest.Mock).mockResolvedValue([
+        { studentId: 'student-5', assessmentDate: new Date('2026-01-01'), status: AcademicStatus.BELOW },
+        { studentId: 'student-5', assessmentDate: new Date('2026-02-01'), status: AcademicStatus.MEETS },
+      ]);
+
+      const profile = await service.getStudentRiskProfile('school-1');
+
+      expect(profile.highRiskStudents).toBe(1);
+      expect(profile.atRiskStudents).toBe(1);
+      expect(profile.lowAttendanceStudents).toBe(1);
+      // Latest academic record for student-5 is MEETS, not BELOW, so not struggling
+      expect(profile.academiclyStruggling).toBe(0);
+    });
+  });
 });

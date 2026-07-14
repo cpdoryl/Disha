@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { In, Repository } from 'typeorm';
 import { GapPrediction, TrendDirection, ConfidenceTier } from 'src/database/entities/gap-prediction.entity';
 import { AssessmentResponse } from 'src/database/entities/AssessmentResponse.entity';
 import { Challenge } from 'src/database/entities/challenge.entity';
@@ -83,6 +83,43 @@ export class GapPredictionService {
   }
 
   /**
+   * Groups a school's assessment responses by the challenge(s) their
+   * question belongs to (a question can map to more than one challenge via
+   * the challenge_question_mapping join table).
+   */
+  private async getResponsesByChallenge(
+    schoolId: string,
+    challenges: Challenge[],
+  ): Promise<Map<string, AssessmentResponse[]>> {
+    const questionIdToChallengeIds = new Map<string, string[]>();
+    challenges.forEach((challenge) => {
+      (challenge.questions || []).forEach((question) => {
+        const challengeIds = questionIdToChallengeIds.get(question.id) || [];
+        challengeIds.push(challenge.id);
+        questionIdToChallengeIds.set(question.id, challengeIds);
+      });
+    });
+
+    const questionIds = Array.from(questionIdToChallengeIds.keys());
+    const responses =
+      questionIds.length > 0
+        ? await this.assessmentResponseRepository.find({ where: { schoolId, questionId: In(questionIds) } })
+        : [];
+
+    const responsesByChallenge = new Map<string, AssessmentResponse[]>();
+    responses.forEach((response) => {
+      const challengeIds = questionIdToChallengeIds.get(response.questionId) || [];
+      challengeIds.forEach((challengeId) => {
+        const existing = responsesByChallenge.get(challengeId) || [];
+        existing.push(response);
+        responsesByChallenge.set(challengeId, existing);
+      });
+    });
+
+    return responsesByChallenge;
+  }
+
+  /**
    * Generate priority gap report for the first assessment
    * Returns top 1-3 ranked gaps
    */
@@ -90,13 +127,15 @@ export class GapPredictionService {
     schoolId: string,
     academicYear: string,
     selectedChallengeIds: string[],
-    assessmentResponses: Map<string, AssessmentResponse[]>,
   ): Promise<PriorityGapResult[]> {
-    // Get selected challenges
+    // Get selected challenges, with the questions that map to them so we can
+    // pull their assessment responses for this school
     const challenges = await this.challengeRepository.find({
       where: selectedChallengeIds.map((id) => ({ id })),
+      relations: ['questions'],
     });
     const challengeMap = new Map(challenges.map((c) => [c.id, c]));
+    const assessmentResponses = await this.getResponsesByChallenge(schoolId, challenges);
 
     // Calculate gap for each selected challenge
     const gaps: GapPrediction[] = [];
