@@ -29,11 +29,7 @@ export class ReportingService {
     return {};
   }
 
-  async generateSchoolPerformanceReport(
-    schoolId: string,
-    startDate: Date,
-    endDate: Date,
-  ): Promise<any> {
+  async generateSchoolPerformanceReport(schoolId: string, startDate: Date, endDate: Date): Promise<any> {
     return {};
   }
 

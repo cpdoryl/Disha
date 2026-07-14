@@ -1,12 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import {
-  CounsellorReferral,
-  RemediationIntervention,
-  BullyingIncident,
-  Student,
-} from 'src/database/entities';
+import { CounsellorReferral, RemediationIntervention, BullyingIncident, Student } from 'src/database/entities';
 
 export enum WellbeingRiskLevel {
   LOW = 'low',
@@ -44,11 +39,7 @@ export class WellbeingService {
     return {};
   }
 
-  async completeIntervention(
-    interventionId: string,
-    effectiveness: 1 | 2 | 3 | 4 | 5,
-    notes?: string,
-  ): Promise<any> {
+  async completeIntervention(interventionId: string, effectiveness: 1 | 2 | 3 | 4 | 5, notes?: string): Promise<any> {
     return {};
   }
 
@@ -56,11 +47,7 @@ export class WellbeingService {
     return {};
   }
 
-  async resolveBullyingIncident(
-    incidentId: string,
-    resolutionDate: Date,
-    resolutionNotes: string,
-  ): Promise<any> {
+  async resolveBullyingIncident(incidentId: string, resolutionDate: Date, resolutionNotes: string): Promise<any> {
     return {};
   }
 

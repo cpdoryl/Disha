@@ -15,7 +15,7 @@ import { ApiTags, ApiOperation, ApiBearerAuth, ApiResponse } from '@nestjs/swagg
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { AssessmentService } from './assessment.service';
 import { SubmitResponseDto } from './dto/submit-response.dto';
-import { CreateAssessmentDto } from './dto/assessment-response.dto';
+import { CreateAssessmentDto } from './dto/create-assessment.dto';
 import { Assessment, AssessmentStatus } from '../../database/entities';
 
 @ApiTags('Assessments')
@@ -42,9 +42,7 @@ export class AssessmentController {
   @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Create new assessment cycle' })
   @ApiResponse({ status: 201, type: Assessment })
-  async createAssessment(
-    @Body() createAssessmentDto: CreateAssessmentDto,
-  ): Promise<Assessment> {
+  async createAssessment(@Body() createAssessmentDto: CreateAssessmentDto): Promise<Assessment> {
     this.logger.log(`Creating assessment for school ${createAssessmentDto.schoolId}`);
     return this.assessmentService.createAssessment(createAssessmentDto);
   }
@@ -68,29 +66,20 @@ export class AssessmentController {
   @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Get assessment questions by respondent type' })
   @ApiResponse({ status: 200 })
-  async getQuestions(
-    @Param('assessmentId') assessmentId: string,
-    @Query('respondentType') respondentType: string,
-  ) {
-    this.logger.log(
-      `Fetching questions for assessment ${assessmentId}, type: ${respondentType}`,
-    );
+  async getQuestions(@Param('assessmentId') assessmentId: string, @Query('respondentType') respondentType: string) {
+    this.logger.log(`Fetching questions for assessment ${assessmentId}, type: ${respondentType}`);
 
     if (!respondentType) {
       throw new BadRequestException('respondentType query parameter is required');
     }
 
-    const questions = await this.assessmentService.getQuestionsForAssessment(
-      assessmentId,
-      respondentType as any,
-    );
+    const questions = await this.assessmentService.getQuestionsForAssessment(assessmentId, respondentType as any);
 
     return {
       questions,
       totalQuestions: questions.length,
       estimatedTimeMinutes: this.estimateTime(questions.length),
-      instructions:
-        'Please answer all questions honestly. Your responses are completely anonymous.',
+      instructions: 'Please answer all questions honestly. Your responses are completely anonymous.',
     };
   }
 
@@ -102,19 +91,12 @@ export class AssessmentController {
     summary: 'Submit assessment responses (main Capture endpoint)',
   })
   @ApiResponse({ status: 200, description: 'Responses received and validated' })
-  async submitResponses(
-    @Param('assessmentId') assessmentId: string,
-    @Body() submitResponseDto: SubmitResponseDto,
-  ) {
-    this.logger.log(
-      `Receiving ${submitResponseDto.responses.length} responses for assessment ${assessmentId}`,
-    );
+  async submitResponses(@Param('assessmentId') assessmentId: string, @Body() submitResponseDto: SubmitResponseDto) {
+    this.logger.log(`Receiving ${submitResponseDto.responses.length} responses for assessment ${assessmentId}`);
 
     // Validate assessmentId matches
     if (assessmentId !== submitResponseDto.assessmentId) {
-      throw new BadRequestException(
-        'Assessment ID in URL does not match request body',
-      );
+      throw new BadRequestException('Assessment ID in URL does not match request body');
     }
 
     return this.assessmentService.submitResponses(submitResponseDto);
@@ -127,18 +109,12 @@ export class AssessmentController {
   @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Check if user already submitted response' })
   @ApiResponse({ status: 200 })
-  async checkIfSubmitted(
-    @Param('assessmentId') assessmentId: string,
-    @Query('respondentId') respondentId: string,
-  ) {
+  async checkIfSubmitted(@Param('assessmentId') assessmentId: string, @Query('respondentId') respondentId: string) {
     if (!respondentId) {
       throw new BadRequestException('respondentId query parameter is required');
     }
 
-    const submitted = await this.assessmentService.hasRespondentSubmitted(
-      assessmentId,
-      respondentId,
-    );
+    const submitted = await this.assessmentService.hasRespondentSubmitted(assessmentId, respondentId);
 
     if (submitted) {
       return {

@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { School, District, Organization } from 'src/database/entities';
+import { School, District, Organization, CityTier, BoardType } from 'src/database/entities';
 
 @Injectable()
 export class SchoolService {
@@ -20,8 +20,8 @@ export class SchoolService {
     district: string;
     state: string;
     city: string;
-    cityTier: 'tier_1' | 'tier_2' | 'tier_3';
-    boardType: 'cbse' | 'icse' | 'ib' | 'state' | 'other';
+    cityTier: CityTier;
+    boardType: BoardType;
     studentCount: number;
     staffCount: number;
     udiseCode?: string;
@@ -50,10 +50,7 @@ export class SchoolService {
     });
   }
 
-  async updateSchool(
-    schoolId: string,
-    updateData: Partial<School>,
-  ): Promise<School> {
+  async updateSchool(schoolId: string, updateData: Partial<School>): Promise<School | null> {
     await this.schoolRepository.update(schoolId, updateData);
     return this.getSchool(schoolId);
   }
@@ -72,14 +69,12 @@ export class SchoolService {
     });
   }
 
-  async getSchoolMetrics(
-    schoolId: string,
-  ): Promise<{
+  async getSchoolMetrics(schoolId: string): Promise<{
     studentCount: number;
     staffCount: number;
     activeAssessments: number;
     pendingAssessments: number;
-  }> {
+  } | null> {
     const school = await this.schoolRepository.findOne({
       where: { id: schoolId },
     });
@@ -98,11 +93,7 @@ export class SchoolService {
     await this.schoolRepository.update(schoolId, { isActive: false });
   }
 
-  async createDistrict(createDistrictDto: {
-    name: string;
-    state: string;
-    districtCode?: string;
-  }): Promise<District> {
+  async createDistrict(createDistrictDto: { name: string; state: string; districtCode?: string }): Promise<District> {
     const district = this.districtRepository.create(createDistrictDto);
     return this.districtRepository.save(district);
   }

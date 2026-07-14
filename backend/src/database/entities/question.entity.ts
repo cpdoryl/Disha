@@ -3,12 +3,14 @@ import {
   PrimaryGeneratedColumn,
   Column,
   ManyToOne,
+  ManyToMany,
   OneToMany,
   Index,
   CreateDateColumn,
 } from 'typeorm';
 import { Assessment } from './Assessment.entity';
 import { AssessmentResponse } from './AssessmentResponse.entity';
+import { Challenge } from './challenge.entity';
 
 export enum QuestionType {
   LIKERT_5 = 'likert_5',
@@ -76,6 +78,9 @@ export class Question {
 
   @OneToMany(() => AssessmentResponse, (response) => response.question)
   responses: AssessmentResponse[];
+
+  @ManyToMany(() => Challenge, (challenge) => challenge.questions)
+  challenges: Challenge[];
 
   @CreateDateColumn()
   createdAt: Date;

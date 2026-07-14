@@ -12,6 +12,7 @@ import {
   ReferralSeverity,
   ResolutionStatus,
 } from 'src/database/entities';
+import { Gender } from 'src/database/entities/Student.entity';
 
 @Injectable()
 export class StudentService {
@@ -31,7 +32,7 @@ export class StudentService {
     enrollmentNumber: string;
     firstName: string;
     lastName: string;
-    gender: 'male' | 'female' | 'other';
+    gender: Gender;
     dateOfBirth: Date;
     gradeLevel: number;
     classSection?: string;
@@ -73,11 +74,7 @@ export class StudentService {
     });
   }
 
-  async updateStudentStatus(
-    studentId: string,
-    status: StudentStatus,
-    reason?: string,
-  ): Promise<Student | null> {
+  async updateStudentStatus(studentId: string, status: StudentStatus, reason?: string): Promise<Student | null> {
     const updateData: any = {
       status,
     };
@@ -136,9 +133,9 @@ export class StudentService {
     });
 
     const totalDays = records.length;
-    const presentDays = records.filter(r => r.status === 'present').length;
-    const absentDays = records.filter(r => r.status === 'absent').length;
-    const leaveDays = records.filter(r => r.status === 'leave').length;
+    const presentDays = records.filter((r) => r.status === 'present').length;
+    const absentDays = records.filter((r) => r.status === 'absent').length;
+    const leaveDays = records.filter((r) => r.status === 'leave').length;
 
     return {
       totalDays,
@@ -188,11 +185,9 @@ export class StudentService {
     return this.academicRepository.save(assessment);
   }
 
-  async getAcademicPerformance(
-    studentId: string,
-    term?: string,
-  ): Promise<StudentAcademicAssessment[]> {
-    const query = this.academicRepository.createQueryBuilder('academic')
+  async getAcademicPerformance(studentId: string, term?: string): Promise<StudentAcademicAssessment[]> {
+    const query = this.academicRepository
+      .createQueryBuilder('academic')
       .where('academic.studentId = :studentId', { studentId });
 
     if (term) {

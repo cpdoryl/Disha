@@ -1,12 +1,4 @@
-import {
-  Entity,
-  PrimaryGeneratedColumn,
-  Column,
-  ManyToOne,
-  Index,
-  CreateDateColumn,
-  Unique,
-} from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, Index, CreateDateColumn, Unique } from 'typeorm';
 import { Assessment } from './Assessment.entity';
 import { Question } from './question.entity';
 import { School } from './School.entity';

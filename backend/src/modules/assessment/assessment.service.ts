@@ -1,9 +1,4 @@
-import {
-  Injectable,
-  BadRequestException,
-  NotFoundException,
-  Logger,
-} from '@nestjs/common';
+import { Injectable, BadRequestException, NotFoundException, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import {
@@ -34,9 +29,7 @@ export class AssessmentService {
   /**
    * Create a new assessment cycle
    */
-  async createAssessment(
-    createAssessmentDto: CreateAssessmentDto,
-  ): Promise<Assessment> {
+  async createAssessment(createAssessmentDto: CreateAssessmentDto): Promise<Assessment> {
     try {
       const assessment = this.assessmentRepository.create({
         ...createAssessmentDto,
@@ -44,15 +37,10 @@ export class AssessmentService {
       });
 
       const saved = await this.assessmentRepository.save(assessment);
-      this.logger.log(
-        `Assessment created: ${saved.id} for school ${saved.schoolId}`,
-      );
+      this.logger.log(`Assessment created: ${saved.id} for school ${saved.schoolId}`);
       return saved;
-    } catch (error) {
-      this.logger.error(
-        `Failed to create assessment: ${error.message}`,
-        error.stack,
-      );
+    } catch (error: any) {
+      this.logger.error(`Failed to create assessment: ${error.message}`, error.stack);
       throw new BadRequestException('Failed to create assessment');
     }
   }
@@ -75,7 +63,7 @@ export class AssessmentService {
       where: { assessmentId },
     });
 
-    const groupedByRespondentType = {};
+    const groupedByRespondentType: Record<string, AssessmentResponse[]> = {};
     responses.forEach((response) => {
       if (!groupedByRespondentType[response.respondentType]) {
         groupedByRespondentType[response.respondentType] = [];
@@ -83,13 +71,9 @@ export class AssessmentService {
       groupedByRespondentType[response.respondentType].push(response);
     });
 
-    const responseSummary = {};
-    for (const [type, typeResponses] of Object.entries(
-      groupedByRespondentType,
-    )) {
-      const uniqueRespondents = new Set(
-        (typeResponses as any[]).map((r) => r.respondentId),
-      );
+    const responseSummary: Record<string, { expected: number; received: number; rate: string }> = {};
+    for (const [type, typeResponses] of Object.entries(groupedByRespondentType)) {
+      const uniqueRespondents = new Set((typeResponses as any[]).map((r) => r.respondentId));
       responseSummary[type] = {
         expected: 0, // Would be calculated from school data
         received: uniqueRespondents.size,
@@ -108,10 +92,7 @@ export class AssessmentService {
   /**
    * Get all questions for an assessment by respondent type
    */
-  async getQuestionsForAssessment(
-    assessmentId: string,
-    respondentType: RespondentType,
-  ): Promise<Question[]> {
+  async getQuestionsForAssessment(assessmentId: string, respondentType: RespondentType): Promise<Question[]> {
     const questions = await this.questionRepository.find({
       where: {
         assessmentId,
@@ -123,9 +104,7 @@ export class AssessmentService {
     });
 
     if (questions.length === 0) {
-      this.logger.warn(
-        `No questions found for assessment ${assessmentId} and type ${respondentType}`,
-      );
+      this.logger.warn(`No questions found for assessment ${assessmentId} and type ${respondentType}`);
     }
 
     return questions;
@@ -134,21 +113,10 @@ export class AssessmentService {
   /**
    * Submit assessment responses (main Capture endpoint)
    */
-  async submitResponses(
-    submitResponseDto: SubmitResponseDto,
-  ): Promise<AssessmentResponseDto> {
-    const {
-      assessmentId,
-      schoolId,
-      respondentId,
-      respondentType,
-      responses,
-      metadata,
-    } = submitResponseDto;
+  async submitResponses(submitResponseDto: SubmitResponseDto): Promise<AssessmentResponseDto> {
+    const { assessmentId, schoolId, respondentId, respondentType, responses, metadata } = submitResponseDto;
 
-    this.logger.log(
-      `Submitting ${responses.length} responses for assessment ${assessmentId}`,
-    );
+    this.logger.log(`Submitting ${responses.length} responses for assessment ${assessmentId}`);
 
     // Validate assessment exists and is active
     const assessment = await this.assessmentRepository.findOne({
@@ -160,9 +128,7 @@ export class AssessmentService {
     }
 
     if (assessment.status !== AssessmentStatus.ACTIVE) {
-      throw new BadRequestException(
-        `Assessment is ${assessment.status}, not accepting responses`,
-      );
+      throw new BadRequestException(`Assessment is ${assessment.status}, not accepting responses`);
     }
 
     // Process each response
@@ -185,10 +151,7 @@ export class AssessmentService {
         }
 
         // Validate response value based on question type
-        const validationResult = this.validateResponse(
-          response.responseValue,
-          question.questionType,
-        );
+        const validationResult = this.validateResponse(response.responseValue, question.questionType);
 
         if (!validationResult.valid) {
           validationErrors.push({
@@ -219,11 +182,8 @@ export class AssessmentService {
 
         const saved = await this.responseRepository.save(assessmentResponse);
         savedResponses.push(saved);
-      } catch (error) {
-        this.logger.error(
-          `Failed to save response: ${error.message}`,
-          error.stack,
-        );
+      } catch (error: any) {
+        this.logger.error(`Failed to save response: ${error.message}`, error.stack);
         validationErrors.push({
           questionId: response.questionId,
           error: error.message,
@@ -231,9 +191,7 @@ export class AssessmentService {
       }
     }
 
-    this.logger.log(
-      `Saved ${savedResponses.length} responses, ${validationErrors.length} errors`,
-    );
+    this.logger.log(`Saved ${savedResponses.length} responses, ${validationErrors.length} errors`);
 
     return {
       submissionId: `${assessmentId}-${respondentId}-${Date.now()}`,
@@ -242,8 +200,7 @@ export class AssessmentService {
       responsesReceived: savedResponses.length,
       responsesRejected: validationErrors.length,
       validationErrors,
-      receiptMessage:
-        'Thank you! Your response has been recorded successfully.',
+      receiptMessage: 'Thank you! Your response has been recorded successfully.',
     };
   }
 
@@ -307,7 +264,7 @@ export class AssessmentService {
         default:
           return { valid: false, error: 'Unknown question type' };
       }
-    } catch (error) {
+    } catch (error: any) {
       return { valid: false, error: `Validation error: ${error.message}` };
     }
   }
@@ -315,10 +272,7 @@ export class AssessmentService {
   /**
    * Check if respondent already submitted for this assessment
    */
-  async hasRespondentSubmitted(
-    assessmentId: string,
-    respondentId: string,
-  ): Promise<boolean> {
+  async hasRespondentSubmitted(assessmentId: string, respondentId: string): Promise<boolean> {
     const response = await this.responseRepository.findOne({
       where: {
         assessmentId,
@@ -340,7 +294,7 @@ export class AssessmentService {
     const validResponses = responses.filter((r) => r.isValid).length;
     const invalidResponses = totalResponses - validResponses;
 
-    const groupedByType = {};
+    const groupedByType: Record<string, { total: number; valid: number; invalid: number }> = {};
     responses.forEach((response) => {
       if (!groupedByType[response.respondentType]) {
         groupedByType[response.respondentType] = {
@@ -370,10 +324,7 @@ export class AssessmentService {
   /**
    * Update assessment status
    */
-  async updateAssessmentStatus(
-    assessmentId: string,
-    newStatus: AssessmentStatus,
-  ): Promise<Assessment> {
+  async updateAssessmentStatus(assessmentId: string, newStatus: AssessmentStatus): Promise<Assessment> {
     const assessment = await this.assessmentRepository.findOne({
       where: { id: assessmentId },
     });
@@ -385,9 +336,7 @@ export class AssessmentService {
     assessment.status = newStatus;
     const updated = await this.assessmentRepository.save(assessment);
 
-    this.logger.log(
-      `Assessment ${assessmentId} status updated to ${newStatus}`,
-    );
+    this.logger.log(`Assessment ${assessmentId} status updated to ${newStatus}`);
     return updated;
   }
 }

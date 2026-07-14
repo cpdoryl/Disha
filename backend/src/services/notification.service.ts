@@ -49,12 +49,7 @@ export class NotificationService {
     return { success: true, channels: [] };
   }
 
-  async sendFeeReminder(
-    schoolId: string,
-    parentId: string,
-    amount: number,
-    dueDate: Date,
-  ): Promise<any> {
+  async sendFeeReminder(schoolId: string, parentId: string, amount: number, dueDate: Date): Promise<any> {
     return { success: true, channels: [] };
   }
 

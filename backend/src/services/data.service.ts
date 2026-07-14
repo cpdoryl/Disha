@@ -28,47 +28,27 @@ export class DataService {
     return Promise.resolve(null);
   }
 
-  async getOperationalDataForSchool(
-    schoolId: string,
-    startDate: Date,
-    endDate: Date,
-  ): Promise<OperationalData[]> {
+  async getOperationalDataForSchool(schoolId: string, startDate: Date, endDate: Date): Promise<OperationalData[]> {
     return [];
   }
 
-  async generateMonitoringScorecard(
-    schoolId: string,
-    month: Date,
-    metrics: any,
-  ): Promise<MonitoringScorecard[]> {
+  async generateMonitoringScorecard(schoolId: string, month: Date, metrics: any): Promise<MonitoringScorecard[]> {
     return [];
   }
 
-  async getScorecardReport(
-    schoolId: string,
-    startMonth: Date,
-    endMonth: Date,
-  ): Promise<MonitoringScorecard[]> {
+  async getScorecardReport(schoolId: string, startMonth: Date, endMonth: Date): Promise<MonitoringScorecard[]> {
     return [];
   }
 
-  async getStudentRetentionMetrics(
-    schoolId: string,
-    academicYear: string,
-  ): Promise<any> {
+  async getStudentRetentionMetrics(schoolId: string, academicYear: string): Promise<any> {
     return {};
   }
 
-  async getTeacherRetentionMetrics(
-    schoolId: string,
-    academicYear: string,
-  ): Promise<any> {
+  async getTeacherRetentionMetrics(schoolId: string, academicYear: string): Promise<any> {
     return {};
   }
 
-  async getAssessmentResponseQualityMetrics(
-    assessmentId: string,
-  ): Promise<any> {
+  async getAssessmentResponseQualityMetrics(assessmentId: string): Promise<any> {
     return {};
   }
 
@@ -76,10 +56,7 @@ export class DataService {
     return {};
   }
 
-  async getAttendanceTrendAnalysis(
-    schoolId: string,
-    months?: number,
-  ): Promise<any> {
+  async getAttendanceTrendAnalysis(schoolId: string, months?: number): Promise<any> {
     return [];
   }
 }

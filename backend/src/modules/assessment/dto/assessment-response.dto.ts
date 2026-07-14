@@ -28,20 +28,3 @@ export class AssessmentResponseDto {
   @IsOptional()
   receiptMessage: string;
 }
-
-export class CreateAssessmentDto {
-  @IsUUID()
-  schoolId: string;
-
-  @IsOptional()
-  cycleName?: string;
-
-  @IsOptional()
-  description?: string;
-
-  @IsOptional()
-  startDate?: Date;
-
-  @IsOptional()
-  endDate?: Date;
-}
