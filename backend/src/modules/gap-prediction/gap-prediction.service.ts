@@ -1,8 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+import { AssessmentResponse } from 'src/database/entities';
 import { GapPrediction, TrendDirection, ConfidenceTier } from 'src/database/entities/gap-prediction.entity';
-import { AssessmentResponse } from 'src/database/entities/assessment-response.entity';
 import { Challenge } from 'src/database/entities/challenge.entity';
 
 export interface PriorityGapResult {
@@ -37,8 +37,8 @@ export class GapPredictionService {
     if (responses.length === 0) return 0;
 
     const numericAnswers = responses
-      .filter((r) => r.answerNumeric !== undefined && r.answerNumeric !== null)
-      .map((r) => r.answerNumeric);
+      .filter((r) => r.responseNumeric !== undefined && r.responseNumeric !== null)
+      .map((r) => r.responseNumeric);
 
     if (numericAnswers.length === 0) return 0;
 

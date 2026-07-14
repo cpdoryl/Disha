@@ -14,9 +14,8 @@ import {
   RespondentType,
   QuestionType,
 } from '../../database/entities';
-import { CreateAssessmentDto } from './dto/create-assessment.dto';
+import { CreateAssessmentDto, AssessmentResponseDto } from './dto/assessment-response.dto';
 import { SubmitResponseDto } from './dto/submit-response.dto';
-import { AssessmentResponseDto } from './dto/assessment-response.dto';
 
 @Injectable()
 export class AssessmentService {
@@ -48,10 +47,10 @@ export class AssessmentService {
         `Assessment created: ${saved.id} for school ${saved.schoolId}`,
       );
       return saved;
-    } catch (error) {
+    } catch (error: any) {
       this.logger.error(
-        `Failed to create assessment: ${error.message}`,
-        error.stack,
+        `Failed to create assessment: ${error?.message || 'Unknown error'}`,
+        error?.stack,
       );
       throw new BadRequestException('Failed to create assessment');
     }
@@ -75,7 +74,7 @@ export class AssessmentService {
       where: { assessmentId },
     });
 
-    const groupedByRespondentType = {};
+    const groupedByRespondentType: Record<string, any[]> = {};
     responses.forEach((response) => {
       if (!groupedByRespondentType[response.respondentType]) {
         groupedByRespondentType[response.respondentType] = [];
@@ -83,7 +82,7 @@ export class AssessmentService {
       groupedByRespondentType[response.respondentType].push(response);
     });
 
-    const responseSummary = {};
+    const responseSummary: Record<string, any> = {};
     for (const [type, typeResponses] of Object.entries(
       groupedByRespondentType,
     )) {
@@ -219,14 +218,14 @@ export class AssessmentService {
 
         const saved = await this.responseRepository.save(assessmentResponse);
         savedResponses.push(saved);
-      } catch (error) {
+      } catch (error: any) {
         this.logger.error(
-          `Failed to save response: ${error.message}`,
-          error.stack,
+          `Failed to save response: ${error?.message || 'Unknown error'}`,
+          error?.stack,
         );
         validationErrors.push({
           questionId: response.questionId,
-          error: error.message,
+          error: error?.message || 'Unknown error',
         });
       }
     }
@@ -307,8 +306,8 @@ export class AssessmentService {
         default:
           return { valid: false, error: 'Unknown question type' };
       }
-    } catch (error) {
-      return { valid: false, error: `Validation error: ${error.message}` };
+    } catch (error: any) {
+      return { valid: false, error: `Validation error: ${error?.message || 'Unknown error'}` };
     }
   }
 
@@ -340,7 +339,7 @@ export class AssessmentService {
     const validResponses = responses.filter((r) => r.isValid).length;
     const invalidResponses = totalResponses - validResponses;
 
-    const groupedByType = {};
+    const groupedByType: Record<string, any> = {};
     responses.forEach((response) => {
       if (!groupedByType[response.respondentType]) {
         groupedByType[response.respondentType] = {

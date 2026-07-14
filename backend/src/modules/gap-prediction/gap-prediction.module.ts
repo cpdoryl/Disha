@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { AssessmentResponse } from 'src/database/entities';
 import { GapPrediction } from 'src/database/entities/gap-prediction.entity';
-import { AssessmentResponse } from 'src/database/entities/assessment-response.entity';
 import { Challenge } from 'src/database/entities/challenge.entity';
 import { GapPredictionService } from './gap-prediction.service';
 
