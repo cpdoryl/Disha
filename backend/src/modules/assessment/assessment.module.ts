@@ -1,16 +1,13 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { Assessment } from 'src/database/entities/assessment.entity';
-import { Question } from 'src/database/entities/question.entity';
-import { AssessmentResponse } from 'src/database/entities/assessment-response.entity';
-import { Challenge } from 'src/database/entities/challenge.entity';
-import { AssessmentService } from './assessment.service';
 import { AssessmentController } from './assessment.controller';
+import { AssessmentService } from './assessment.service';
+import { Assessment, Question, AssessmentResponse } from '../../database/entities';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Assessment, Question, AssessmentResponse, Challenge])],
-  providers: [AssessmentService],
+  imports: [TypeOrmModule.forFeature([Assessment, Question, AssessmentResponse])],
   controllers: [AssessmentController],
+  providers: [AssessmentService],
   exports: [AssessmentService],
 })
 export class AssessmentModule {}

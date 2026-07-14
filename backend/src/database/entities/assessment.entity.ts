@@ -1,6 +1,16 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, ManyToOne, OneToMany, JoinColumn } from 'typeorm';
-import { School } from './school.entity';
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  ManyToOne,
+  OneToMany,
+  CreateDateColumn,
+  UpdateDateColumn,
+  Index,
+} from 'typeorm';
+import { School } from './School.entity';
 import { Question } from './question.entity';
+import { AssessmentResponse } from './AssessmentResponse.entity';
 
 export enum AssessmentStatus {
   DRAFT = 'draft',
@@ -9,39 +19,49 @@ export enum AssessmentStatus {
   ARCHIVED = 'archived',
 }
 
-export enum RespondentType {
-  OWNER = 'owner',
-  TEACHER = 'teacher',
-  PARENT = 'parent',
-  STUDENT = 'student',
-  ADMIN = 'admin',
-}
-
 @Entity('assessments')
+@Index(['schoolId', 'status'])
+@Index(['createdAt'])
 export class Assessment {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
+  @ManyToOne(() => School, (school) => school.assessments, { eager: true })
+  school: School;
+
   @Column({ type: 'uuid' })
   schoolId: string;
 
-  @Column({ type: 'varchar', length: 255 })
-  assessmentName: string;
+  @Column({ type: 'varchar', length: 50 })
+  cycleName: string; // e.g., "Term1_2026", "Term2_2026"
 
-  @Column({ type: 'enum', enum: RespondentType })
-  respondentType: RespondentType;
-
-  @Column({ type: 'enum', enum: AssessmentStatus, default: AssessmentStatus.ACTIVE })
+  @Column({
+    type: 'enum',
+    enum: AssessmentStatus,
+    default: AssessmentStatus.DRAFT,
+  })
   status: AssessmentStatus;
+
+  @Column({ type: 'text', nullable: true })
+  description: string;
+
+  @Column({ type: 'date', nullable: true })
+  startDate: Date;
+
+  @Column({ type: 'date', nullable: true })
+  endDate: Date;
+
+  @OneToMany(() => Question, (question) => question.assessment, {
+    cascade: true,
+  })
+  questions: Question[];
+
+  @OneToMany(() => AssessmentResponse, (response) => response.assessment)
+  responses: AssessmentResponse[];
 
   @CreateDateColumn()
   createdAt: Date;
 
-  // Relations
-  @ManyToOne(() => School, (school) => school.assessments, { onDelete: 'CASCADE' })
-  @JoinColumn({ name: 'schoolId' })
-  school: School;
-
-  @OneToMany(() => Question, (question) => question.assessment)
-  questions: Question[];
+  @UpdateDateColumn()
+  updatedAt: Date;
 }

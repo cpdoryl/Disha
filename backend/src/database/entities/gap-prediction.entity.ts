@@ -8,7 +8,7 @@ import {
   JoinColumn,
   Index,
 } from 'typeorm';
-import { School } from './school.entity';
+import { School } from './School.entity';
 import { Challenge } from './challenge.entity';
 
 export enum TrendDirection {

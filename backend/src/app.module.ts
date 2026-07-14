@@ -6,10 +6,15 @@ import configuration from './config/configuration';
 // Import all feature modules
 import { AuthModule } from './modules/auth/auth.module';
 import { SchoolModule } from './modules/school/school.module';
+import { StudentModule } from './modules/student/student.module';
 import { ChallengeModule } from './modules/challenge/challenge.module';
 import { AssessmentModule } from './modules/assessment/assessment.module';
 import { GapPredictionModule } from './modules/gap-prediction/gap-prediction.module';
 import { ReportingModule } from './modules/reporting/reporting.module';
+import { DataModule } from './modules/data/data.module';
+import { NotificationModule } from './modules/notification/notification.module';
+import { AuditModule } from './modules/audit/audit.module';
+import { WellbeingModule } from './modules/wellbeing/wellbeing.module';
 import { AdmissionsModule } from './modules/admissions/admissions.module';
 import { FeeModule } from './modules/fee/fee.module';
 import { StaffModule } from './modules/staff/staff.module';
@@ -49,10 +54,15 @@ import { InfrastructureModule } from './modules/infrastructure/infrastructure.mo
     // Feature modules
     AuthModule,
     SchoolModule,
+    StudentModule,
     ChallengeModule,
     AssessmentModule,
     GapPredictionModule,
     ReportingModule,
+    DataModule,
+    NotificationModule,
+    AuditModule,
+    WellbeingModule,
     AdmissionsModule,
     FeeModule,
     StaffModule,

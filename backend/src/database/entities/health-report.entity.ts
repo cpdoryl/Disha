@@ -1,5 +1,5 @@
 import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, ManyToOne, JoinColumn, Index } from 'typeorm';
-import { School } from './school.entity';
+import { School } from './School.entity';
 
 export enum ReportType {
   PRIORITY_GAP = 'priority_gap',
