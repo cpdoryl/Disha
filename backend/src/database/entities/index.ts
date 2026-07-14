@@ -1,34 +1,56 @@
-// Core Entities
-export { Assessment, AssessmentStatus } from './Assessment.entity';
-export { Question, QuestionType, RespondentType } from './question.entity';
-export {
-  AssessmentResponse,
-} from './AssessmentResponse.entity';
-export { School, CityTier, BoardType } from './School.entity';
-export { Student, StudentStatus, AgeGroup } from './Student.entity';
-export { Staff, StaffPosition, EmploymentStatus } from './Staff.entity';
-export { Organization, OrganizationType } from './Organization.entity';
-export {
-  TeacherTraining,
-  CompletionStatus,
-} from './TeacherTraining.entity';
+// Core Entity Imports
+import { Assessment, AssessmentStatus } from './Assessment.entity';
+import { Question, QuestionType, RespondentType } from './question.entity';
+import { AssessmentResponse } from './AssessmentResponse.entity';
+import { School, CityTier, BoardType } from './School.entity';
+import { Student, StudentStatus, AgeGroup, Gender } from './Student.entity';
+import { Staff, StaffPosition, EmploymentStatus } from './Staff.entity';
+import { Organization, OrganizationType } from './Organization.entity';
+import { TeacherTraining, CompletionStatus } from './TeacherTraining.entity';
 
-// Additional Entities (Day 2)
-export { District } from './District.entity';
-export { User, UserType, RoleType } from './User.entity';
-export { StudentAttendance } from './studentattendance.entity';
-export { StudentAcademicAssessment, AcademicStatus } from './studentacademicassessment.entity';
-export { CounsellorReferral, ReferralSeverity, ResolutionStatus } from './counsellorreferral.entity';
-export { BullyingIncident, IncidentType, IncidentSeverity } from './bullyingincident.entity';
-export { ParentCommunication, CommunicationChannel, CommunicationStatus } from './parentcommunication.entity';
-export { Complaint, ComplaintCategory, ComplaintSeverity } from './complaint.entity';
-export { ParentNpsSurvey } from './parentnpssurvey.entity';
-export { OperationalData, DataType } from './operationaldata.entity';
-export { MonitoringScorecard, ScorecardMetric } from './monitoringscorecard.entity';
-export { DataRetentionPolicy, DataClassification, RetentionAction } from './dataretentionpolicy.entity';
-export { AuditLog, ActionType, ResourceType } from './auditlog.entity';
-export { RemediationIntervention, InterventionType, InterventionStatus } from './remediationintervention.entity';
-export { Admission, AdmissionStatus, AdmissionSource } from './admission.entity';
+// Additional Entity Imports (Day 2)
+import { District } from './District.entity';
+import { User, UserType, RoleType } from './User.entity';
+import { StudentAttendance } from './studentattendance.entity';
+import { StudentAcademicAssessment, AcademicStatus } from './studentacademicassessment.entity';
+import { CounsellorReferral, ReferralSeverity, ResolutionStatus } from './counsellorreferral.entity';
+import { BullyingIncident, IncidentType, IncidentSeverity } from './bullyingincident.entity';
+import { ParentCommunication, CommunicationChannel, CommunicationStatus } from './parentcommunication.entity';
+import { Complaint, ComplaintCategory, ComplaintSeverity } from './complaint.entity';
+import { ParentNpsSurvey } from './parentnpssurvey.entity';
+import { OperationalData, DataType } from './operationaldata.entity';
+import { MonitoringScorecard, ScorecardMetric } from './monitoringscorecard.entity';
+import { DataRetentionPolicy, DataClassification, RetentionAction } from './dataretentionpolicy.entity';
+import { AuditLog, ActionType, ResourceType } from './auditlog.entity';
+import { RemediationIntervention, InterventionType, InterventionStatus } from './remediationintervention.entity';
+import { Admission, AdmissionStatus, AdmissionSource } from './admission.entity';
+
+// Core Entity Exports
+export { Assessment, AssessmentStatus };
+export { Question, QuestionType, RespondentType };
+export { AssessmentResponse };
+export { School, CityTier, BoardType };
+export { Student, StudentStatus, AgeGroup, Gender };
+export { Staff, StaffPosition, EmploymentStatus };
+export { Organization, OrganizationType };
+export { TeacherTraining, CompletionStatus };
+
+// Additional Entity Exports (Day 2)
+export { District };
+export { User, UserType, RoleType };
+export { StudentAttendance };
+export { StudentAcademicAssessment, AcademicStatus };
+export { CounsellorReferral, ReferralSeverity, ResolutionStatus };
+export { BullyingIncident, IncidentType, IncidentSeverity };
+export { ParentCommunication, CommunicationChannel, CommunicationStatus };
+export { Complaint, ComplaintCategory, ComplaintSeverity };
+export { ParentNpsSurvey };
+export { OperationalData, DataType };
+export { MonitoringScorecard, ScorecardMetric };
+export { DataRetentionPolicy, DataClassification, RetentionAction };
+export { AuditLog, ActionType, ResourceType };
+export { RemediationIntervention, InterventionType, InterventionStatus };
+export { Admission, AdmissionStatus, AdmissionSource };
 
 // Array of all entities for TypeORM configuration
 export const DISHA_ENTITIES = [

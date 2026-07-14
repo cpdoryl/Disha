@@ -34,12 +34,12 @@ export class SchoolService {
     phone?: string;
     email?: string;
   }): Promise<School> {
-    const school = this.schoolRepository.create({
-      ...createSchoolDto,
-      organization: { id: createSchoolDto.organizationId },
-      isActive: true,
-      onboardedDate: new Date(),
-    });
+    const school = new School();
+    Object.assign(school, createSchoolDto);
+    school.organizationId = createSchoolDto.organizationId;
+    school.isActive = true;
+    school.onboardedDate = new Date();
+
     return this.schoolRepository.save(school);
   }
 
@@ -53,7 +53,7 @@ export class SchoolService {
   async updateSchool(
     schoolId: string,
     updateData: Partial<School>,
-  ): Promise<School> {
+  ): Promise<School | null> {
     await this.schoolRepository.update(schoolId, updateData);
     return this.getSchool(schoolId);
   }
@@ -79,7 +79,7 @@ export class SchoolService {
     staffCount: number;
     activeAssessments: number;
     pendingAssessments: number;
-  }> {
+  } | null> {
     const school = await this.schoolRepository.findOne({
       where: { id: schoolId },
     });

@@ -4,6 +4,7 @@ import {
   Column,
   ManyToOne,
   OneToMany,
+  ManyToMany,
   Index,
   CreateDateColumn,
 } from 'typeorm';
@@ -76,6 +77,9 @@ export class Question {
 
   @OneToMany(() => AssessmentResponse, (response) => response.question)
   responses: AssessmentResponse[];
+
+  @ManyToMany('Challenge', (challenge) => (challenge as any).questions)
+  challenges: any[];
 
   @CreateDateColumn()
   createdAt: Date;

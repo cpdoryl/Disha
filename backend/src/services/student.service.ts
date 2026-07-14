@@ -11,6 +11,7 @@ import {
   AcademicStatus,
   ReferralSeverity,
   ResolutionStatus,
+  Gender,
 } from 'src/database/entities';
 
 @Injectable()
@@ -31,7 +32,7 @@ export class StudentService {
     enrollmentNumber: string;
     firstName: string;
     lastName: string;
-    gender: 'male' | 'female' | 'other';
+    gender: Gender;
     dateOfBirth: Date;
     gradeLevel: number;
     classSection?: string;
