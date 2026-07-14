@@ -71,16 +71,40 @@ jobs:
         run: npm run test:unit
         working-directory: backend
         env:
-          DATABASE_URL: postgresql://disha_user:test_password@localhost:5432/disha_test
-          REDIS_URL: redis://localhost:6379
+          DATABASE_HOST: localhost
+          DATABASE_PORT: 5432
+          DATABASE_USER: disha_user
+          DATABASE_PASSWORD: test_password
+          DATABASE_NAME: disha_test
+          REDIS_HOST: localhost
+          REDIS_PORT: 6379
           NODE_ENV: test
 
       - name: Run integration tests
         run: npm run test:integration
         working-directory: backend
         env:
-          DATABASE_URL: postgresql://disha_user:test_password@localhost:5432/disha_test
-          REDIS_URL: redis://localhost:6379
+          DATABASE_HOST: localhost
+          DATABASE_PORT: 5432
+          DATABASE_USER: disha_user
+          DATABASE_PASSWORD: test_password
+          DATABASE_NAME: disha_test
+          REDIS_HOST: localhost
+          REDIS_PORT: 6379
+          NODE_ENV: test
+        continue-on-error: true
+
+      - name: Run e2e tests
+        run: npm run test:e2e
+        working-directory: backend
+        env:
+          DATABASE_HOST: localhost
+          DATABASE_PORT: 5432
+          DATABASE_USER: disha_user
+          DATABASE_PASSWORD: test_password
+          DATABASE_NAME: disha_test
+          REDIS_HOST: localhost
+          REDIS_PORT: 6379
           NODE_ENV: test
         continue-on-error: true
 

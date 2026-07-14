@@ -20,7 +20,7 @@ import { Assessment, AssessmentStatus } from '../../database/entities';
 
 @ApiTags('Assessments')
 @ApiBearerAuth()
-@Controller('api/v2/assessments')
+@Controller('assessments')
 export class AssessmentController {
   private readonly logger = new Logger(AssessmentController.name);
 
