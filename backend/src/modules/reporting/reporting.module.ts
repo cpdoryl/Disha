@@ -9,6 +9,7 @@ import {
   StudentAttendance,
 } from 'src/database/entities';
 import { ReportingService } from 'src/services/reporting.service';
+import { ReportingController } from './reporting.controller';
 
 @Module({
   imports: [
@@ -21,6 +22,7 @@ import { ReportingService } from 'src/services/reporting.service';
       StudentAttendance,
     ]),
   ],
+  controllers: [ReportingController],
   providers: [ReportingService],
   exports: [ReportingService],
 })

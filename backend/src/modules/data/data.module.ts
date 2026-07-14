@@ -10,6 +10,7 @@ import {
   Staff,
 } from 'src/database/entities';
 import { DataService } from 'src/services/data.service';
+import { DataController } from './data.controller';
 
 @Module({
   imports: [
@@ -23,6 +24,7 @@ import { DataService } from 'src/services/data.service';
       Staff,
     ]),
   ],
+  controllers: [DataController],
   providers: [DataService],
   exports: [DataService],
 })
