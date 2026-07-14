@@ -1,9 +1,11 @@
-import { Module } from '@nestjs/common';
+import { Module, NestModule, MiddlewareConsumer } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import configuration from './config/configuration';
+import { MetricsMiddleware } from './common/middleware/metrics.middleware';
 
 // Import all feature modules
+import { HealthModule } from './modules/health/health.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { SchoolModule } from './modules/school/school.module';
 import { StudentModule } from './modules/student/student.module';
@@ -52,6 +54,7 @@ import { InfrastructureModule } from './modules/infrastructure/infrastructure.mo
     }),
 
     // Feature modules
+    HealthModule,
     AuthModule,
     SchoolModule,
     StudentModule,
@@ -72,4 +75,10 @@ import { InfrastructureModule } from './modules/infrastructure/infrastructure.mo
     InfrastructureModule,
   ],
 })
-export class AppModule {}
+export class AppModule implements NestModule {
+  configure(consumer: MiddlewareConsumer) {
+    consumer
+      .apply(MetricsMiddleware)
+      .forRoutes('*'); // Apply to all routes
+  }
+}
