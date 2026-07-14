@@ -8,14 +8,17 @@ import {
   HttpStatus,
   UseGuards,
 } from '@nestjs/common';
-import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
+import { ApiTags, ApiBearerAuth, ApiParam } from '@nestjs/swagger';
 import { NotificationService } from '../../services/notification.service';
 import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
+import { RolesGuard } from 'src/common/guards/roles.guard';
+import { Roles } from 'src/common/decorators/roles.decorator';
 
 @ApiTags('Notifications')
 @ApiBearerAuth()
 @Controller('api/v2/notifications')
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, RolesGuard)
+@Roles('ryl_admin', 'school_admin', 'teacher')
 export class NotificationController {
   constructor(private notificationService: NotificationService) {}
 

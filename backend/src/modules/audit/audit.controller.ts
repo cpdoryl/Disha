@@ -9,14 +9,17 @@ import {
   HttpStatus,
   UseGuards,
 } from '@nestjs/common';
-import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
+import { ApiTags, ApiBearerAuth, ApiParam } from '@nestjs/swagger';
 import { AuditService } from '../../services/audit.service';
 import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
+import { RolesGuard } from 'src/common/guards/roles.guard';
+import { Roles } from 'src/common/decorators/roles.decorator';
 
 @ApiTags('Audit')
 @ApiBearerAuth()
 @Controller('api/v2/audit')
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, RolesGuard)
+@Roles('ryl_admin', 'school_admin')
 export class AuditController {
   constructor(private auditService: AuditService) {}
 

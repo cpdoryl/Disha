@@ -11,8 +11,10 @@ import {
   Patch,
   BadRequestException,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiBearerAuth, ApiResponse } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiBearerAuth, ApiResponse, ApiParam } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
+import { RolesGuard } from '../../common/guards/roles.guard';
+import { Roles } from '../../common/decorators/roles.decorator';
 import { AssessmentService } from './assessment.service';
 import { SubmitResponseDto } from './dto/submit-response.dto';
 import { CreateAssessmentDto } from './dto/assessment-response.dto';
@@ -39,7 +41,8 @@ export class AssessmentController {
    * Create new assessment cycle
    */
   @Post('create')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('ryl_admin', 'school_admin')
   @ApiOperation({ summary: 'Create new assessment cycle' })
   @ApiResponse({ status: 201, type: Assessment })
   async createAssessment(
@@ -53,7 +56,9 @@ export class AssessmentController {
    * Get assessment details
    */
   @Get(':id')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('ryl_admin', 'school_admin', 'teacher', 'student')
+  @ApiParam({ name: 'id', description: 'Assessment ID' })
   @ApiOperation({ summary: 'Get assessment details with response summary' })
   @ApiResponse({ status: 200 })
   async getAssessment(@Param('id') assessmentId: string) {
@@ -65,7 +70,9 @@ export class AssessmentController {
    * Get questions for an assessment
    */
   @Get(':assessmentId/questions')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('ryl_admin', 'school_admin', 'teacher', 'student')
+  @ApiParam({ name: 'assessmentId', description: 'Assessment ID' })
   @ApiOperation({ summary: 'Get assessment questions by respondent type' })
   @ApiResponse({ status: 200 })
   async getQuestions(
@@ -95,9 +102,10 @@ export class AssessmentController {
   }
 
   /**
-   * MAIN ENDPOINT: Submit assessment responses
+   * MAIN ENDPOINT: Submit assessment responses (public for respondents)
    */
   @Post(':assessmentId/submit')
+  @ApiParam({ name: 'assessmentId', description: 'Assessment ID' })
   @ApiOperation({
     summary: 'Submit assessment responses (main Capture endpoint)',
   })
@@ -121,10 +129,10 @@ export class AssessmentController {
   }
 
   /**
-   * Check if respondent already submitted
+   * Check if respondent already submitted (public endpoint)
    */
   @Get(':assessmentId/my-response')
-  @UseGuards(JwtAuthGuard)
+  @ApiParam({ name: 'assessmentId', description: 'Assessment ID' })
   @ApiOperation({ summary: 'Check if user already submitted response' })
   @ApiResponse({ status: 200 })
   async checkIfSubmitted(
@@ -158,7 +166,9 @@ export class AssessmentController {
    * Get data quality report
    */
   @Get(':assessmentId/data-quality-report')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('ryl_admin', 'school_admin', 'teacher')
+  @ApiParam({ name: 'assessmentId', description: 'Assessment ID' })
   @ApiOperation({ summary: 'Get data quality metrics for assessment' })
   @ApiResponse({ status: 200 })
   async getDataQualityReport(@Param('assessmentId') assessmentId: string) {
@@ -170,7 +180,9 @@ export class AssessmentController {
    * Update assessment status (activate, close, archive)
    */
   @Patch(':id/status')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('ryl_admin', 'school_admin')
+  @ApiParam({ name: 'id', description: 'Assessment ID' })
   @ApiOperation({ summary: 'Update assessment status' })
   @ApiResponse({ status: 200, type: Assessment })
   async updateStatus(

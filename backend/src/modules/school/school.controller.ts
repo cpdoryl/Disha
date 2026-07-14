@@ -47,21 +47,33 @@ export class SchoolController {
   }
 
   @Get(':id/metrics')
+  @Roles('ryl_admin', 'school_admin', 'teacher')
+  @ApiParam({ name: 'id', description: 'School ID' })
+  @ApiOperation({ summary: 'Get school metrics' })
   async getSchoolMetrics(@Param('id') schoolId: string) {
     return this.schoolService.getSchoolMetrics(schoolId);
   }
 
   @Get('organization/:orgId')
+  @Roles('ryl_admin', 'school_admin')
+  @ApiParam({ name: 'orgId', description: 'Organization ID' })
+  @ApiOperation({ summary: 'Get schools by organization' })
   async getSchoolsByOrganization(@Param('orgId') organizationId: string) {
     return this.schoolService.getSchoolsByOrganization(organizationId);
   }
 
   @Get('district/:districtId')
+  @Roles('ryl_admin', 'school_admin')
+  @ApiParam({ name: 'districtId', description: 'District ID' })
+  @ApiOperation({ summary: 'Get schools by district' })
   async getSchoolsByDistrict(@Param('districtId') districtId: string) {
     return this.schoolService.getSchoolsByDistrict(districtId);
   }
 
   @Patch(':id/deactivate')
+  @Roles('ryl_admin')
+  @ApiParam({ name: 'id', description: 'School ID' })
+  @ApiOperation({ summary: 'Deactivate school' })
   async deactivateSchool(@Param('id') schoolId: string) {
     await this.schoolService.deactivateSchool(schoolId);
     return { success: true, message: 'School deactivated' };

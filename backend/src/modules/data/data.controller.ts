@@ -9,14 +9,17 @@ import {
   HttpStatus,
   UseGuards,
 } from '@nestjs/common';
-import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
+import { ApiTags, ApiBearerAuth, ApiParam, ApiOperation } from '@nestjs/swagger';
 import { DataService } from '../../services/data.service';
 import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
+import { RolesGuard } from 'src/common/guards/roles.guard';
+import { Roles } from 'src/common/decorators/roles.decorator';
 
 @ApiTags('Data')
 @ApiBearerAuth()
 @Controller('api/v2/data')
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, RolesGuard)
+@Roles('ryl_admin', 'school_admin', 'teacher')
 export class DataController {
   constructor(private dataService: DataService) {}
 
