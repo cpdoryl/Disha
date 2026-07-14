@@ -12,22 +12,26 @@ import {
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiParam } from '@nestjs/swagger';
 import { SchoolService } from '../../services/school.service';
 import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
+import { RolesGuard } from 'src/common/guards/roles.guard';
+import { Roles } from 'src/common/decorators/roles.decorator';
 
 @ApiTags('Schools')
 @ApiBearerAuth()
 @Controller('api/v2/schools')
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, RolesGuard)
 export class SchoolController {
   constructor(private schoolService: SchoolService) {}
 
   @Post()
   @HttpCode(HttpStatus.CREATED)
-  @ApiOperation({ summary: 'Create school', description: 'Register a new school' })
+  @Roles('ryl_admin')
+  @ApiOperation({ summary: 'Create school', description: 'Register a new school (RYL Admin only)' })
   async createSchool(@Body() createSchoolDto: any) {
     return this.schoolService.createSchool(createSchoolDto);
   }
 
   @Get(':id')
+  @Roles('ryl_admin', 'school_admin', 'teacher')
   @ApiParam({ name: 'id', description: 'School ID' })
   @ApiOperation({ summary: 'Get school details' })
   async getSchool(@Param('id') schoolId: string) {
@@ -35,6 +39,7 @@ export class SchoolController {
   }
 
   @Patch(':id')
+  @Roles('ryl_admin', 'school_admin')
   @ApiParam({ name: 'id', description: 'School ID' })
   @ApiOperation({ summary: 'Update school details' })
   async updateSchool(@Param('id') schoolId: string, @Body() updateData: any) {
