@@ -6,6 +6,8 @@ import {
   AssessmentResponse,
   StudentAttendance,
   StudentAcademicAssessment,
+  Student,
+  Staff,
 } from 'src/database/entities';
 import { DataService } from 'src/services/data.service';
 
@@ -17,6 +19,8 @@ import { DataService } from 'src/services/data.service';
       AssessmentResponse,
       StudentAttendance,
       StudentAcademicAssessment,
+      Student,
+      Staff,
     ]),
   ],
   providers: [DataService],
