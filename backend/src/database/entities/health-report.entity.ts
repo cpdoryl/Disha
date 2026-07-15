@@ -7,7 +7,7 @@ export enum ReportType {
 }
 
 @Entity('health_reports')
-@Index('idx_school_created', ['schoolId', 'createdAt'])
+@Index('idx_school_created', ['schoolId', 'generatedAt'])
 export class HealthReport {
   @PrimaryGeneratedColumn('uuid')
   id: string;

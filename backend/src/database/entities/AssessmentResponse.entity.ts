@@ -7,7 +7,7 @@ import {
   CreateDateColumn,
   Unique,
 } from 'typeorm';
-import { Assessment } from './Assessment.entity';
+import { Assessment } from './assessment.entity';
 import { Question } from './question.entity';
 import { School } from './School.entity';
 

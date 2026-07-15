@@ -8,7 +8,7 @@ import {
 } from 'typeorm';
 import { School } from './School.entity';
 import { User } from './User.entity';
-import { Student } from './Student.entity';
+import { Student } from './student.entity';
 
 export enum CommunicationChannel {
   WHATSAPP = 'whatsapp',

@@ -8,8 +8,8 @@ import {
   UpdateDateColumn,
   Index,
 } from 'typeorm';
-import { Assessment } from './Assessment.entity';
-import { Student } from './Student.entity';
+import { Assessment } from './assessment.entity';
+import { Student } from './student.entity';
 import { Staff } from './Staff.entity';
 import { Organization } from './Organization.entity';
 

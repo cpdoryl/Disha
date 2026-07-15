@@ -6,7 +6,7 @@ import {
   Index,
   CreateDateColumn,
 } from 'typeorm';
-import { Student } from './Student.entity';
+import { Student } from './student.entity';
 import { School } from './School.entity';
 
 export enum AttendanceStatus {
