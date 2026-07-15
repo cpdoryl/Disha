@@ -54,6 +54,19 @@ export interface LoginResponse {
   };
 }
 
+export interface Student {
+  id: string;
+  enrollmentNumber: string;
+  firstName: string;
+  lastName: string;
+  gender: string | null;
+  gradeLevel: number | null;
+  classSection: string | null;
+  status: string;
+  guardianName: string | null;
+  guardianPhone: string | null;
+}
+
 export const api = {
   login: (email: string, password: string) =>
     request<LoginResponse>("/api/v2/auth/login", {
@@ -66,4 +79,7 @@ export const api = {
 
   getSchoolMetrics: (schoolId: string, token: string) =>
     request(`/api/v2/schools/${schoolId}/metrics`, {}, token),
+
+  getStudentsBySchool: (schoolId: string, token: string) =>
+    request<Student[]>(`/api/v2/students/school/${schoolId}`, {}, token),
 };

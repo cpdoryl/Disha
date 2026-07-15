@@ -1,8 +1,14 @@
 "use client";
 
 import { useEffect } from "react";
-import { useRouter } from "next/navigation";
+import Link from "next/link";
+import { usePathname, useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth-context";
+
+const NAV_ITEMS = [
+  { href: "/dashboard", label: "Overview" },
+  { href: "/dashboard/students", label: "Students" },
+];
 
 export default function DashboardLayout({
   children,
@@ -11,6 +17,7 @@ export default function DashboardLayout({
 }) {
   const { user, isLoading, logout } = useAuth();
   const router = useRouter();
+  const pathname = usePathname();
 
   useEffect(() => {
     if (!isLoading && !user) {
@@ -44,6 +51,24 @@ export default function DashboardLayout({
           Sign out
         </button>
       </header>
+      <nav className="flex gap-4 border-b border-zinc-200 dark:border-zinc-800 px-6">
+        {NAV_ITEMS.map((item) => {
+          const isActive = pathname === item.href;
+          return (
+            <Link
+              key={item.href}
+              href={item.href}
+              className={`border-b-2 px-1 py-3 text-sm font-medium ${
+                isActive
+                  ? "border-zinc-900 text-zinc-900 dark:border-zinc-50 dark:text-zinc-50"
+                  : "border-transparent text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-50"
+              }`}
+            >
+              {item.label}
+            </Link>
+          );
+        })}
+      </nav>
       <main className="flex-1 p-6">{children}</main>
     </div>
   );
