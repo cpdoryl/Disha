@@ -50,6 +50,20 @@ export class AssessmentController {
   }
 
   /**
+   * List assessment cycles for a school
+   */
+  @Get('school/:schoolId')
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({ summary: 'List assessment cycles for a school' })
+  @ApiResponse({ status: 200, type: [Assessment] })
+  async getAssessmentsBySchool(
+    @Param('schoolId') schoolId: string,
+  ): Promise<Assessment[]> {
+    this.logger.log(`Fetching assessments for school ${schoolId}`);
+    return this.assessmentService.getAssessmentsBySchool(schoolId);
+  }
+
+  /**
    * Get assessment details
    */
   @Get(':id')

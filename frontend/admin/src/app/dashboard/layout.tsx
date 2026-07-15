@@ -8,6 +8,7 @@ import { useAuth } from "@/lib/auth-context";
 const NAV_ITEMS = [
   { href: "/dashboard", label: "Overview" },
   { href: "/dashboard/students", label: "Students" },
+  { href: "/dashboard/assessments", label: "Assessments" },
 ];
 
 export default function DashboardLayout({

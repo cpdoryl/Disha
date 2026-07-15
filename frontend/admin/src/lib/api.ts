@@ -67,6 +67,16 @@ export interface Student {
   guardianPhone: string | null;
 }
 
+export interface Assessment {
+  id: string;
+  cycleName: string;
+  status: "draft" | "active" | "closed" | "archived";
+  description: string | null;
+  startDate: string | null;
+  endDate: string | null;
+  createdAt: string;
+}
+
 export const api = {
   login: (email: string, password: string) =>
     request<LoginResponse>("/api/v2/auth/login", {
@@ -82,4 +92,7 @@ export const api = {
 
   getStudentsBySchool: (schoolId: string, token: string) =>
     request<Student[]>(`/api/v2/students/school/${schoolId}`, {}, token),
+
+  getAssessmentsBySchool: (schoolId: string, token: string) =>
+    request<Assessment[]>(`/api/v2/assessments/school/${schoolId}`, {}, token),
 };
