@@ -8,7 +8,7 @@ import {
   Index,
   CreateDateColumn,
 } from 'typeorm';
-import { Assessment } from './Assessment.entity';
+import { Assessment } from './assessment.entity';
 import { AssessmentResponse } from './AssessmentResponse.entity';
 
 export enum QuestionType {

@@ -9,7 +9,7 @@ import {
   Index,
 } from 'typeorm';
 import { School } from './School.entity';
-import { Challenge } from './Challenge.entity';
+import { Challenge } from './challenge.entity';
 
 export enum TrendDirection {
   WORSENING = 'worsening',

@@ -1,11 +1,11 @@
 import { AppDataSource } from '../datasource';
-import { Organization } from '../entities/Organization.entity';
+import { Organization, OrganizationType } from '../entities/Organization.entity';
 import { District } from '../entities/District.entity';
 import { School } from '../entities/School.entity';
-import { Student, Gender, StudentStatus } from '../entities/Student.entity';
+import { Student, Gender, StudentStatus } from '../entities/student.entity';
 import { User, UserType, RoleType } from '../entities/User.entity';
-import { Challenge, PREDEFINED_CHALLENGES } from '../entities/Challenge.entity';
-import { Assessment, AssessmentStatus } from '../entities/Assessment.entity';
+import { Challenge, PREDEFINED_CHALLENGES } from '../entities/challenge.entity';
+import { Assessment, AssessmentStatus } from '../entities/assessment.entity';
 import * as bcrypt from 'bcrypt';
 
 async function seed() {
@@ -19,6 +19,7 @@ async function seed() {
     console.log('📋 Creating organizations...');
     const org = new Organization();
     org.name = 'Ryl Education Foundation';
+    org.type = OrganizationType.SCHOOL_CHAIN;
     const savedOrg = await AppDataSource.manager.save(org);
     console.log(`✅ Created organization: ${savedOrg.name}`);
 

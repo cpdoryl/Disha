@@ -1,7 +1,7 @@
 import { Repository, SelectQueryBuilder } from 'typeorm';
 import { School } from '../entities/School.entity';
-import { Student } from '../entities/Student.entity';
-import { Assessment } from '../entities/Assessment.entity';
+import { Student } from '../entities/student.entity';
+import { Assessment } from '../entities/assessment.entity';
 import { AssessmentResponse } from '../entities/AssessmentResponse.entity';
 
 /**

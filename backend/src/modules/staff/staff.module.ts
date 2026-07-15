@@ -1,4 +1,13 @@
 import { Module } from '@nestjs/common';
+import { TypeOrmModule } from '@nestjs/typeorm';
+import { Staff } from 'src/database/entities';
+import { StaffService } from 'src/services/staff.service';
+import { StaffController } from './staff.controller';
 
-@Module({})
+@Module({
+  imports: [TypeOrmModule.forFeature([Staff])],
+  controllers: [StaffController],
+  providers: [StaffService],
+  exports: [StaffService],
+})
 export class StaffModule {}

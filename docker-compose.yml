@@ -80,9 +80,7 @@ services:
     depends_on:
       - backend
     volumes:
-      - ./frontend/admin/app:/app/app
-      - ./frontend/admin/components:/app/components
-      - ./frontend/admin/lib:/app/lib
+      - ./frontend/admin/src:/app/src
       - ./frontend/admin/node_modules:/app/node_modules
     networks:
       - disha-network
