@@ -1,0 +1,69 @@
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000";
+
+export class ApiRequestError extends Error {
+  status: number;
+
+  constructor(status: number, message: string) {
+    super(message);
+    this.status = status;
+  }
+}
+
+async function request<T>(
+  path: string,
+  options: RequestInit = {},
+  token?: string,
+): Promise<T> {
+  const res = await fetch(`${API_URL}${path}`, {
+    ...options,
+    headers: {
+      "Content-Type": "application/json",
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      ...options.headers,
+    },
+  });
+
+  if (!res.ok) {
+    let message = res.statusText;
+    try {
+      const body = await res.json();
+      message = body.message || message;
+    } catch {
+      // response body wasn't JSON, fall back to statusText
+    }
+    throw new ApiRequestError(res.status, message);
+  }
+
+  if (res.status === 204) {
+    return undefined as T;
+  }
+  return res.json();
+}
+
+export interface LoginResponse {
+  accessToken: string;
+  refreshToken: string;
+  tokenType: string;
+  expiresIn: number;
+  user: {
+    id: string;
+    email: string;
+    firstName: string;
+    lastName: string;
+    role: string;
+  };
+}
+
+export const api = {
+  login: (email: string, password: string) =>
+    request<LoginResponse>("/api/v2/auth/login", {
+      method: "POST",
+      body: JSON.stringify({ email, password }),
+    }),
+
+  getSchool: (schoolId: string, token: string) =>
+    request(`/api/v2/schools/${schoolId}`, {}, token),
+
+  getSchoolMetrics: (schoolId: string, token: string) =>
+    request(`/api/v2/schools/${schoolId}/metrics`, {}, token),
+};
