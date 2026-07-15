@@ -77,6 +77,20 @@ export interface Assessment {
   createdAt: string;
 }
 
+export interface Staff {
+  id: string;
+  employeeId: string;
+  firstName: string;
+  lastName: string;
+  gender: string | null;
+  position: string;
+  subjectTaught: string | null;
+  gradeLevel: number | null;
+  employmentStatus: string;
+  email: string | null;
+  phone: string | null;
+}
+
 export const api = {
   login: (email: string, password: string) =>
     request<LoginResponse>("/api/v2/auth/login", {
@@ -95,4 +109,7 @@ export const api = {
 
   getAssessmentsBySchool: (schoolId: string, token: string) =>
     request<Assessment[]>(`/api/v2/assessments/school/${schoolId}`, {}, token),
+
+  getStaffBySchool: (schoolId: string, token: string) =>
+    request<Staff[]>(`/api/v2/staff/school/${schoolId}`, {}, token),
 };
