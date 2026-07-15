@@ -111,11 +111,33 @@ export interface Admission {
   sourceOfInquiry: string;
 }
 
+export interface Challenge {
+  id: string;
+  code: string;
+  displayName: string;
+  category:
+    | "growth_enrollment"
+    | "people"
+    | "academic_wellbeing"
+    | "reputation_marketing"
+    | "operations_finance";
+  description: string;
+  iconName: string | null;
+}
+
 export const api = {
   login: (email: string, password: string) =>
     request<LoginResponse>("/api/v2/auth/login", {
       method: "POST",
       body: JSON.stringify({ email, password }),
+    }),
+
+  getChallenges: () => request<Challenge[]>("/challenges"),
+
+  getSelectedChallenges: (challengeIds: string[]) =>
+    request<Challenge[]>("/challenges/selected", {
+      method: "POST",
+      body: JSON.stringify({ challengeIds }),
     }),
 
   getSchool: (schoolId: string, token: string) =>
