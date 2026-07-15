@@ -8,12 +8,12 @@ export default () => ({
 
   database: {
     type: 'postgres',
-    host: process.env.DATABASE_HOST || 'localhost',
-    port: parseInt(process.env.DATABASE_PORT || '5432'),
-    username: process.env.DATABASE_USER || 'disha_user',
-    password: process.env.DATABASE_PASSWORD || 'disha_password_dev',
-    name: process.env.DATABASE_NAME || 'disha_db',
-    synchronize: process.env.NODE_ENV !== 'production',
+    host: process.env.DB_HOST || process.env.DATABASE_HOST || 'localhost',
+    port: parseInt(process.env.DB_PORT || process.env.DATABASE_PORT || '5432'),
+    username: process.env.DB_USERNAME || process.env.DATABASE_USER || 'staging_user',
+    password: process.env.DB_PASSWORD || process.env.DATABASE_PASSWORD || 'staging_password_change_me',
+    name: process.env.DB_NAME || process.env.DATABASE_NAME || 'disha_staging_db',
+    synchronize: true,
     logging: process.env.LOG_LEVEL === 'debug',
   },
 
@@ -50,3 +50,4 @@ export default () => ({
     origin: process.env.CORS_ORIGIN?.split(',') || ['http://localhost:3001', 'http://localhost:3000'],
   },
 });
+

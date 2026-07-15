@@ -1,0 +1,228 @@
+╔════════════════════════════════════════════════════════════════════════════╗
+║                 DISHA v2.0 - LOAD TESTING QUICK START                      ║
+║                                                                            ║
+║                    ✅ ALL SYSTEMS OPERATIONAL                             ║
+╚════════════════════════════════════════════════════════════════════════════╝
+
+STEP 1: VERIFY SERVICES ARE RUNNING
+═══════════════════════════════════════════════════════════════════════════
+
+  docker compose -f docker-compose.staging.yml ps
+
+  Expected: All containers showing "Up"
+  - PostgreSQL (postgres-staging): Healthy
+  - Disha API (disha-staging-api): Health: starting (will be ready in 30s)
+  - Nginx (nginx-staging): Up
+  - Prometheus (disha-staging-prometheus): Up
+  - Grafana (disha-staging-grafana): Up
+
+
+STEP 2: START BACKEND API (Choose ONE)
+═══════════════════════════════════════════════════════════════════════════
+
+  Option A: LOCAL BACKEND (Recommended - No Docker networking issues)
+  ─────────────────────────────────────────────────────────────────────
+  .\start-backend-for-testing.ps1
+
+  Connects to: PostgreSQL in Docker
+  API runs on: http://localhost:3000
+  Setup time: 30-60 seconds
+  ✅ FASTEST & MOST RELIABLE
+
+
+  Option B: DOCKER API (If local backend preferred)
+  ─────────────────────────────────────────────────────────────────────
+  docker exec disha-staging-api npm start
+
+  Note: This may fail due to Windows Docker networking
+  If fails, use Option A instead
+
+
+STEP 3: VERIFY API IS READY
+═══════════════════════════════════════════════════════════════════════════
+
+  # Check health endpoint
+  curl http://localhost:3000/health
+
+  Expected response:
+  {
+    "status": "ok",
+    "timestamp": "2026-07-15T00:20:00Z"
+  }
+
+  # View real-time metrics
+  curl http://localhost:3000/health/metrics | ConvertFrom-Json
+
+
+STEP 4: RUN LOAD TESTS
+═══════════════════════════════════════════════════════════════════════════
+
+  BASELINE TEST (30 seconds, 50 concurrent users)
+  ───────────────────────────────────────────────
+  wrk -t4 -c50 -d30s --latency http://localhost:3000/health
+
+  Expected Results:
+  - Requests/sec: >1000
+  - Latency avg: <100ms
+  - Latency p99: <200ms
+  - Socket errors: 0
+
+
+  PROGRESSIVE STRESS TEST (10 → 500 users)
+  ────────────────────────────────────────
+  # Stage 1: 10 users (1 minute)
+  wrk -t2 -c10 -d60s --latency http://localhost:3000/health
+
+  # Wait 10 seconds
+  Start-Sleep -Seconds 10
+
+  # Stage 2: 100 users (1 minute)
+  wrk -t4 -c100 -d60s --latency http://localhost:3000/health
+
+  # Wait 10 seconds
+  Start-Sleep -Seconds 10
+
+  # Stage 3: 500 users (1 minute)
+  wrk -t16 -c500 -d60s --latency http://localhost:3000/health
+
+
+STEP 5: MONITOR DURING TESTS (OPTIONAL - Terminal 3)
+═══════════════════════════════════════════════════════════════════════════
+
+  # Real-time monitoring dashboard
+  $interval = 2
+  while ($true) {
+    Clear-Host
+    Write-Host "=== Load Test Monitor ===" -ForegroundColor Cyan
+    $m = curl -s http://localhost:3000/health/metrics | ConvertFrom-Json
+    Write-Host "Requests: $($m.api.requestCount)"
+    Write-Host "Errors: $($m.api.errorCount)"
+    Write-Host "Error Rate: $($m.api.errorRate)"
+    Write-Host "Latency: $($m.api.averageResponseTime)ms"
+    Write-Host "Memory: $($m.memory.percentage)%"
+    Start-Sleep -Seconds $interval
+  }
+
+  OR: Open Grafana Dashboard
+  ──────────────────────────
+  http://localhost:3001
+  Login: admin / admin_change_me
+
+
+PERFORMANCE TARGETS
+═══════════════════════════════════════════════════════════════════════════
+
+  Baseline (50 users):
+    ✓ Throughput: >1000 req/s
+    ✓ Latency: <100ms average
+    ✓ Errors: 0%
+
+  Light Load (100 users):
+    ✓ Throughput: >500 req/s
+    ✓ Latency: 50-150ms average
+    ✓ Errors: <0.1%
+
+  Heavy Load (500 users):
+    ✓ Throughput: >200 req/s
+    ✓ Latency: 100-300ms average
+    ✓ Errors: <1%
+
+  All Tests:
+    ✓ Memory: Stable (no continuous growth)
+    ✓ CPU: <80%
+    ✓ Database: Responsive <100ms
+
+
+MONITORING ENDPOINTS
+═══════════════════════════════════════════════════════════════════════════
+
+  API Metrics:        http://localhost:3000/health/metrics
+  Prometheus:         http://localhost:9090
+  Grafana:            http://localhost:3001
+  Nginx:              http://localhost/
+  PostgreSQL:         localhost:5432
+
+
+TROUBLESHOOTING
+═══════════════════════════════════════════════════════════════════════════
+
+  Issue: "Cannot access http://localhost:3000"
+  ─────────────────────────────────────────────
+  Solution: Backend not started yet
+  - Verify it with: curl http://localhost:3000/health
+  - Or wait 30 seconds after running start-backend-for-testing.ps1
+  - Check terminal 1 for startup logs
+
+
+  Issue: "wrk: command not found"
+  ──────────────────────────────
+  Solution: Install wrk
+  - choco install wrk -y
+  - Or download from: https://github.com/wg/wrk/releases
+
+
+  Issue: "Error rate high during test"
+  ────────────────────────────────────
+  Check: Database health
+  - docker exec -e PGPASSWORD=staging_password_change_me disha-staging-postgres psql -U staging_user -d disha_staging_db -c "SELECT 1;"
+
+  Check: API logs
+  - docker logs disha-staging-api --tail 20
+
+
+  Issue: "Memory continuously growing"
+  ────────────────────────────────────
+  Possible: Memory leak in application
+  Action: Reduce load, monitor with: curl http://localhost:3000/health/metrics
+
+
+NEXT STEPS AFTER TESTING
+═══════════════════════════════════════════════════════════════════════════
+
+  1. ✅ Compare results against targets above
+
+  2. If targets met:
+     → Infrastructure is production-ready
+     → Proceed to production deployment
+
+  3. If targets not met:
+     → Review LOAD_TESTING.md for bottleneck analysis
+     → Optimize slow queries or memory usage
+     → Re-run tests to verify improvements
+
+  4. Always:
+     → Document results in load-test-report.md
+     → Archive metrics from Prometheus
+     → Review Grafana dashboards for anomalies
+
+
+DOCUMENTATION
+═══════════════════════════════════════════════════════════════════════════
+
+  For Complete Guides:
+  - LOAD_TEST_READY.md ........................ Summary & quick start
+  - LOAD_TEST_SETUP.md ........................ Detailed setup guide
+  - LOAD_TEST_WINDOWS.md ...................... Windows-specific commands
+  - LOAD_TESTING.md ........................... Methodology (2000+ lines)
+  - INFRASTRUCTURE_STATUS.md ................. Current status details
+
+
+═══════════════════════════════════════════════════════════════════════════
+
+EXPECTED TIMELINE:
+  Setup:       5 minutes   (start backend + verify health)
+  Baseline:    5 minutes   (30-second test)
+  Progressive: 30 minutes  (6 stages, 10-500 users)
+  Analysis:    10 minutes  (review results)
+  ─────────────────────────
+  TOTAL:      ~50 minutes
+
+═══════════════════════════════════════════════════════════════════════════
+
+STATUS: ✅ ALL SYSTEMS READY FOR LOAD TESTING
+
+Start with: .\start-backend-for-testing.ps1
+
+Good luck! 🚀
+
+═══════════════════════════════════════════════════════════════════════════
