@@ -91,6 +91,26 @@ export interface Staff {
   phone: string | null;
 }
 
+export interface Admission {
+  id: string;
+  studentName: string;
+  guardianName: string | null;
+  guardianPhone: string | null;
+  gradeApplied: number;
+  admissionDate: string;
+  status:
+    | "inquiry"
+    | "application"
+    | "applied"
+    | "interviewed"
+    | "offered"
+    | "admitted"
+    | "rejected"
+    | "waitlisted"
+    | "declined";
+  sourceOfInquiry: string;
+}
+
 export const api = {
   login: (email: string, password: string) =>
     request<LoginResponse>("/api/v2/auth/login", {
@@ -112,4 +132,7 @@ export const api = {
 
   getStaffBySchool: (schoolId: string, token: string) =>
     request<Staff[]>(`/api/v2/staff/school/${schoolId}`, {}, token),
+
+  getAdmissionsBySchool: (schoolId: string, token: string) =>
+    request<Admission[]>(`/api/v2/admissions/school/${schoolId}`, {}, token),
 };
