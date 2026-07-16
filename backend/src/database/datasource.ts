@@ -1,6 +1,7 @@
 import { DataSource } from 'typeorm';
 import * as dotenv from 'dotenv';
 import * as path from 'path';
+import { DISHA_ENTITIES } from './entities';
 
 // Load environment variables
 dotenv.config({ path: path.resolve(__dirname, '../../.env.local') });
@@ -13,7 +14,13 @@ export const AppDataSource = new DataSource({
   username: process.env.DB_USERNAME || 'postgres',
   password: process.env.DB_PASSWORD || 'postgres',
   database: process.env.DB_NAME || 'disha_db',
-  entities: [path.join(__dirname, '../../dist/**/*.entity.js')],
+  // Import entity classes directly (rather than a dist/**/*.entity.js glob) so
+  // ts-node-run scripts (seed, migration:generate) and the compiled build both
+  // resolve to the same class references — a glob pointed only at dist made
+  // ts-node-loaded entity classes register under a different module instance
+  // than the ones already loaded by this DataSource, so TypeORM couldn't find
+  // their metadata (EntityMetadataNotFoundError) when seeding.
+  entities: DISHA_ENTITIES,
   migrations: [path.join(__dirname, '../../dist/database/migrations/*.js')],
   synchronize: false,
   logging: false,

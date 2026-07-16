@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, Between } from 'typeorm';
 import {
@@ -74,11 +74,7 @@ export class StudentService {
     });
   }
 
-  async updateStudentStatus(
-    studentId: string,
-    status: StudentStatus,
-    reason?: string,
-  ): Promise<Student | null> {
+  async updateStudentStatus(studentId: string, status: StudentStatus, reason?: string): Promise<Student | null> {
     const updateData: any = {
       status,
     };
@@ -101,19 +97,23 @@ export class StudentService {
     markedByStaffId?: string;
     notes?: string;
   }): Promise<StudentAttendance> {
+    const attendanceDate = new Date(recordAttendanceDto.attendanceDate);
+    if (isNaN(attendanceDate.getTime())) {
+      throw new BadRequestException('attendanceDate must be a valid date');
+    }
+    if (!recordAttendanceDto.status) {
+      throw new BadRequestException('status is required');
+    }
+
     const attendance = new StudentAttendance();
     attendance.studentId = recordAttendanceDto.studentId;
     attendance.schoolId = recordAttendanceDto.schoolId;
-    attendance.attendanceDate = recordAttendanceDto.attendanceDate;
+    attendance.attendanceDate = attendanceDate;
     attendance.status = recordAttendanceDto.status as any; // Cast to bypass type mismatch
     attendance.term = recordAttendanceDto.term || '';
     attendance.markedByStaffId = recordAttendanceDto.markedByStaffId || '';
     attendance.notes = recordAttendanceDto.notes || '';
-    attendance.monthYear = new Date(
-      recordAttendanceDto.attendanceDate.getFullYear(),
-      recordAttendanceDto.attendanceDate.getMonth(),
-      1,
-    );
+    attendance.monthYear = new Date(attendanceDate.getFullYear(), attendanceDate.getMonth(), 1);
 
     return this.attendanceRepository.save(attendance);
   }
@@ -137,9 +137,9 @@ export class StudentService {
     });
 
     const totalDays = records.length;
-    const presentDays = records.filter(r => r.status === 'present').length;
-    const absentDays = records.filter(r => r.status === 'absent').length;
-    const leaveDays = records.filter(r => r.status === 'leave').length;
+    const presentDays = records.filter((r) => r.status === 'present').length;
+    const absentDays = records.filter((r) => r.status === 'absent').length;
+    const leaveDays = records.filter((r) => r.status === 'leave').length;
 
     return {
       totalDays,
@@ -189,11 +189,9 @@ export class StudentService {
     return this.academicRepository.save(assessment);
   }
 
-  async getAcademicPerformance(
-    studentId: string,
-    term?: string,
-  ): Promise<StudentAcademicAssessment[]> {
-    const query = this.academicRepository.createQueryBuilder('academic')
+  async getAcademicPerformance(studentId: string, term?: string): Promise<StudentAcademicAssessment[]> {
+    const query = this.academicRepository
+      .createQueryBuilder('academic')
       .where('academic.studentId = :studentId', { studentId });
 
     if (term) {

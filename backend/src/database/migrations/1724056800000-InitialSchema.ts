@@ -1,278 +1,330 @@
-import { MigrationInterface, QueryRunner } from 'typeorm';
+import { MigrationInterface, QueryRunner } from "typeorm";
 
 export class InitialSchema1724056800000 implements MigrationInterface {
-  name = 'InitialSchema1724056800000';
+    name = 'InitialSchema1724056800000'
 
-  public async up(queryRunner: QueryRunner): Promise<void> {
-    // Create users table
-    await queryRunner.query(`
-      CREATE TABLE "users" (
-        "id" uuid NOT NULL DEFAULT gen_random_uuid(),
-        "email" character varying(255) NOT NULL UNIQUE,
-        "phone" character varying(20),
-        "passwordHash" character varying(255) NOT NULL,
-        "firstName" character varying(100) NOT NULL,
-        "lastName" character varying(100),
-        "userType" character varying NOT NULL,
-        "schoolId" uuid,
-        "roleType" character varying NOT NULL DEFAULT 'user',
-        "isActive" boolean NOT NULL DEFAULT true,
-        "lastLoginAt" TIMESTAMP,
-        "profilePictureUrl" character varying(255),
-        "bio" text,
-        "preferences" jsonb,
-        "createdAt" TIMESTAMP NOT NULL DEFAULT now(),
-        "updatedAt" TIMESTAMP NOT NULL DEFAULT now(),
-        PRIMARY KEY ("id")
-      )
-    `);
-    await queryRunner.query(
-      `CREATE INDEX "IDX_users_email" ON "users" ("email")`,
-    );
-    await queryRunner.query(
-      `CREATE INDEX "IDX_users_schoolId_userType" ON "users" ("schoolId", "userType")`,
-    );
+    public async up(queryRunner: QueryRunner): Promise<void> {
+        await queryRunner.query(`CREATE TABLE "assessment_responses" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "assessmentId" uuid NOT NULL, "respondentId" uuid NOT NULL, "respondentType" character varying(50) NOT NULL, "questionId" uuid NOT NULL, "responseValue" character varying(50) NOT NULL, "responseNumeric" numeric(5,2), "responseText" text, "schoolId" uuid NOT NULL, "submissionTimestamp" TIMESTAMP NOT NULL DEFAULT now(), "ipAddress" character varying(50), "deviceType" character varying(50), "deviceOs" character varying(100), "isValid" boolean NOT NULL DEFAULT true, "validationFlags" jsonb, "submissionTimeSeconds" integer, "countryCode" character varying(2), "timezone" character varying(50), "createdAt" TIMESTAMP NOT NULL DEFAULT now(), CONSTRAINT "PK_9604af439812c326d6e2618b56d" PRIMARY KEY ("id"))`);
+        await queryRunner.query(`CREATE INDEX "IDX_b7b4d2c3650829af0a9a237526" ON "assessment_responses" ("submissionTimestamp") `);
+        await queryRunner.query(`CREATE INDEX "IDX_daeed4b5f94e39bd2bf47235f8" ON "assessment_responses" ("respondentId") `);
+        await queryRunner.query(`CREATE INDEX "IDX_855ea9d7b5c7ca07fe75f0d0af" ON "assessment_responses" ("schoolId", "respondentType") `);
+        await queryRunner.query(`CREATE UNIQUE INDEX "IDX_1a07c9d1d66c47f8f55141dd0b" ON "assessment_responses" ("assessmentId", "respondentId", "questionId") `);
+        await queryRunner.query(`CREATE TYPE "public"."questions_questiontype_enum" AS ENUM('likert_5', 'likert_5_reverse', 'multiple_choice', 'yes_no', 'open_text', 'rating_nps')`);
+        await queryRunner.query(`CREATE TYPE "public"."questions_respondenttype_enum" AS ENUM('student_6_8', 'student_9_12', 'student_13_18', 'teacher', 'parent', 'school_leader')`);
+        await queryRunner.query(`CREATE TABLE "questions" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "assessmentId" uuid NOT NULL, "questionCode" character varying(50) NOT NULL, "questionText" text NOT NULL, "questionType" "public"."questions_questiontype_enum" NOT NULL, "respondentType" "public"."questions_respondenttype_enum" NOT NULL, "challengeDomain" character varying(100), "orderInForm" integer NOT NULL, "isMandatory" boolean NOT NULL DEFAULT true, "skipLogic" jsonb, "options" jsonb, "correctAnswer" character varying(50), "createdAt" TIMESTAMP NOT NULL DEFAULT now(), CONSTRAINT "PK_08a6d4b0f49ff300bf3a0ca60ac" PRIMARY KEY ("id"))`);
+        await queryRunner.query(`CREATE INDEX "IDX_4604459cf5ca60df52d6e89b7f" ON "questions" ("respondentType") `);
+        await queryRunner.query(`CREATE INDEX "IDX_53a648f6253cc05caf37d079f2" ON "questions" ("challengeDomain") `);
+        await queryRunner.query(`CREATE INDEX "IDX_fb9a8d6d69ea63b910ff3ddbd9" ON "questions" ("assessmentId", "respondentType") `);
+        await queryRunner.query(`CREATE TYPE "public"."assessments_status_enum" AS ENUM('draft', 'active', 'closed', 'archived')`);
+        await queryRunner.query(`CREATE TABLE "assessments" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "schoolId" uuid NOT NULL, "cycleName" character varying(50) NOT NULL, "status" "public"."assessments_status_enum" NOT NULL DEFAULT 'draft', "description" text, "startDate" date, "endDate" date, "createdAt" TIMESTAMP NOT NULL DEFAULT now(), "updatedAt" TIMESTAMP NOT NULL DEFAULT now(), CONSTRAINT "PK_a3442bd80a00e9111cefca57f6c" PRIMARY KEY ("id"))`);
+        await queryRunner.query(`CREATE INDEX "IDX_5b842a1a16b55c8fa677fd4510" ON "assessments" ("createdAt") `);
+        await queryRunner.query(`CREATE INDEX "IDX_6940ec6bfc90c401d9afb78d40" ON "assessments" ("schoolId", "status") `);
+        await queryRunner.query(`CREATE TYPE "public"."teacher_training_completionstatus_enum" AS ENUM('completed', 'incomplete', 'cancelled')`);
+        await queryRunner.query(`CREATE TABLE "teacher_training" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "staffId" uuid NOT NULL, "trainingDate" date NOT NULL, "topic" character varying(200) NOT NULL, "hours" integer NOT NULL, "deliveryMethod" character varying(100) NOT NULL DEFAULT 'workshop', "completionStatus" "public"."teacher_training_completionstatus_enum" NOT NULL DEFAULT 'completed', "effectivenessRating" integer, "notes" text, "certificateUrl" character varying(255), "createdAt" TIMESTAMP NOT NULL DEFAULT now(), CONSTRAINT "PK_1cb9ae03acccb6a3399f8ab8a6b" PRIMARY KEY ("id"))`);
+        await queryRunner.query(`CREATE INDEX "IDX_13e860422defadeef55a0b5f06" ON "teacher_training" ("topic") `);
+        await queryRunner.query(`CREATE INDEX "IDX_7c86ed3ca31ba19b3ce151e585" ON "teacher_training" ("staffId", "trainingDate") `);
+        await queryRunner.query(`CREATE TYPE "public"."staff_gender_enum" AS ENUM('male', 'female', 'other')`);
+        await queryRunner.query(`CREATE TYPE "public"."staff_position_enum" AS ENUM('principal', 'vice_principal', 'teacher', 'counsellor', 'admin_staff')`);
+        await queryRunner.query(`CREATE TYPE "public"."staff_employmentstatus_enum" AS ENUM('active', 'leave', 'resigned', 'retired')`);
+        await queryRunner.query(`CREATE TABLE "staff" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "schoolId" uuid NOT NULL, "employeeId" character varying(50) NOT NULL, "firstName" character varying(100) NOT NULL, "lastName" character varying(100), "gender" "public"."staff_gender_enum", "subjectTaught" character varying(100), "gradeLevel" integer, "position" "public"."staff_position_enum" NOT NULL, "startDate" date NOT NULL, "salaryBand" character varying(50), "employmentStatus" "public"."staff_employmentstatus_enum" NOT NULL DEFAULT 'active', "exitDate" date, "exitReasonCode" character varying(50), "exitReasonDetail" text, "trainingHoursPerYear" integer NOT NULL DEFAULT '40', "email" character varying(255), "phone" character varying(20), "dateOfBirth" date, "createdAt" TIMESTAMP NOT NULL DEFAULT now(), "updatedAt" TIMESTAMP NOT NULL DEFAULT now(), CONSTRAINT "PK_e4ee98bb552756c180aec1e854a" PRIMARY KEY ("id"))`);
+        await queryRunner.query(`CREATE INDEX "IDX_7390f81e2272a8da0aa825ce58" ON "staff" ("position") `);
+        await queryRunner.query(`CREATE INDEX "IDX_cd00d607d9e3d3a6508c5c1857" ON "staff" ("employeeId") `);
+        await queryRunner.query(`CREATE INDEX "IDX_c15be7d4b8d0dbce9ddf6c40e7" ON "staff" ("schoolId", "employmentStatus") `);
+        await queryRunner.query(`CREATE TYPE "public"."organizations_type_enum" AS ENUM('ngo', 'education_board', 'school_chain', 'individual_school')`);
+        await queryRunner.query(`CREATE TABLE "organizations" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "name" character varying(255) NOT NULL, "type" "public"."organizations_type_enum" NOT NULL, "countryCode" character varying(2) NOT NULL DEFAULT 'IN', "state" character varying(100), "city" character varying(100), "description" character varying(255), "logoUrl" character varying(255), "website" character varying(255), "phone" character varying(20), "email" character varying(255), "createdAt" TIMESTAMP NOT NULL DEFAULT now(), "updatedAt" TIMESTAMP NOT NULL DEFAULT now(), CONSTRAINT "PK_6b031fcd0863e3f6b44230163f9" PRIMARY KEY ("id"))`);
+        await queryRunner.query(`CREATE INDEX "IDX_cd7bcf06ca6f1fff6c45e106e3" ON "organizations" ("type", "state") `);
+        await queryRunner.query(`CREATE TYPE "public"."schools_citytier_enum" AS ENUM('tier_1', 'tier_2', 'tier_3')`);
+        await queryRunner.query(`CREATE TYPE "public"."schools_boardtype_enum" AS ENUM('cbse', 'icse', 'ib', 'state', 'other')`);
+        await queryRunner.query(`CREATE TABLE "schools" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "organizationId" uuid, "name" character varying(255) NOT NULL, "district" character varying(100) NOT NULL, "state" character varying(100), "city" character varying(100), "cityTier" "public"."schools_citytier_enum", "boardType" "public"."schools_boardtype_enum", "studentCount" integer, "staffCount" integer, "udiseCode" character varying(20), "latitude" numeric(10,8), "longitude" numeric(11,8), "principalName" character varying(255), "principalPhone" character varying(20), "principalEmail" character varying(255), "address" character varying(255), "pinCode" character varying(10), "isActive" boolean NOT NULL DEFAULT true, "onboardedDate" date, "lastAssessmentDate" date, "createdAt" TIMESTAMP NOT NULL DEFAULT now(), "updatedAt" TIMESTAMP NOT NULL DEFAULT now(), CONSTRAINT "PK_95b932e47ac129dd8e23a0db548" PRIMARY KEY ("id"))`);
+        await queryRunner.query(`CREATE INDEX "IDX_7c03173c74e17d889510bff031" ON "schools" ("udiseCode") `);
+        await queryRunner.query(`CREATE INDEX "IDX_37959d98e0ad59ddb8aecd4952" ON "schools" ("isActive") `);
+        await queryRunner.query(`CREATE INDEX "IDX_febb01e90b9f205274d54b14f3" ON "schools" ("state", "district") `);
+        await queryRunner.query(`CREATE INDEX "IDX_42ef534f0b1efdbc6aece928cd" ON "schools" ("organizationId") `);
+        await queryRunner.query(`CREATE TYPE "public"."students_gender_enum" AS ENUM('male', 'female', 'other')`);
+        await queryRunner.query(`CREATE TYPE "public"."students_agegroup_enum" AS ENUM('6_8', '9_12', '13_18')`);
+        await queryRunner.query(`CREATE TYPE "public"."students_status_enum" AS ENUM('active', 'withdrawn', 'transferred', 'graduated')`);
+        await queryRunner.query(`CREATE TABLE "students" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "schoolId" uuid NOT NULL, "enrollmentNumber" character varying(50) NOT NULL, "firstName" character varying(100) NOT NULL, "lastName" character varying(100), "gender" "public"."students_gender_enum", "dateOfBirth" date, "gradeLevel" integer, "classSection" character varying(10), "ageGroup" "public"."students_agegroup_enum", "enrollmentDate" date NOT NULL, "status" "public"."students_status_enum" NOT NULL DEFAULT 'active', "withdrawalDate" date, "withdrawalReasonCode" character varying(50), "withdrawalReasonDetail" text, "guardianName" character varying(255), "guardianPhone" character varying(20), "guardianEmail" character varying(255), "createdAt" TIMESTAMP NOT NULL DEFAULT now(), "updatedAt" TIMESTAMP NOT NULL DEFAULT now(), CONSTRAINT "PK_7d7f07271ad4ce999880713f05e" PRIMARY KEY ("id"))`);
+        await queryRunner.query(`CREATE INDEX "IDX_cadd496973a3777c4a6a693e70" ON "students" ("ageGroup") `);
+        await queryRunner.query(`CREATE INDEX "IDX_1e4f44202096bf96faffdb3e8d" ON "students" ("gradeLevel") `);
+        await queryRunner.query(`CREATE INDEX "IDX_7f6d3cb54984a049eb05426e5f" ON "students" ("enrollmentNumber") `);
+        await queryRunner.query(`CREATE INDEX "IDX_009093c06d0dfffdbe87a1b766" ON "students" ("schoolId", "status") `);
+        await queryRunner.query(`CREATE TYPE "public"."student_academic_assessments_status_enum" AS ENUM('exceeds', 'meets', 'approaching', 'below')`);
+        await queryRunner.query(`CREATE TABLE "student_academic_assessments" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "studentId" uuid NOT NULL, "schoolId" uuid NOT NULL, "assessmentDate" date NOT NULL, "subject" character varying(100) NOT NULL, "topic" character varying(200), "scoreObtained" numeric(5,2) NOT NULL, "scoreMax" numeric(5,2) NOT NULL, "percentage" numeric(5,2) NOT NULL, "gradeLevelExpectation" numeric(5,2), "status" "public"."student_academic_assessments_status_enum", "term" character varying(20), "assessmentType" character varying(50), "teacherNotes" text, "createdAt" TIMESTAMP NOT NULL DEFAULT now(), CONSTRAINT "PK_58e3634d901e76567c03a45b019" PRIMARY KEY ("id"))`);
+        await queryRunner.query(`CREATE INDEX "IDX_d9dc0d94864609233109a3f475" ON "student_academic_assessments" ("schoolId", "term") `);
+        await queryRunner.query(`CREATE INDEX "IDX_aec7f4befc0cde2ae62e100b7c" ON "student_academic_assessments" ("studentId", "assessmentDate") `);
+        await queryRunner.query(`CREATE TYPE "public"."remediation_interventions_interventiontype_enum" AS ENUM('academic_support', 'attendance_improvement', 'behavior_modification', 'parental_engagement', 'counselling', 'financial_assistance', 'peer_mentoring', 'extra_curricular')`);
+        await queryRunner.query(`CREATE TYPE "public"."remediation_interventions_status_enum" AS ENUM('planned', 'active', 'completed', 'abandoned', 'escalated')`);
+        await queryRunner.query(`CREATE TABLE "remediation_interventions" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "schoolId" uuid NOT NULL, "studentId" uuid NOT NULL, "interventionType" "public"."remediation_interventions_interventiontype_enum" NOT NULL, "interventionStartDate" date NOT NULL, "plannedEndDate" date, "actualEndDate" date, "status" "public"."remediation_interventions_status_enum" NOT NULL, "interventionDetails" text NOT NULL, "assignedTo" character varying(100), "progressNotes" text, "effectivenessRating" integer, "escalatedToParent" boolean NOT NULL DEFAULT false, "parentCommunicationNotes" text, "createdAt" TIMESTAMP NOT NULL DEFAULT now(), CONSTRAINT "PK_9c81288d8a8243af3668443c351" PRIMARY KEY ("id"))`);
+        await queryRunner.query(`CREATE INDEX "IDX_78d563950c2a1fd53b2de0c5f7" ON "remediation_interventions" ("studentId", "status") `);
+        await queryRunner.query(`CREATE INDEX "IDX_bbb135b4ed8c75e6bda582a70d" ON "remediation_interventions" ("schoolId", "interventionStartDate") `);
+        await queryRunner.query(`CREATE TYPE "public"."users_usertype_enum" AS ENUM('school_admin', 'teacher', 'parent', 'student', 'ryl_admin', 'ryl_support')`);
+        await queryRunner.query(`CREATE TYPE "public"."users_roletype_enum" AS ENUM('admin', 'user', 'viewer')`);
+        await queryRunner.query(`CREATE TABLE "users" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "email" character varying(255) NOT NULL, "phone" character varying(20), "passwordHash" character varying(255) NOT NULL, "firstName" character varying(100) NOT NULL, "lastName" character varying(100), "userType" "public"."users_usertype_enum" NOT NULL, "schoolId" uuid, "roleType" "public"."users_roletype_enum" NOT NULL DEFAULT 'user', "isActive" boolean NOT NULL DEFAULT true, "lastLoginAt" TIMESTAMP, "profilePictureUrl" character varying(255), "bio" text, "preferences" jsonb, "createdAt" TIMESTAMP NOT NULL DEFAULT now(), "updatedAt" TIMESTAMP NOT NULL DEFAULT now(), CONSTRAINT "UQ_97672ac88f789774dd47f7c8be3" UNIQUE ("email"), CONSTRAINT "PK_a3ffb1c0c8416b9fc6f907b7433" PRIMARY KEY ("id"))`);
+        await queryRunner.query(`CREATE INDEX "IDX_e573dea64fd72516c61b1e333c" ON "users" ("schoolId", "userType") `);
+        await queryRunner.query(`CREATE UNIQUE INDEX "IDX_97672ac88f789774dd47f7c8be" ON "users" ("email") `);
+        await queryRunner.query(`CREATE TABLE "parent_nps_surveys" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "schoolId" uuid NOT NULL, "parentId" uuid, "surveyDate" date NOT NULL, "npsScore" integer NOT NULL, "easeOfContactScore" integer, "responsivenessScore" integer, "overallSatisfactionScore" integer, "academicQualityScore" integer, "infrastructureScore" integer, "feedbackText" text, "improvementSuggestions" text, "createdAt" TIMESTAMP NOT NULL DEFAULT now(), CONSTRAINT "PK_bd653d08e3c18479b437dc788c8" PRIMARY KEY ("id"))`);
+        await queryRunner.query(`CREATE INDEX "IDX_b52d26c616779792c464d06ee2" ON "parent_nps_surveys" ("npsScore") `);
+        await queryRunner.query(`CREATE INDEX "IDX_165b561a8d7f6ec86f54686b65" ON "parent_nps_surveys" ("schoolId", "surveyDate") `);
+        await queryRunner.query(`CREATE TYPE "public"."parent_communications_querychannel_enum" AS ENUM('whatsapp', 'email', 'phone', 'in_person', 'sms')`);
+        await queryRunner.query(`CREATE TYPE "public"."parent_communications_status_enum" AS ENUM('resolved', 'pending', 'escalated')`);
+        await queryRunner.query(`CREATE TABLE "parent_communications" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "schoolId" uuid NOT NULL, "parentId" uuid, "studentId" uuid, "queryDate" TIMESTAMP NOT NULL, "queryChannel" "public"."parent_communications_querychannel_enum" NOT NULL, "queryTopic" character varying(200) NOT NULL, "queryDescription" text NOT NULL, "responseProvidedDate" TIMESTAMP, "responseContent" text, "responseTimeHours" integer, "status" "public"."parent_communications_status_enum", "handledByStaff" character varying(100), "createdAt" TIMESTAMP NOT NULL DEFAULT now(), CONSTRAINT "PK_0272516f15f32c5c3503313ad5f" PRIMARY KEY ("id"))`);
+        await queryRunner.query(`CREATE INDEX "IDX_83a8d9981d0aba7e6825d8bb92" ON "parent_communications" ("parentId", "studentId") `);
+        await queryRunner.query(`CREATE INDEX "IDX_3a30f193d31d3d63aa0ebe4593" ON "parent_communications" ("schoolId", "queryDate") `);
+        await queryRunner.query(`CREATE TYPE "public"."operational_data_datatype_enum" AS ENUM('fee_default', 'admission_inquiry', 'student_withdrawal', 'infrastructure_status', 'compliance_status', 'communication_log', 'other')`);
+        await queryRunner.query(`CREATE TABLE "operational_data" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "schoolId" uuid NOT NULL, "dataType" "public"."operational_data_datatype_enum" NOT NULL, "dataDate" date NOT NULL, "monthYear" date, "dataValue" jsonb NOT NULL, "quantity" integer, "notes" text, "source" character varying(100), "createdAt" TIMESTAMP NOT NULL DEFAULT now(), CONSTRAINT "PK_f4572f223212ab47cc2f0928b7e" PRIMARY KEY ("id"))`);
+        await queryRunner.query(`CREATE INDEX "IDX_64586277a49eac61456c85030c" ON "operational_data" ("dataType") `);
+        await queryRunner.query(`CREATE INDEX "IDX_e0a93cd9b03ac25b47829488e0" ON "operational_data" ("schoolId", "dataDate") `);
+        await queryRunner.query(`CREATE TYPE "public"."student_attendance_status_enum" AS ENUM('present', 'absent', 'leave', 'half_day')`);
+        await queryRunner.query(`CREATE TABLE "student_attendance" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "studentId" uuid NOT NULL, "schoolId" uuid NOT NULL, "attendanceDate" date NOT NULL, "status" "public"."student_attendance_status_enum" NOT NULL, "term" character varying(20), "monthYear" date, "notes" text, "markedByStaffId" uuid, "createdAt" TIMESTAMP NOT NULL DEFAULT now(), CONSTRAINT "PK_432904873d2981c3443763ef49d" PRIMARY KEY ("id"))`);
+        await queryRunner.query(`CREATE INDEX "IDX_023f801c581da95050c4ea2747" ON "student_attendance" ("schoolId", "monthYear") `);
+        await queryRunner.query(`CREATE INDEX "IDX_709b117c7771b099edfa520877" ON "student_attendance" ("studentId", "attendanceDate") `);
+        await queryRunner.query(`CREATE TYPE "public"."monitoring_scorecards_metric_enum" AS ENUM('student_retention', 'teacher_retention', 'academic_performance', 'parental_satisfaction', 'student_wellbeing', 'system_duplication', 'operational_efficiency')`);
+        await queryRunner.query(`CREATE TABLE "monitoring_scorecards" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "schoolId" uuid NOT NULL, "scorecardMonth" date NOT NULL, "metric" "public"."monitoring_scorecards_metric_enum" NOT NULL, "targetValue" numeric(5,2) NOT NULL, "achievedValue" numeric(5,2) NOT NULL, "variancePercentage" numeric(5,2), "analysisNotes" text, "subMetrics" jsonb, "status" character varying(50), "createdAt" TIMESTAMP NOT NULL DEFAULT now(), CONSTRAINT "PK_11703ecb7b968a371909638c32b" PRIMARY KEY ("id"))`);
+        await queryRunner.query(`CREATE INDEX "IDX_cf578543b816e72f8e43e64ddf" ON "monitoring_scorecards" ("metric", "scorecardMonth") `);
+        await queryRunner.query(`CREATE INDEX "IDX_ab3303748f3e3e35d64a515298" ON "monitoring_scorecards" ("schoolId", "scorecardMonth") `);
+        await queryRunner.query(`CREATE TYPE "public"."health_reports_reporttype_enum" AS ENUM('priority_gap', 'full_health_check')`);
+        await queryRunner.query(`CREATE TABLE "health_reports" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "schoolId" uuid NOT NULL, "academicYear" character varying(50) NOT NULL, "reportType" "public"."health_reports_reporttype_enum" NOT NULL, "reportVersion" integer NOT NULL, "generatedAt" TIMESTAMP NOT NULL DEFAULT now(), "executiveSummary" jsonb, "twelveLensScorecard" jsonb, "perceptionVsDataFindings" jsonb, "digitalCompetitivePosition" jsonb, "rootCauseMap" jsonb, "prioritizedRoadmap" jsonb, "totalGapsIdentified" integer, "top3GapIds" uuid array, "schoolOwnerNotes" text, CONSTRAINT "PK_07fbf6b377e99e934bdfbb1643c" PRIMARY KEY ("id"))`);
+        await queryRunner.query(`CREATE INDEX "idx_school_created" ON "health_reports" ("schoolId", "generatedAt") `);
+        await queryRunner.query(`CREATE TYPE "public"."challenges_category_enum" AS ENUM('growth_enrollment', 'people', 'academic_wellbeing', 'reputation_marketing', 'operations_finance')`);
+        await queryRunner.query(`CREATE TABLE "challenges" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "code" character varying(50) NOT NULL, "displayName" character varying(255) NOT NULL, "category" "public"."challenges_category_enum" NOT NULL, "description" text NOT NULL, "iconName" character varying(50), "createdAt" TIMESTAMP NOT NULL DEFAULT now(), CONSTRAINT "UQ_0979d01bda46416f0254cf4bd0d" UNIQUE ("code"), CONSTRAINT "PK_1e664e93171e20fe4d6125466af" PRIMARY KEY ("id"))`);
+        await queryRunner.query(`CREATE UNIQUE INDEX "IDX_0979d01bda46416f0254cf4bd0" ON "challenges" ("code") `);
+        await queryRunner.query(`CREATE TYPE "public"."gap_predictions_trenddirection_enum" AS ENUM('worsening', 'stable', 'improving', 'unknown')`);
+        await queryRunner.query(`CREATE TYPE "public"."gap_predictions_confidencetier_enum" AS ENUM('A', 'B', 'C')`);
+        await queryRunner.query(`CREATE TABLE "gap_predictions" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "schoolId" uuid NOT NULL, "academicYear" character varying(50) NOT NULL, "challengeId" uuid NOT NULL, "selfReportedSeverity" numeric(3,2), "dataConfirmedSeverity" numeric(3,2), "trendDirection" "public"."gap_predictions_trenddirection_enum" NOT NULL DEFAULT 'unknown', "confidenceTier" "public"."gap_predictions_confidencetier_enum" NOT NULL DEFAULT 'C', "combinedScore" numeric(4,3) NOT NULL, "priorityRank" integer NOT NULL, "urgencyFactor" numeric(3,2), "dataSources" jsonb, "createdAt" TIMESTAMP NOT NULL DEFAULT now(), "updatedAt" TIMESTAMP NOT NULL DEFAULT now(), CONSTRAINT "PK_bf8899727aff1087777193e67db" PRIMARY KEY ("id"))`);
+        await queryRunner.query(`CREATE INDEX "IDX_5c1f7ceda6404c4a847ea0e40a" ON "gap_predictions" ("schoolId", "academicYear", "priorityRank") `);
+        await queryRunner.query(`CREATE TYPE "public"."data_retention_policies_dataclassification_enum" AS ENUM('personally_identifiable', 'educational_records', 'assessment_data', 'operational', 'logs')`);
+        await queryRunner.query(`CREATE TYPE "public"."data_retention_policies_actionafterretention_enum" AS ENUM('retain', 'archive', 'anonymize', 'delete')`);
+        await queryRunner.query(`CREATE TABLE "data_retention_policies" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "dataClassification" "public"."data_retention_policies_dataclassification_enum" NOT NULL, "policyName" character varying(255) NOT NULL, "description" text NOT NULL, "retentionMonths" integer NOT NULL, "archiveMonths" integer, "actionAfterRetention" "public"."data_retention_policies_actionafterretention_enum" NOT NULL, "policyReasoning" text, "isActive" boolean NOT NULL DEFAULT true, "complianceReference" character varying(100), "createdAt" TIMESTAMP NOT NULL DEFAULT now(), "updatedAt" TIMESTAMP NOT NULL DEFAULT now(), CONSTRAINT "PK_f0272039a89c1c0aa616aedeaf5" PRIMARY KEY ("id"))`);
+        await queryRunner.query(`CREATE INDEX "IDX_b510ba3e445c960afb904e5989" ON "data_retention_policies" ("dataClassification") `);
+        await queryRunner.query(`CREATE TYPE "public"."counsellor_referrals_severity_enum" AS ENUM('low', 'medium', 'high', 'critical')`);
+        await queryRunner.query(`CREATE TYPE "public"."counsellor_referrals_resolutionstatus_enum" AS ENUM('resolved', 'ongoing', 'escalated')`);
+        await queryRunner.query(`CREATE TABLE "counsellor_referrals" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "studentId" uuid NOT NULL, "schoolId" uuid NOT NULL, "referralDate" date NOT NULL, "reasonCode" character varying(100) NOT NULL, "severity" "public"."counsellor_referrals_severity_enum" NOT NULL, "referredBy" character varying(100), "counsellingProvided" boolean NOT NULL DEFAULT false, "sessionsCount" integer NOT NULL DEFAULT '0', "resolutionStatus" "public"."counsellor_referrals_resolutionstatus_enum", "outsideReferral" boolean NOT NULL DEFAULT false, "externalReferralTo" character varying(255), "counsellorNotes" text, "resolutionDate" date, "createdAt" TIMESTAMP NOT NULL DEFAULT now(), CONSTRAINT "PK_6c1b8f1da5f142352278fec8e49" PRIMARY KEY ("id"))`);
+        await queryRunner.query(`CREATE INDEX "IDX_2a520fb6c4bc652796de84f2a2" ON "counsellor_referrals" ("schoolId", "severity") `);
+        await queryRunner.query(`CREATE INDEX "IDX_fd06facb09b805fee38508f986" ON "counsellor_referrals" ("studentId", "referralDate") `);
+        await queryRunner.query(`CREATE TYPE "public"."complaints_category_enum" AS ENUM('academic', 'communication', 'behavior', 'fee', 'infrastructure', 'staff', 'other')`);
+        await queryRunner.query(`CREATE TYPE "public"."complaints_severity_enum" AS ENUM('low', 'medium', 'high')`);
+        await queryRunner.query(`CREATE TYPE "public"."complaints_resolutionstatus_enum" AS ENUM('resolved', 'pending', 'in_progress')`);
+        await queryRunner.query(`CREATE TABLE "complaints" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "schoolId" uuid NOT NULL, "parentId" uuid, "complaintDate" date NOT NULL, "category" "public"."complaints_category_enum" NOT NULL, "severity" "public"."complaints_severity_enum" NOT NULL, "complaintDescription" text NOT NULL, "resolutionDate" date, "resolutionStatus" "public"."complaints_resolutionstatus_enum", "resolutionMethod" character varying(255), "parentSatisfactionRating" integer, "resolutionNotes" text, "handledByPrincipal" character varying(100), "createdAt" TIMESTAMP NOT NULL DEFAULT now(), CONSTRAINT "PK_4b7566a2a489c2cc7c12ed076ad" PRIMARY KEY ("id"))`);
+        await queryRunner.query(`CREATE INDEX "IDX_608c895c0a567ed3dabfe55026" ON "complaints" ("severity", "resolutionStatus") `);
+        await queryRunner.query(`CREATE INDEX "IDX_cb49bc36613ee353a6a80f92b6" ON "complaints" ("schoolId", "complaintDate") `);
+        await queryRunner.query(`CREATE TYPE "public"."bullying_incidents_incidenttype_enum" AS ENUM('in_person', 'cyberbullying', 'exclusion', 'other')`);
+        await queryRunner.query(`CREATE TYPE "public"."bullying_incidents_severity_enum" AS ENUM('minor', 'moderate', 'severe')`);
+        await queryRunner.query(`CREATE TYPE "public"."bullying_incidents_resolutionstatus_enum" AS ENUM('resolved', 'pending')`);
+        await queryRunner.query(`CREATE TABLE "bullying_incidents" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "schoolId" uuid NOT NULL, "incidentDate" date NOT NULL, "incidentType" "public"."bullying_incidents_incidenttype_enum" NOT NULL, "severity" "public"."bullying_incidents_severity_enum" NOT NULL, "reportedBy" character varying(255), "studentsInvolved" integer NOT NULL, "actionTaken" text NOT NULL, "resolutionDate" date, "resolutionStatus" "public"."bullying_incidents_resolutionstatus_enum", "studentIds" jsonb, "principalNotes" text, "parentNotified" boolean NOT NULL DEFAULT false, "createdAt" TIMESTAMP NOT NULL DEFAULT now(), CONSTRAINT "PK_9577755b9283d3963c578463bf5" PRIMARY KEY ("id"))`);
+        await queryRunner.query(`CREATE INDEX "IDX_426675c28982edacd54fbbcfe9" ON "bullying_incidents" ("severity") `);
+        await queryRunner.query(`CREATE INDEX "IDX_f1d07a118794836f28b7077de6" ON "bullying_incidents" ("schoolId", "incidentDate") `);
+        await queryRunner.query(`CREATE TYPE "public"."audit_logs_actiontype_enum" AS ENUM('create', 'update', 'delete', 'read', 'export', 'login', 'logout', 'permission_change')`);
+        await queryRunner.query(`CREATE TYPE "public"."audit_logs_resourcetype_enum" AS ENUM('student', 'staff', 'assessment', 'school', 'user', 'response', 'organization', 'report')`);
+        await queryRunner.query(`CREATE TABLE "audit_logs" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "userId" uuid NOT NULL, "schoolId" uuid, "actionType" "public"."audit_logs_actiontype_enum" NOT NULL, "resourceType" "public"."audit_logs_resourcetype_enum" NOT NULL, "resourceId" uuid, "description" character varying(255), "changesBefore" jsonb, "changesAfter" jsonb, "ipAddress" character varying(45), "userAgent" character varying(255), "success" boolean NOT NULL DEFAULT true, "errorMessage" text, "actionTimestamp" TIMESTAMP NOT NULL DEFAULT now(), CONSTRAINT "PK_1bb179d048bbc581caa3b013439" PRIMARY KEY ("id"))`);
+        await queryRunner.query(`CREATE INDEX "IDX_c24c119441c567c55fdf7920e9" ON "audit_logs" ("resourceType", "actionTimestamp") `);
+        await queryRunner.query(`CREATE INDEX "IDX_2e93a9c4aeee2c2a7e81be9af9" ON "audit_logs" ("userId", "actionTimestamp") `);
+        await queryRunner.query(`CREATE INDEX "IDX_9885db5f08f225b8d96f2e898b" ON "audit_logs" ("schoolId", "actionTimestamp") `);
+        await queryRunner.query(`CREATE TYPE "public"."admissions_status_enum" AS ENUM('inquiry', 'application', 'applied', 'interviewed', 'offered', 'admitted', 'rejected', 'waitlisted', 'declined')`);
+        await queryRunner.query(`CREATE TYPE "public"."admissions_sourceofinquiry_enum" AS ENUM('walk_in', 'referral', 'online', 'social_media', 'advertisement', 'school_visit', 'alumni', 'other')`);
+        await queryRunner.query(`CREATE TABLE "admissions" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "schoolId" uuid NOT NULL, "studentName" character varying(255) NOT NULL, "guardianName" character varying(100), "guardianPhone" character varying(20), "guardianEmail" character varying(100), "dateOfBirth" date NOT NULL, "gradeApplied" integer NOT NULL, "admissionDate" date NOT NULL, "status" "public"."admissions_status_enum" NOT NULL, "sourceOfInquiry" "public"."admissions_sourceofinquiry_enum" NOT NULL, "interviewDate" date, "interviewScore" integer, "admissionOfferDate" date, "admissionAcceptanceDate" date, "scholarshipStatus" character varying(100), "scholarshipAmount" numeric(8,2), "remarks" text, "createdAt" TIMESTAMP NOT NULL DEFAULT now(), CONSTRAINT "PK_6d47682a899dfa0a78ce11fe98a" PRIMARY KEY ("id"))`);
+        await queryRunner.query(`CREATE INDEX "IDX_04466a5fd0724b57c3332ce63a" ON "admissions" ("studentName") `);
+        await queryRunner.query(`CREATE INDEX "IDX_9e32dafef8452edd4d436b523f" ON "admissions" ("status", "admissionDate") `);
+        await queryRunner.query(`CREATE INDEX "IDX_cbb88d68032ec3ec3b9aa742aa" ON "admissions" ("schoolId", "admissionDate") `);
+        await queryRunner.query(`CREATE TABLE "districts" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "name" character varying(100) NOT NULL, "state" character varying(100) NOT NULL, "schoolsCount" integer NOT NULL DEFAULT '0', "description" character varying(255), "districtCode" character varying(20), "createdAt" TIMESTAMP NOT NULL DEFAULT now(), CONSTRAINT "PK_972a72ff4e3bea5c7f43a2b98af" PRIMARY KEY ("id"))`);
+        await queryRunner.query(`CREATE INDEX "IDX_1976fa77386d2ea7cc76b09221" ON "districts" ("state") `);
+        await queryRunner.query(`CREATE TABLE "challenge_question_mapping" ("challenge_id" uuid NOT NULL, "question_id" uuid NOT NULL, CONSTRAINT "PK_6a335b2557f026f7e7739704d05" PRIMARY KEY ("challenge_id", "question_id"))`);
+        await queryRunner.query(`CREATE INDEX "IDX_2621f9d6cdca16f948293d17e3" ON "challenge_question_mapping" ("challenge_id") `);
+        await queryRunner.query(`CREATE INDEX "IDX_6993806ede3b68a3bd7384d99a" ON "challenge_question_mapping" ("question_id") `);
+        await queryRunner.query(`ALTER TABLE "assessment_responses" ADD CONSTRAINT "FK_81da248d3d54c3b02cc70afec7a" FOREIGN KEY ("assessmentId") REFERENCES "assessments"("id") ON DELETE CASCADE ON UPDATE NO ACTION`);
+        await queryRunner.query(`ALTER TABLE "assessment_responses" ADD CONSTRAINT "FK_acb84977ae2439c274d633a7b4d" FOREIGN KEY ("questionId") REFERENCES "questions"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`);
+        await queryRunner.query(`ALTER TABLE "assessment_responses" ADD CONSTRAINT "FK_3e63024241bd95d55a01bcc4fe1" FOREIGN KEY ("schoolId") REFERENCES "schools"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`);
+        await queryRunner.query(`ALTER TABLE "questions" ADD CONSTRAINT "FK_465acef6f7d1194fb40a2e786cf" FOREIGN KEY ("assessmentId") REFERENCES "assessments"("id") ON DELETE CASCADE ON UPDATE NO ACTION`);
+        await queryRunner.query(`ALTER TABLE "assessments" ADD CONSTRAINT "FK_f7d2b1583e73f9b611490ae0d40" FOREIGN KEY ("schoolId") REFERENCES "schools"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`);
+        await queryRunner.query(`ALTER TABLE "teacher_training" ADD CONSTRAINT "FK_b8c3889aa54a733eaccc4fc9e6e" FOREIGN KEY ("staffId") REFERENCES "staff"("id") ON DELETE CASCADE ON UPDATE NO ACTION`);
+        await queryRunner.query(`ALTER TABLE "staff" ADD CONSTRAINT "FK_8cae2ee07c0ab476daf6b007e28" FOREIGN KEY ("schoolId") REFERENCES "schools"("id") ON DELETE CASCADE ON UPDATE NO ACTION`);
+        await queryRunner.query(`ALTER TABLE "schools" ADD CONSTRAINT "FK_42ef534f0b1efdbc6aece928cdd" FOREIGN KEY ("organizationId") REFERENCES "organizations"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`);
+        await queryRunner.query(`ALTER TABLE "students" ADD CONSTRAINT "FK_44855579fce3690c57ae8b12999" FOREIGN KEY ("schoolId") REFERENCES "schools"("id") ON DELETE CASCADE ON UPDATE NO ACTION`);
+        await queryRunner.query(`ALTER TABLE "student_academic_assessments" ADD CONSTRAINT "FK_3619d278d3d982a944492243441" FOREIGN KEY ("studentId") REFERENCES "students"("id") ON DELETE CASCADE ON UPDATE NO ACTION`);
+        await queryRunner.query(`ALTER TABLE "student_academic_assessments" ADD CONSTRAINT "FK_6c9210326547d7b5403f1c423dc" FOREIGN KEY ("schoolId") REFERENCES "schools"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`);
+        await queryRunner.query(`ALTER TABLE "remediation_interventions" ADD CONSTRAINT "FK_4fb5cdda9262fdc0b3e06066edf" FOREIGN KEY ("schoolId") REFERENCES "schools"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`);
+        await queryRunner.query(`ALTER TABLE "remediation_interventions" ADD CONSTRAINT "FK_69fe33178f40993feae174387e3" FOREIGN KEY ("studentId") REFERENCES "students"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`);
+        await queryRunner.query(`ALTER TABLE "parent_nps_surveys" ADD CONSTRAINT "FK_ace4f25d0f6d03768dc3c1df95c" FOREIGN KEY ("schoolId") REFERENCES "schools"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`);
+        await queryRunner.query(`ALTER TABLE "parent_nps_surveys" ADD CONSTRAINT "FK_1e743922eed4ad384fa72576357" FOREIGN KEY ("parentId") REFERENCES "users"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`);
+        await queryRunner.query(`ALTER TABLE "parent_communications" ADD CONSTRAINT "FK_f7741c4cab3fa4f4c1e31932d2a" FOREIGN KEY ("schoolId") REFERENCES "schools"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`);
+        await queryRunner.query(`ALTER TABLE "parent_communications" ADD CONSTRAINT "FK_c9604159c8581697328899c5ae9" FOREIGN KEY ("parentId") REFERENCES "users"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`);
+        await queryRunner.query(`ALTER TABLE "parent_communications" ADD CONSTRAINT "FK_412902697f8fb735a1bbe5aa500" FOREIGN KEY ("studentId") REFERENCES "students"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`);
+        await queryRunner.query(`ALTER TABLE "operational_data" ADD CONSTRAINT "FK_37a3b2d7950d4482944383ec50e" FOREIGN KEY ("schoolId") REFERENCES "schools"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`);
+        await queryRunner.query(`ALTER TABLE "student_attendance" ADD CONSTRAINT "FK_37db95ccd34d2f592c76006ff7f" FOREIGN KEY ("studentId") REFERENCES "students"("id") ON DELETE CASCADE ON UPDATE NO ACTION`);
+        await queryRunner.query(`ALTER TABLE "student_attendance" ADD CONSTRAINT "FK_748db9ebfa77045d2bbf7390f97" FOREIGN KEY ("schoolId") REFERENCES "schools"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`);
+        await queryRunner.query(`ALTER TABLE "monitoring_scorecards" ADD CONSTRAINT "FK_4f04c3ee621d8e652249ab65971" FOREIGN KEY ("schoolId") REFERENCES "schools"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`);
+        await queryRunner.query(`ALTER TABLE "health_reports" ADD CONSTRAINT "FK_a45a49f69e45787ab156265392e" FOREIGN KEY ("schoolId") REFERENCES "schools"("id") ON DELETE CASCADE ON UPDATE NO ACTION`);
+        await queryRunner.query(`ALTER TABLE "gap_predictions" ADD CONSTRAINT "FK_4bf2efc42502dbb82318228bd81" FOREIGN KEY ("schoolId") REFERENCES "schools"("id") ON DELETE CASCADE ON UPDATE NO ACTION`);
+        await queryRunner.query(`ALTER TABLE "gap_predictions" ADD CONSTRAINT "FK_c322ffc3311031d6bdb175803ef" FOREIGN KEY ("challengeId") REFERENCES "challenges"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`);
+        await queryRunner.query(`ALTER TABLE "counsellor_referrals" ADD CONSTRAINT "FK_72ca2e44bbbb6f7c44a188970be" FOREIGN KEY ("studentId") REFERENCES "students"("id") ON DELETE CASCADE ON UPDATE NO ACTION`);
+        await queryRunner.query(`ALTER TABLE "counsellor_referrals" ADD CONSTRAINT "FK_2ec8f9719279aaec7fa7e748882" FOREIGN KEY ("schoolId") REFERENCES "schools"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`);
+        await queryRunner.query(`ALTER TABLE "complaints" ADD CONSTRAINT "FK_c11e471c41c1c55168ba5b30561" FOREIGN KEY ("schoolId") REFERENCES "schools"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`);
+        await queryRunner.query(`ALTER TABLE "complaints" ADD CONSTRAINT "FK_f16db1a0c7c491949f5e5611261" FOREIGN KEY ("parentId") REFERENCES "users"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`);
+        await queryRunner.query(`ALTER TABLE "bullying_incidents" ADD CONSTRAINT "FK_1c9ab487e925da4b0b4596aa1df" FOREIGN KEY ("schoolId") REFERENCES "schools"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`);
+        await queryRunner.query(`ALTER TABLE "admissions" ADD CONSTRAINT "FK_72f0b6bd819a58063d529e56de1" FOREIGN KEY ("schoolId") REFERENCES "schools"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`);
+        await queryRunner.query(`ALTER TABLE "challenge_question_mapping" ADD CONSTRAINT "FK_2621f9d6cdca16f948293d17e31" FOREIGN KEY ("challenge_id") REFERENCES "challenges"("id") ON DELETE CASCADE ON UPDATE CASCADE`);
+        await queryRunner.query(`ALTER TABLE "challenge_question_mapping" ADD CONSTRAINT "FK_6993806ede3b68a3bd7384d99a7" FOREIGN KEY ("question_id") REFERENCES "questions"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`);
+    }
 
-    // Create organizations table
-    await queryRunner.query(`
-      CREATE TABLE "organizations" (
-        "id" uuid NOT NULL DEFAULT gen_random_uuid(),
-        "name" character varying(255) NOT NULL UNIQUE,
-        "registrationNumber" character varying(100) UNIQUE,
-        "country" character varying(100),
-        "state" character varying(100),
-        "city" character varying(100),
-        "address" text,
-        "contactEmail" character varying(255),
-        "contactPhone" character varying(20),
-        "website" character varying(255),
-        "isActive" boolean NOT NULL DEFAULT true,
-        "createdAt" TIMESTAMP NOT NULL DEFAULT now(),
-        "updatedAt" TIMESTAMP NOT NULL DEFAULT now(),
-        PRIMARY KEY ("id")
-      )
-    `);
+    public async down(queryRunner: QueryRunner): Promise<void> {
+        await queryRunner.query(`ALTER TABLE "challenge_question_mapping" DROP CONSTRAINT "FK_6993806ede3b68a3bd7384d99a7"`);
+        await queryRunner.query(`ALTER TABLE "challenge_question_mapping" DROP CONSTRAINT "FK_2621f9d6cdca16f948293d17e31"`);
+        await queryRunner.query(`ALTER TABLE "admissions" DROP CONSTRAINT "FK_72f0b6bd819a58063d529e56de1"`);
+        await queryRunner.query(`ALTER TABLE "bullying_incidents" DROP CONSTRAINT "FK_1c9ab487e925da4b0b4596aa1df"`);
+        await queryRunner.query(`ALTER TABLE "complaints" DROP CONSTRAINT "FK_f16db1a0c7c491949f5e5611261"`);
+        await queryRunner.query(`ALTER TABLE "complaints" DROP CONSTRAINT "FK_c11e471c41c1c55168ba5b30561"`);
+        await queryRunner.query(`ALTER TABLE "counsellor_referrals" DROP CONSTRAINT "FK_2ec8f9719279aaec7fa7e748882"`);
+        await queryRunner.query(`ALTER TABLE "counsellor_referrals" DROP CONSTRAINT "FK_72ca2e44bbbb6f7c44a188970be"`);
+        await queryRunner.query(`ALTER TABLE "gap_predictions" DROP CONSTRAINT "FK_c322ffc3311031d6bdb175803ef"`);
+        await queryRunner.query(`ALTER TABLE "gap_predictions" DROP CONSTRAINT "FK_4bf2efc42502dbb82318228bd81"`);
+        await queryRunner.query(`ALTER TABLE "health_reports" DROP CONSTRAINT "FK_a45a49f69e45787ab156265392e"`);
+        await queryRunner.query(`ALTER TABLE "monitoring_scorecards" DROP CONSTRAINT "FK_4f04c3ee621d8e652249ab65971"`);
+        await queryRunner.query(`ALTER TABLE "student_attendance" DROP CONSTRAINT "FK_748db9ebfa77045d2bbf7390f97"`);
+        await queryRunner.query(`ALTER TABLE "student_attendance" DROP CONSTRAINT "FK_37db95ccd34d2f592c76006ff7f"`);
+        await queryRunner.query(`ALTER TABLE "operational_data" DROP CONSTRAINT "FK_37a3b2d7950d4482944383ec50e"`);
+        await queryRunner.query(`ALTER TABLE "parent_communications" DROP CONSTRAINT "FK_412902697f8fb735a1bbe5aa500"`);
+        await queryRunner.query(`ALTER TABLE "parent_communications" DROP CONSTRAINT "FK_c9604159c8581697328899c5ae9"`);
+        await queryRunner.query(`ALTER TABLE "parent_communications" DROP CONSTRAINT "FK_f7741c4cab3fa4f4c1e31932d2a"`);
+        await queryRunner.query(`ALTER TABLE "parent_nps_surveys" DROP CONSTRAINT "FK_1e743922eed4ad384fa72576357"`);
+        await queryRunner.query(`ALTER TABLE "parent_nps_surveys" DROP CONSTRAINT "FK_ace4f25d0f6d03768dc3c1df95c"`);
+        await queryRunner.query(`ALTER TABLE "remediation_interventions" DROP CONSTRAINT "FK_69fe33178f40993feae174387e3"`);
+        await queryRunner.query(`ALTER TABLE "remediation_interventions" DROP CONSTRAINT "FK_4fb5cdda9262fdc0b3e06066edf"`);
+        await queryRunner.query(`ALTER TABLE "student_academic_assessments" DROP CONSTRAINT "FK_6c9210326547d7b5403f1c423dc"`);
+        await queryRunner.query(`ALTER TABLE "student_academic_assessments" DROP CONSTRAINT "FK_3619d278d3d982a944492243441"`);
+        await queryRunner.query(`ALTER TABLE "students" DROP CONSTRAINT "FK_44855579fce3690c57ae8b12999"`);
+        await queryRunner.query(`ALTER TABLE "schools" DROP CONSTRAINT "FK_42ef534f0b1efdbc6aece928cdd"`);
+        await queryRunner.query(`ALTER TABLE "staff" DROP CONSTRAINT "FK_8cae2ee07c0ab476daf6b007e28"`);
+        await queryRunner.query(`ALTER TABLE "teacher_training" DROP CONSTRAINT "FK_b8c3889aa54a733eaccc4fc9e6e"`);
+        await queryRunner.query(`ALTER TABLE "assessments" DROP CONSTRAINT "FK_f7d2b1583e73f9b611490ae0d40"`);
+        await queryRunner.query(`ALTER TABLE "questions" DROP CONSTRAINT "FK_465acef6f7d1194fb40a2e786cf"`);
+        await queryRunner.query(`ALTER TABLE "assessment_responses" DROP CONSTRAINT "FK_3e63024241bd95d55a01bcc4fe1"`);
+        await queryRunner.query(`ALTER TABLE "assessment_responses" DROP CONSTRAINT "FK_acb84977ae2439c274d633a7b4d"`);
+        await queryRunner.query(`ALTER TABLE "assessment_responses" DROP CONSTRAINT "FK_81da248d3d54c3b02cc70afec7a"`);
+        await queryRunner.query(`DROP INDEX "public"."IDX_6993806ede3b68a3bd7384d99a"`);
+        await queryRunner.query(`DROP INDEX "public"."IDX_2621f9d6cdca16f948293d17e3"`);
+        await queryRunner.query(`DROP TABLE "challenge_question_mapping"`);
+        await queryRunner.query(`DROP INDEX "public"."IDX_1976fa77386d2ea7cc76b09221"`);
+        await queryRunner.query(`DROP TABLE "districts"`);
+        await queryRunner.query(`DROP INDEX "public"."IDX_cbb88d68032ec3ec3b9aa742aa"`);
+        await queryRunner.query(`DROP INDEX "public"."IDX_9e32dafef8452edd4d436b523f"`);
+        await queryRunner.query(`DROP INDEX "public"."IDX_04466a5fd0724b57c3332ce63a"`);
+        await queryRunner.query(`DROP TABLE "admissions"`);
+        await queryRunner.query(`DROP TYPE "public"."admissions_sourceofinquiry_enum"`);
+        await queryRunner.query(`DROP TYPE "public"."admissions_status_enum"`);
+        await queryRunner.query(`DROP INDEX "public"."IDX_9885db5f08f225b8d96f2e898b"`);
+        await queryRunner.query(`DROP INDEX "public"."IDX_2e93a9c4aeee2c2a7e81be9af9"`);
+        await queryRunner.query(`DROP INDEX "public"."IDX_c24c119441c567c55fdf7920e9"`);
+        await queryRunner.query(`DROP TABLE "audit_logs"`);
+        await queryRunner.query(`DROP TYPE "public"."audit_logs_resourcetype_enum"`);
+        await queryRunner.query(`DROP TYPE "public"."audit_logs_actiontype_enum"`);
+        await queryRunner.query(`DROP INDEX "public"."IDX_f1d07a118794836f28b7077de6"`);
+        await queryRunner.query(`DROP INDEX "public"."IDX_426675c28982edacd54fbbcfe9"`);
+        await queryRunner.query(`DROP TABLE "bullying_incidents"`);
+        await queryRunner.query(`DROP TYPE "public"."bullying_incidents_resolutionstatus_enum"`);
+        await queryRunner.query(`DROP TYPE "public"."bullying_incidents_severity_enum"`);
+        await queryRunner.query(`DROP TYPE "public"."bullying_incidents_incidenttype_enum"`);
+        await queryRunner.query(`DROP INDEX "public"."IDX_cb49bc36613ee353a6a80f92b6"`);
+        await queryRunner.query(`DROP INDEX "public"."IDX_608c895c0a567ed3dabfe55026"`);
+        await queryRunner.query(`DROP TABLE "complaints"`);
+        await queryRunner.query(`DROP TYPE "public"."complaints_resolutionstatus_enum"`);
+        await queryRunner.query(`DROP TYPE "public"."complaints_severity_enum"`);
+        await queryRunner.query(`DROP TYPE "public"."complaints_category_enum"`);
+        await queryRunner.query(`DROP INDEX "public"."IDX_fd06facb09b805fee38508f986"`);
+        await queryRunner.query(`DROP INDEX "public"."IDX_2a520fb6c4bc652796de84f2a2"`);
+        await queryRunner.query(`DROP TABLE "counsellor_referrals"`);
+        await queryRunner.query(`DROP TYPE "public"."counsellor_referrals_resolutionstatus_enum"`);
+        await queryRunner.query(`DROP TYPE "public"."counsellor_referrals_severity_enum"`);
+        await queryRunner.query(`DROP INDEX "public"."IDX_b510ba3e445c960afb904e5989"`);
+        await queryRunner.query(`DROP TABLE "data_retention_policies"`);
+        await queryRunner.query(`DROP TYPE "public"."data_retention_policies_actionafterretention_enum"`);
+        await queryRunner.query(`DROP TYPE "public"."data_retention_policies_dataclassification_enum"`);
+        await queryRunner.query(`DROP INDEX "public"."IDX_5c1f7ceda6404c4a847ea0e40a"`);
+        await queryRunner.query(`DROP TABLE "gap_predictions"`);
+        await queryRunner.query(`DROP TYPE "public"."gap_predictions_confidencetier_enum"`);
+        await queryRunner.query(`DROP TYPE "public"."gap_predictions_trenddirection_enum"`);
+        await queryRunner.query(`DROP INDEX "public"."IDX_0979d01bda46416f0254cf4bd0"`);
+        await queryRunner.query(`DROP TABLE "challenges"`);
+        await queryRunner.query(`DROP TYPE "public"."challenges_category_enum"`);
+        await queryRunner.query(`DROP INDEX "public"."idx_school_created"`);
+        await queryRunner.query(`DROP TABLE "health_reports"`);
+        await queryRunner.query(`DROP TYPE "public"."health_reports_reporttype_enum"`);
+        await queryRunner.query(`DROP INDEX "public"."IDX_ab3303748f3e3e35d64a515298"`);
+        await queryRunner.query(`DROP INDEX "public"."IDX_cf578543b816e72f8e43e64ddf"`);
+        await queryRunner.query(`DROP TABLE "monitoring_scorecards"`);
+        await queryRunner.query(`DROP TYPE "public"."monitoring_scorecards_metric_enum"`);
+        await queryRunner.query(`DROP INDEX "public"."IDX_709b117c7771b099edfa520877"`);
+        await queryRunner.query(`DROP INDEX "public"."IDX_023f801c581da95050c4ea2747"`);
+        await queryRunner.query(`DROP TABLE "student_attendance"`);
+        await queryRunner.query(`DROP TYPE "public"."student_attendance_status_enum"`);
+        await queryRunner.query(`DROP INDEX "public"."IDX_e0a93cd9b03ac25b47829488e0"`);
+        await queryRunner.query(`DROP INDEX "public"."IDX_64586277a49eac61456c85030c"`);
+        await queryRunner.query(`DROP TABLE "operational_data"`);
+        await queryRunner.query(`DROP TYPE "public"."operational_data_datatype_enum"`);
+        await queryRunner.query(`DROP INDEX "public"."IDX_3a30f193d31d3d63aa0ebe4593"`);
+        await queryRunner.query(`DROP INDEX "public"."IDX_83a8d9981d0aba7e6825d8bb92"`);
+        await queryRunner.query(`DROP TABLE "parent_communications"`);
+        await queryRunner.query(`DROP TYPE "public"."parent_communications_status_enum"`);
+        await queryRunner.query(`DROP TYPE "public"."parent_communications_querychannel_enum"`);
+        await queryRunner.query(`DROP INDEX "public"."IDX_165b561a8d7f6ec86f54686b65"`);
+        await queryRunner.query(`DROP INDEX "public"."IDX_b52d26c616779792c464d06ee2"`);
+        await queryRunner.query(`DROP TABLE "parent_nps_surveys"`);
+        await queryRunner.query(`DROP INDEX "public"."IDX_97672ac88f789774dd47f7c8be"`);
+        await queryRunner.query(`DROP INDEX "public"."IDX_e573dea64fd72516c61b1e333c"`);
+        await queryRunner.query(`DROP TABLE "users"`);
+        await queryRunner.query(`DROP TYPE "public"."users_roletype_enum"`);
+        await queryRunner.query(`DROP TYPE "public"."users_usertype_enum"`);
+        await queryRunner.query(`DROP INDEX "public"."IDX_bbb135b4ed8c75e6bda582a70d"`);
+        await queryRunner.query(`DROP INDEX "public"."IDX_78d563950c2a1fd53b2de0c5f7"`);
+        await queryRunner.query(`DROP TABLE "remediation_interventions"`);
+        await queryRunner.query(`DROP TYPE "public"."remediation_interventions_status_enum"`);
+        await queryRunner.query(`DROP TYPE "public"."remediation_interventions_interventiontype_enum"`);
+        await queryRunner.query(`DROP INDEX "public"."IDX_aec7f4befc0cde2ae62e100b7c"`);
+        await queryRunner.query(`DROP INDEX "public"."IDX_d9dc0d94864609233109a3f475"`);
+        await queryRunner.query(`DROP TABLE "student_academic_assessments"`);
+        await queryRunner.query(`DROP TYPE "public"."student_academic_assessments_status_enum"`);
+        await queryRunner.query(`DROP INDEX "public"."IDX_009093c06d0dfffdbe87a1b766"`);
+        await queryRunner.query(`DROP INDEX "public"."IDX_7f6d3cb54984a049eb05426e5f"`);
+        await queryRunner.query(`DROP INDEX "public"."IDX_1e4f44202096bf96faffdb3e8d"`);
+        await queryRunner.query(`DROP INDEX "public"."IDX_cadd496973a3777c4a6a693e70"`);
+        await queryRunner.query(`DROP TABLE "students"`);
+        await queryRunner.query(`DROP TYPE "public"."students_status_enum"`);
+        await queryRunner.query(`DROP TYPE "public"."students_agegroup_enum"`);
+        await queryRunner.query(`DROP TYPE "public"."students_gender_enum"`);
+        await queryRunner.query(`DROP INDEX "public"."IDX_42ef534f0b1efdbc6aece928cd"`);
+        await queryRunner.query(`DROP INDEX "public"."IDX_febb01e90b9f205274d54b14f3"`);
+        await queryRunner.query(`DROP INDEX "public"."IDX_37959d98e0ad59ddb8aecd4952"`);
+        await queryRunner.query(`DROP INDEX "public"."IDX_7c03173c74e17d889510bff031"`);
+        await queryRunner.query(`DROP TABLE "schools"`);
+        await queryRunner.query(`DROP TYPE "public"."schools_boardtype_enum"`);
+        await queryRunner.query(`DROP TYPE "public"."schools_citytier_enum"`);
+        await queryRunner.query(`DROP INDEX "public"."IDX_cd7bcf06ca6f1fff6c45e106e3"`);
+        await queryRunner.query(`DROP TABLE "organizations"`);
+        await queryRunner.query(`DROP TYPE "public"."organizations_type_enum"`);
+        await queryRunner.query(`DROP INDEX "public"."IDX_c15be7d4b8d0dbce9ddf6c40e7"`);
+        await queryRunner.query(`DROP INDEX "public"."IDX_cd00d607d9e3d3a6508c5c1857"`);
+        await queryRunner.query(`DROP INDEX "public"."IDX_7390f81e2272a8da0aa825ce58"`);
+        await queryRunner.query(`DROP TABLE "staff"`);
+        await queryRunner.query(`DROP TYPE "public"."staff_employmentstatus_enum"`);
+        await queryRunner.query(`DROP TYPE "public"."staff_position_enum"`);
+        await queryRunner.query(`DROP TYPE "public"."staff_gender_enum"`);
+        await queryRunner.query(`DROP INDEX "public"."IDX_7c86ed3ca31ba19b3ce151e585"`);
+        await queryRunner.query(`DROP INDEX "public"."IDX_13e860422defadeef55a0b5f06"`);
+        await queryRunner.query(`DROP TABLE "teacher_training"`);
+        await queryRunner.query(`DROP TYPE "public"."teacher_training_completionstatus_enum"`);
+        await queryRunner.query(`DROP INDEX "public"."IDX_6940ec6bfc90c401d9afb78d40"`);
+        await queryRunner.query(`DROP INDEX "public"."IDX_5b842a1a16b55c8fa677fd4510"`);
+        await queryRunner.query(`DROP TABLE "assessments"`);
+        await queryRunner.query(`DROP TYPE "public"."assessments_status_enum"`);
+        await queryRunner.query(`DROP INDEX "public"."IDX_fb9a8d6d69ea63b910ff3ddbd9"`);
+        await queryRunner.query(`DROP INDEX "public"."IDX_53a648f6253cc05caf37d079f2"`);
+        await queryRunner.query(`DROP INDEX "public"."IDX_4604459cf5ca60df52d6e89b7f"`);
+        await queryRunner.query(`DROP TABLE "questions"`);
+        await queryRunner.query(`DROP TYPE "public"."questions_respondenttype_enum"`);
+        await queryRunner.query(`DROP TYPE "public"."questions_questiontype_enum"`);
+        await queryRunner.query(`DROP INDEX "public"."IDX_1a07c9d1d66c47f8f55141dd0b"`);
+        await queryRunner.query(`DROP INDEX "public"."IDX_855ea9d7b5c7ca07fe75f0d0af"`);
+        await queryRunner.query(`DROP INDEX "public"."IDX_daeed4b5f94e39bd2bf47235f8"`);
+        await queryRunner.query(`DROP INDEX "public"."IDX_b7b4d2c3650829af0a9a237526"`);
+        await queryRunner.query(`DROP TABLE "assessment_responses"`);
+    }
 
-    // Create districts table
-    await queryRunner.query(`
-      CREATE TABLE "districts" (
-        "id" uuid NOT NULL DEFAULT gen_random_uuid(),
-        "name" character varying(255) NOT NULL,
-        "organizationId" uuid NOT NULL,
-        "state" character varying(100),
-        "region" character varying(255),
-        "contactEmail" character varying(255),
-        "contactPhone" character varying(20),
-        "isActive" boolean NOT NULL DEFAULT true,
-        "createdAt" TIMESTAMP NOT NULL DEFAULT now(),
-        "updatedAt" TIMESTAMP NOT NULL DEFAULT now(),
-        PRIMARY KEY ("id"),
-        FOREIGN KEY ("organizationId") REFERENCES "organizations"("id")
-      )
-    `);
-    await queryRunner.query(
-      `CREATE INDEX "IDX_districts_organizationId" ON "districts" ("organizationId")`,
-    );
-
-    // Create schools table
-    await queryRunner.query(`
-      CREATE TABLE "schools" (
-        "id" uuid NOT NULL DEFAULT gen_random_uuid(),
-        "name" character varying(255) NOT NULL,
-        "districtId" uuid NOT NULL,
-        "organizationId" uuid NOT NULL,
-        "registrationNumber" character varying(100) UNIQUE,
-        "type" character varying(100),
-        "principalName" character varying(255),
-        "principalEmail" character varying(255),
-        "principalPhone" character varying(20),
-        "address" text,
-        "city" character varying(100),
-        "state" character varying(100),
-        "pincode" character varying(20),
-        "latitude" numeric,
-        "longitude" numeric,
-        "studentStrength" integer,
-        "staffStrength" integer,
-        "classrooms" integer,
-        "isActive" boolean NOT NULL DEFAULT true,
-        "createdAt" TIMESTAMP NOT NULL DEFAULT now(),
-        "updatedAt" TIMESTAMP NOT NULL DEFAULT now(),
-        PRIMARY KEY ("id"),
-        FOREIGN KEY ("districtId") REFERENCES "districts"("id"),
-        FOREIGN KEY ("organizationId") REFERENCES "organizations"("id")
-      )
-    `);
-    await queryRunner.query(
-      `CREATE INDEX "IDX_schools_districtId" ON "schools" ("districtId")`,
-    );
-    await queryRunner.query(
-      `CREATE INDEX "IDX_schools_organizationId" ON "schools" ("organizationId")`,
-    );
-
-    // Create students table
-    await queryRunner.query(`
-      CREATE TABLE "students" (
-        "id" uuid NOT NULL DEFAULT gen_random_uuid(),
-        "schoolId" uuid NOT NULL,
-        "enrollmentNumber" character varying(100) UNIQUE NOT NULL,
-        "firstName" character varying(100) NOT NULL,
-        "lastName" character varying(100) NOT NULL,
-        "dateOfBirth" DATE,
-        "gender" character varying(50),
-        "email" character varying(255) UNIQUE,
-        "phone" character varying(20),
-        "address" text,
-        "parentName" character varying(255),
-        "parentEmail" character varying(255),
-        "parentPhone" character varying(20),
-        "currentClass" character varying(50),
-        "section" character varying(10),
-        "admissionDate" DATE,
-        "status" character varying(50) NOT NULL DEFAULT 'active',
-        "riskProfile" jsonb,
-        "createdAt" TIMESTAMP NOT NULL DEFAULT now(),
-        "updatedAt" TIMESTAMP NOT NULL DEFAULT now(),
-        PRIMARY KEY ("id"),
-        FOREIGN KEY ("schoolId") REFERENCES "schools"("id")
-      )
-    `);
-    await queryRunner.query(
-      `CREATE INDEX "IDX_students_schoolId" ON "students" ("schoolId")`,
-    );
-
-    // Create student_attendance table
-    await queryRunner.query(`
-      CREATE TABLE "student_attendance" (
-        "id" uuid NOT NULL DEFAULT gen_random_uuid(),
-        "studentId" uuid NOT NULL,
-        "schoolId" uuid NOT NULL,
-        "attendanceDate" DATE NOT NULL,
-        "status" character varying(50) NOT NULL,
-        "remarks" text,
-        "createdAt" TIMESTAMP NOT NULL DEFAULT now(),
-        "updatedAt" TIMESTAMP NOT NULL DEFAULT now(),
-        PRIMARY KEY ("id"),
-        FOREIGN KEY ("studentId") REFERENCES "students"("id"),
-        FOREIGN KEY ("schoolId") REFERENCES "schools"("id")
-      )
-    `);
-    await queryRunner.query(
-      `CREATE INDEX "IDX_attendance_studentId_date" ON "student_attendance" ("studentId", "attendanceDate")`,
-    );
-
-    // Create assessments table
-    await queryRunner.query(`
-      CREATE TABLE "assessments" (
-        "id" uuid NOT NULL DEFAULT gen_random_uuid(),
-        "schoolId" uuid NOT NULL,
-        "title" character varying(255) NOT NULL,
-        "description" text,
-        "challengeDomain" character varying(100) NOT NULL,
-        "assessmentType" character varying(100),
-        "status" character varying(50) NOT NULL DEFAULT 'draft',
-        "startDate" TIMESTAMP,
-        "endDate" TIMESTAMP,
-        "createdBy" uuid,
-        "totalQuestions" integer DEFAULT 0,
-        "createdAt" TIMESTAMP NOT NULL DEFAULT now(),
-        "updatedAt" TIMESTAMP NOT NULL DEFAULT now(),
-        PRIMARY KEY ("id"),
-        FOREIGN KEY ("schoolId") REFERENCES "schools"("id")
-      )
-    `);
-    await queryRunner.query(
-      `CREATE INDEX "IDX_assessments_schoolId" ON "assessments" ("schoolId")`,
-    );
-
-    // Create assessment_responses table
-    await queryRunner.query(`
-      CREATE TABLE "assessment_responses" (
-        "id" uuid NOT NULL DEFAULT gen_random_uuid(),
-        "assessmentId" uuid NOT NULL,
-        "respondentId" uuid NOT NULL,
-        "respondentType" character varying(100),
-        "responseNumeric" numeric,
-        "responseText" text,
-        "responseJson" jsonb,
-        "submittedAt" TIMESTAMP,
-        "createdAt" TIMESTAMP NOT NULL DEFAULT now(),
-        "updatedAt" TIMESTAMP NOT NULL DEFAULT now(),
-        PRIMARY KEY ("id"),
-        FOREIGN KEY ("assessmentId") REFERENCES "assessments"("id")
-      )
-    `);
-    await queryRunner.query(
-      `CREATE INDEX "IDX_responses_assessmentId" ON "assessment_responses" ("assessmentId")`,
-    );
-
-    // Create audit_logs table
-    await queryRunner.query(`
-      CREATE TABLE "audit_logs" (
-        "id" uuid NOT NULL DEFAULT gen_random_uuid(),
-        "schoolId" uuid NOT NULL,
-        "userId" uuid,
-        "action" character varying(100) NOT NULL,
-        "entityType" character varying(100),
-        "entityId" uuid,
-        "changes" jsonb,
-        "ipAddress" character varying(45),
-        "userAgent" text,
-        "createdAt" TIMESTAMP NOT NULL DEFAULT now(),
-        PRIMARY KEY ("id"),
-        FOREIGN KEY ("schoolId") REFERENCES "schools"("id")
-      )
-    `);
-    await queryRunner.query(
-      `CREATE INDEX "IDX_audit_schoolId_createdAt" ON "audit_logs" ("schoolId", "createdAt")`,
-    );
-    await queryRunner.query(
-      `CREATE INDEX "IDX_audit_userId" ON "audit_logs" ("userId")`,
-    );
-
-    // Create operational_data table
-    await queryRunner.query(`
-      CREATE TABLE "operational_data" (
-        "id" uuid NOT NULL DEFAULT gen_random_uuid(),
-        "schoolId" uuid NOT NULL,
-        "category" character varying(100) NOT NULL,
-        "metric" character varying(255) NOT NULL,
-        "value" numeric NOT NULL,
-        "unit" character varying(50),
-        "recordedDate" DATE NOT NULL,
-        "createdAt" TIMESTAMP NOT NULL DEFAULT now(),
-        "updatedAt" TIMESTAMP NOT NULL DEFAULT now(),
-        PRIMARY KEY ("id"),
-        FOREIGN KEY ("schoolId") REFERENCES "schools"("id")
-      )
-    `);
-    await queryRunner.query(
-      `CREATE INDEX "IDX_operational_schoolId_date" ON "operational_data" ("schoolId", "recordedDate")`,
-    );
-  }
-
-  public async down(queryRunner: QueryRunner): Promise<void> {
-    await queryRunner.query(`DROP INDEX IF EXISTS "IDX_operational_schoolId_date"`);
-    await queryRunner.query(`DROP TABLE IF EXISTS "operational_data"`);
-    await queryRunner.query(`DROP INDEX IF EXISTS "IDX_audit_userId"`);
-    await queryRunner.query(`DROP INDEX IF EXISTS "IDX_audit_schoolId_createdAt"`);
-    await queryRunner.query(`DROP TABLE IF EXISTS "audit_logs"`);
-    await queryRunner.query(`DROP INDEX IF EXISTS "IDX_responses_assessmentId"`);
-    await queryRunner.query(`DROP TABLE IF EXISTS "assessment_responses"`);
-    await queryRunner.query(`DROP INDEX IF EXISTS "IDX_assessments_schoolId"`);
-    await queryRunner.query(`DROP TABLE IF EXISTS "assessments"`);
-    await queryRunner.query(`DROP INDEX IF EXISTS "IDX_attendance_studentId_date"`);
-    await queryRunner.query(`DROP TABLE IF EXISTS "student_attendance"`);
-    await queryRunner.query(`DROP INDEX IF EXISTS "IDX_students_schoolId"`);
-    await queryRunner.query(`DROP TABLE IF EXISTS "students"`);
-    await queryRunner.query(`DROP INDEX IF EXISTS "IDX_schools_organizationId"`);
-    await queryRunner.query(`DROP INDEX IF EXISTS "IDX_schools_districtId"`);
-    await queryRunner.query(`DROP TABLE IF EXISTS "schools"`);
-    await queryRunner.query(`DROP INDEX IF EXISTS "IDX_districts_organizationId"`);
-    await queryRunner.query(`DROP TABLE IF EXISTS "districts"`);
-    await queryRunner.query(`DROP TABLE IF EXISTS "organizations"`);
-    await queryRunner.query(`DROP INDEX IF EXISTS "IDX_users_schoolId_userType"`);
-    await queryRunner.query(`DROP INDEX IF EXISTS "IDX_users_email"`);
-    await queryRunner.query(`DROP TABLE IF EXISTS "users"`);
-  }
 }

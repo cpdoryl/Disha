@@ -7,7 +7,7 @@ import {
   CreateDateColumn,
 } from 'typeorm';
 import { School } from './School.entity';
-import { Student } from './Student.entity';
+import { Student } from './student.entity';
 
 export enum InterventionType {
   ACADEMIC_SUPPORT = 'academic_support',

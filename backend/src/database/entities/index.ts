@@ -1,9 +1,9 @@
 // Core Entity Imports
-import { Assessment, AssessmentStatus } from './Assessment.entity';
+import { Assessment, AssessmentStatus } from './assessment.entity';
 import { Question, QuestionType, RespondentType } from './question.entity';
 import { AssessmentResponse } from './AssessmentResponse.entity';
 import { School, CityTier, BoardType } from './School.entity';
-import { Student, StudentStatus, AgeGroup, Gender } from './Student.entity';
+import { Student, StudentStatus, AgeGroup, Gender } from './student.entity';
 import { Staff, StaffPosition, EmploymentStatus } from './Staff.entity';
 import { Organization, OrganizationType } from './Organization.entity';
 import { TeacherTraining, CompletionStatus } from './TeacherTraining.entity';
@@ -24,7 +24,7 @@ import { DataRetentionPolicy, DataClassification, RetentionAction } from './data
 import { AuditLog, ActionType, ResourceType } from './auditlog.entity';
 import { RemediationIntervention, InterventionType, InterventionStatus } from './remediationintervention.entity';
 import { Admission, AdmissionStatus, AdmissionSource } from './admission.entity';
-import { Challenge, ChallengeCategory, PREDEFINED_CHALLENGES } from './Challenge.entity';
+import { Challenge, ChallengeCategory, PREDEFINED_CHALLENGES } from './challenge.entity';
 import { GapPrediction, TrendDirection, ConfidenceTier } from './gap-prediction.entity';
 
 // Core Entity Exports

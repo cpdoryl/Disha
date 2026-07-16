@@ -2,9 +2,11 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication, ValidationPipe } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule } from '@nestjs/config';
+import request from 'supertest';
 import * as dotenv from 'dotenv';
 import * as path from 'path';
 import { AppModule } from '../src/app.module';
+import { AllExceptionsFilter } from '../src/common/filters/all-exceptions.filter';
 
 // Load test environment variables
 dotenv.config({ path: path.resolve(__dirname, '../.env.test') });
@@ -27,6 +29,7 @@ export async function setupTestApp() {
       transform: true,
     }),
   );
+  app.useGlobalFilters(new AllExceptionsFilter());
 
   await app.init();
 
@@ -45,8 +48,8 @@ export async function teardownTestApp() {
 // Test user credentials (from seed data)
 export const TEST_USERS = {
   rylAdmin: {
-    email: 'admin1@school.edu',
-    password: 'admin123',
+    email: 'rylAdmin@disha.local',
+    password: 'rylAdmin123',
     role: 'ryl_admin',
   },
   schoolAdmin: {
@@ -67,23 +70,24 @@ export async function loginAndGetToken(
   email: string,
   password: string,
 ) {
-  const response = await testApp.get('/api/v2/auth/login').send({
-    email,
-    password,
-  });
+  const response = await request(testApp.getHttpServer())
+    .post('/api/v2/auth/login')
+    .send({ email, password });
 
   return response.body.accessToken;
 }
 
 // Helper to make authenticated request
-export async function authenticatedRequest(
+export function authenticatedRequest(
   testApp: INestApplication,
   method: 'get' | 'post' | 'patch' | 'delete',
   path: string,
   token: string,
   data?: any,
 ) {
-  const req = testApp[method](path).set('Authorization', `Bearer ${token}`);
+  const req = request(testApp.getHttpServer())
+    [method](path)
+    .set('Authorization', `Bearer ${token}`);
 
   if (data) {
     req.send(data);

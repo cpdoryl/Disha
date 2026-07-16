@@ -1,5 +1,5 @@
 import { INestApplication } from '@nestjs/common';
-import * as request from 'supertest';
+import request from 'supertest';
 import { setupTestApp, teardownTestApp, TEST_USERS } from './setup';
 
 describe('RBAC Integration Tests', () => {

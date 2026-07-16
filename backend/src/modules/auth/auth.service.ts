@@ -91,12 +91,7 @@ export class AuthService {
   async login(email: string, password: string) {
     const user = await this.validateUser(email, password);
 
-    const tokens = await this.generateTokens(
-      user.id,
-      user.schoolId || '',
-      user.roleType,
-      user.email,
-    );
+    const tokens = await this.generateTokens(user.id, user.schoolId || '', user.userType, user.email);
 
     // Update last login timestamp
     user.lastLoginAt = new Date();
@@ -109,7 +104,7 @@ export class AuthService {
         email: user.email,
         firstName: user.firstName,
         lastName: user.lastName || '',
-        role: user.roleType,
+        role: user.userType,
       },
     };
   }
@@ -129,12 +124,7 @@ export class AuthService {
         throw new UnauthorizedException('User not found or inactive');
       }
 
-      return this.generateTokens(
-        user.id,
-        user.schoolId || '',
-        user.roleType,
-        user.email,
-      );
+      return this.generateTokens(user.id, user.schoolId || '', user.userType, user.email);
     } catch (error: any) {
       throw new UnauthorizedException('Invalid refresh token');
     }

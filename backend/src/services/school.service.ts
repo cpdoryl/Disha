@@ -50,10 +50,7 @@ export class SchoolService {
     });
   }
 
-  async updateSchool(
-    schoolId: string,
-    updateData: Partial<School>,
-  ): Promise<School | null> {
+  async updateSchool(schoolId: string, updateData: Partial<School>): Promise<School | null> {
     await this.schoolRepository.update(schoolId, updateData);
     return this.getSchool(schoolId);
   }
@@ -65,6 +62,12 @@ export class SchoolService {
     });
   }
 
+  async getAllSchools(): Promise<School[]> {
+    return this.schoolRepository.find({
+      order: { name: 'ASC' },
+    });
+  }
+
   async getSchoolsByDistrict(districtId: string): Promise<School[]> {
     return this.schoolRepository.find({
       where: { district: districtId },
@@ -72,9 +75,7 @@ export class SchoolService {
     });
   }
 
-  async getSchoolMetrics(
-    schoolId: string,
-  ): Promise<{
+  async getSchoolMetrics(schoolId: string): Promise<{
     studentCount: number;
     staffCount: number;
     activeAssessments: number;
@@ -98,11 +99,7 @@ export class SchoolService {
     await this.schoolRepository.update(schoolId, { isActive: false });
   }
 
-  async createDistrict(createDistrictDto: {
-    name: string;
-    state: string;
-    districtCode?: string;
-  }): Promise<District> {
+  async createDistrict(createDistrictDto: { name: string; state: string; districtCode?: string }): Promise<District> {
     const district = this.districtRepository.create(createDistrictDto);
     return this.districtRepository.save(district);
   }

@@ -1,14 +1,4 @@
-import {
-  Controller,
-  Get,
-  Post,
-  Patch,
-  Param,
-  Body,
-  UseGuards,
-  HttpCode,
-  HttpStatus,
-} from '@nestjs/common';
+import { Controller, Get, Post, Patch, Param, Body, UseGuards, HttpCode, HttpStatus } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiParam } from '@nestjs/swagger';
 import { SchoolService } from '../../services/school.service';
 import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
@@ -28,6 +18,13 @@ export class SchoolController {
   @ApiOperation({ summary: 'Create school', description: 'Register a new school (RYL Admin only)' })
   async createSchool(@Body() createSchoolDto: any) {
     return this.schoolService.createSchool(createSchoolDto);
+  }
+
+  @Get()
+  @Roles('ryl_admin')
+  @ApiOperation({ summary: 'List all schools', description: 'Organization-wide school list (RYL Admin only)' })
+  async getAllSchools() {
+    return this.schoolService.getAllSchools();
   }
 
   @Get(':id')

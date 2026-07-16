@@ -1,5 +1,14 @@
 import { ExceptionFilter, Catch, ArgumentsHost, HttpException, HttpStatus, Logger } from '@nestjs/common';
 import { Request, Response } from 'express';
+import { QueryFailedError } from 'typeorm';
+
+// Postgres error codes that indicate a malformed request (bad client input),
+// not a server-side failure - these should surface as 400s, not 500s.
+const POSTGRES_BAD_INPUT_CODES = new Set([
+  '22P02', // invalid_text_representation (e.g. malformed UUID)
+  '22007', // invalid_datetime_format
+  '23502', // not_null_violation
+]);
 
 @Catch()
 export class AllExceptionsFilter implements ExceptionFilter {
@@ -20,6 +29,13 @@ export class AllExceptionsFilter implements ExceptionFilter {
       const exceptionResponse = exception.getResponse();
       message = (exceptionResponse as any)?.message || exception.message;
       error = (exceptionResponse as any)?.error || exception.name;
+    } else if (
+      exception instanceof QueryFailedError &&
+      POSTGRES_BAD_INPUT_CODES.has((exception as any).code)
+    ) {
+      status = HttpStatus.BAD_REQUEST;
+      message = 'Invalid request: malformed identifier or missing required field';
+      error = 'BadRequest';
     } else if (exception instanceof Error) {
       message = exception.message;
       error = exception.name;
