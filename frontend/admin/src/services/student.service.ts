@@ -1,13 +1,20 @@
 import { http } from '@/lib/http';
-import type { AcademicAssessment, AttendanceReport, Student, StudentRiskProfile } from '@/types/student';
+import type {
+  AcademicAssessment,
+  AttendanceReport,
+  CreateStudentInput,
+  Student,
+  StudentRiskProfile,
+  StudentStatus,
+} from '@/types/student';
 
 export const studentService = {
-  create: (data: Record<string, unknown>) => http.post('/students', data).then((r) => r.data),
-  getById: (id: string) => http.get(`/students/${id}`).then((r) => r.data),
+  create: (data: CreateStudentInput) => http.post<Student>('/students', data).then((r) => r.data),
+  getById: (id: string) => http.get<Student>(`/students/${id}`).then((r) => r.data),
   listBySchool: (schoolId: string) =>
     http.get<Student[]>(`/students/school/${schoolId}`).then((r) => r.data),
-  updateStatus: (id: string, status: string) =>
-    http.patch(`/students/${id}/status`, { status }).then((r) => r.data),
+  updateStatus: (id: string, status: StudentStatus, reason?: string) =>
+    http.patch<Student>(`/students/${id}/status`, { status, reason }).then((r) => r.data),
   recordAttendance: (id: string, data: Record<string, unknown>) =>
     http.post(`/students/${id}/attendance`, data).then((r) => r.data),
   getAttendanceReport: (id: string, startDate: string, endDate: string) =>

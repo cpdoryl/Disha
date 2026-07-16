@@ -1,6 +1,7 @@
 'use client';
 
 import { useMemo, useState } from 'react';
+import Link from 'next/link';
 import { Card } from '@/components/ui/Card';
 import { DataTable, DataTableColumn } from '@/components/ui/DataTable';
 import { SearchInput } from '@/components/ui/SearchInput';
@@ -13,9 +14,9 @@ const columns: DataTableColumn<Student>[] = [
     sortable: true,
     sortValue: (s) => `${s.lastName ?? ''} ${s.firstName}`.toLowerCase(),
     render: (s) => (
-      <span className="font-medium text-gray-900 dark:text-white">
+      <Link href={`/dashboard/students/${s.id}`} className="font-medium text-indigo-600 hover:underline">
         {s.firstName} {s.lastName ?? ''}
-      </span>
+      </Link>
     ),
   },
   {
