@@ -24,6 +24,7 @@ import { AttendanceModule } from './modules/attendance/attendance.module';
 import { ComplianceModule } from './modules/compliance/compliance.module';
 import { CommunicationModule } from './modules/communication/communication.module';
 import { InfrastructureModule } from './modules/infrastructure/infrastructure.module';
+import { UserModule } from './modules/user/user.module';
 
 @Module({
   imports: [
@@ -73,6 +74,7 @@ import { InfrastructureModule } from './modules/infrastructure/infrastructure.mo
     ComplianceModule,
     CommunicationModule,
     InfrastructureModule,
+    UserModule,
   ],
 })
 export class AppModule implements NestModule {

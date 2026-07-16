@@ -13,7 +13,7 @@ export default () => ({
     username: process.env.DB_USERNAME || process.env.DATABASE_USER || 'staging_user',
     password: process.env.DB_PASSWORD || process.env.DATABASE_PASSWORD || 'staging_password_change_me',
     name: process.env.DB_NAME || process.env.DATABASE_NAME || 'disha_staging_db',
-    synchronize: true,
+    synchronize: process.env.DB_SYNCHRONIZE === 'true',
     logging: process.env.LOG_LEVEL === 'debug',
   },
 
