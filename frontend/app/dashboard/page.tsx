@@ -1,19 +1,39 @@
 'use client'
 
+import { useState, useEffect } from 'react'
 import { useAuthStore } from '@/lib/store/authStore'
 import StatCard from '@/components/dashboard/StatCard'
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts'
-
-const data = [
-  { name: 'Jan', students: 400, attendance: 240 },
-  { name: 'Feb', students: 300, attendance: 221 },
-  { name: 'Mar', students: 200, attendance: 229 },
-  { name: 'Apr', students: 278, attendance: 200 },
-  { name: 'May', students: 189, attendance: 218 },
-]
+import { schoolAPI } from '@/lib/api/services'
 
 export default function DashboardHome() {
   const { user } = useAuthStore()
+  const [metrics, setMetrics] = useState<any>(null)
+  const [loading, setLoading] = useState(true)
+  const [data, setData] = useState([
+    { name: 'Jan', students: 400, attendance: 240 },
+    { name: 'Feb', students: 300, attendance: 221 },
+    { name: 'Mar', students: 200, attendance: 229 },
+    { name: 'Apr', students: 278, attendance: 200 },
+    { name: 'May', students: 189, attendance: 218 },
+  ])
+
+  useEffect(() => {
+    if (!user?.schoolId) return
+    fetchMetrics()
+  }, [user?.schoolId])
+
+  const fetchMetrics = async () => {
+    try {
+      setLoading(true)
+      const result = await schoolAPI.getMetrics(user!.schoolId)
+      setMetrics(result)
+    } catch (err) {
+      console.error('Failed to fetch metrics:', err)
+    } finally {
+      setLoading(false)
+    }
+  }
 
   return (
     <div className="space-y-6">
@@ -25,30 +45,53 @@ export default function DashboardHome() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <StatCard
-          title="Total Students"
-          value="1,234"
-          change="+12%"
-          icon="📚"
-        />
-        <StatCard
-          title="Attendance Rate"
-          value="94.2%"
-          change="+2.1%"
-          icon="📊"
-        />
-        <StatCard
-          title="Active Assessments"
-          value="18"
-          change="+3"
-          icon="✅"
-        />
-        <StatCard
-          title="Pending Tasks"
-          value="7"
-          change="-2"
-          icon="⏱️"
-        />
+        {loading ? (
+          <>
+            <div className="bg-white rounded-lg shadow p-4 animate-pulse">
+              <div className="h-4 bg-gray-200 rounded w-1/2 mb-2"></div>
+              <div className="h-8 bg-gray-200 rounded w-3/4"></div>
+            </div>
+            <div className="bg-white rounded-lg shadow p-4 animate-pulse">
+              <div className="h-4 bg-gray-200 rounded w-1/2 mb-2"></div>
+              <div className="h-8 bg-gray-200 rounded w-3/4"></div>
+            </div>
+            <div className="bg-white rounded-lg shadow p-4 animate-pulse">
+              <div className="h-4 bg-gray-200 rounded w-1/2 mb-2"></div>
+              <div className="h-8 bg-gray-200 rounded w-3/4"></div>
+            </div>
+            <div className="bg-white rounded-lg shadow p-4 animate-pulse">
+              <div className="h-4 bg-gray-200 rounded w-1/2 mb-2"></div>
+              <div className="h-8 bg-gray-200 rounded w-3/4"></div>
+            </div>
+          </>
+        ) : (
+          <>
+            <StatCard
+              title="Total Students"
+              value={metrics?.totalStudents?.toString() || '0'}
+              change={metrics?.studentChange || '+0%'}
+              icon="📚"
+            />
+            <StatCard
+              title="Attendance Rate"
+              value={metrics?.averageAttendance ? `${metrics.averageAttendance}%` : '0%'}
+              change={metrics?.attendanceChange || '+0%'}
+              icon="📊"
+            />
+            <StatCard
+              title="Active Assessments"
+              value={metrics?.activeAssessments?.toString() || '0'}
+              change={metrics?.assessmentChange || '+0'}
+              icon="✅"
+            />
+            <StatCard
+              title="Staff Count"
+              value={metrics?.staffCount?.toString() || '0'}
+              change={metrics?.staffChange || '+0'}
+              icon="👥"
+            />
+          </>
+        )}
       </div>
 
       <div className="bg-white rounded-lg shadow p-6">

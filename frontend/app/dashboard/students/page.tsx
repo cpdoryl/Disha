@@ -1,9 +1,11 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
+import { studentAPI } from '@/lib/api/services'
+import { useAuthStore } from '@/lib/store/authStore'
 
 const studentSchema = z.object({
   name: z.string().min(2, 'Name required'),
@@ -14,50 +16,34 @@ const studentSchema = z.object({
 
 type StudentFormData = z.infer<typeof studentSchema>
 
-const mockStudents = [
-  {
-    id: '1',
-    name: 'Raj Kumar',
-    email: 'raj@example.com',
-    rollNumber: '001',
-    className: '10-A',
-    attendance: '92%',
-    status: 'Active',
-  },
-  {
-    id: '2',
-    name: 'Priya Singh',
-    email: 'priya@example.com',
-    rollNumber: '002',
-    className: '10-A',
-    attendance: '88%',
-    status: 'Active',
-  },
-  {
-    id: '3',
-    name: 'Amit Patel',
-    email: 'amit@example.com',
-    rollNumber: '003',
-    className: '10-B',
-    attendance: '85%',
-    status: 'Active',
-  },
-  {
-    id: '4',
-    name: 'Neha Gupta',
-    email: 'neha@example.com',
-    rollNumber: '004',
-    className: '10-B',
-    attendance: '95%',
-    status: 'Active',
-  },
-]
-
 export default function StudentsPage() {
-  const [students, setStudents] = useState(mockStudents)
+  const { user } = useAuthStore()
+  const [students, setStudents] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const [submitting, setSubmitting] = useState(false)
   const [search, setSearch] = useState('')
   const [showForm, setShowForm] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (!user?.schoolId) return
+    fetchStudents()
+  }, [user?.schoolId])
+
+  const fetchStudents = async () => {
+    try {
+      setLoading(true)
+      setError(null)
+      const data = await studentAPI.getBySchool(user!.schoolId)
+      setStudents(Array.isArray(data) ? data : data.data || [])
+    } catch (err: any) {
+      setError(err.response?.data?.message || 'Failed to load students')
+      setStudents([])
+    } finally {
+      setLoading(false)
+    }
+  }
 
   const {
     register,
@@ -74,29 +60,29 @@ export default function StudentsPage() {
     student.rollNumber.includes(search)
   )
 
-  const onSubmit = (data: StudentFormData) => {
-    if (editingId) {
-      setStudents(
-        students.map((s) =>
-          s.id === editingId
-            ? { ...s, ...data, attendance: '0%' }
-            : s
-        )
-      )
+  const onSubmit = async (data: StudentFormData) => {
+    try {
+      setSubmitting(true)
+      const studentData = {
+        ...data,
+        schoolId: user!.schoolId,
+      }
+
+      if (editingId) {
+        await studentAPI.create(studentData)
+      } else {
+        await studentAPI.create(studentData)
+      }
+
+      await fetchStudents()
+      reset()
+      setShowForm(false)
       setEditingId(null)
-    } else {
-      setStudents([
-        ...students,
-        {
-          id: Date.now().toString(),
-          ...data,
-          attendance: '0%',
-          status: 'Active',
-        },
-      ])
+    } catch (err: any) {
+      setError(err.response?.data?.message || 'Failed to save student')
+    } finally {
+      setSubmitting(false)
     }
-    reset()
-    setShowForm(false)
   }
 
   return (
@@ -112,11 +98,21 @@ export default function StudentsPage() {
             setEditingId(null)
             reset()
           }}
-          className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+          className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
+          disabled={loading}
         >
           {showForm ? 'Cancel' : '+ Add Student'}
         </button>
       </div>
+
+      {error && (
+        <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-red-700">
+          {error}
+          <button onClick={fetchStudents} className="ml-2 underline font-medium">
+            Retry
+          </button>
+        </div>
+      )}
 
       {showForm && (
         <div className="bg-white rounded-lg shadow p-6">
@@ -180,9 +176,10 @@ export default function StudentsPage() {
 
             <button
               type="submit"
-              className="w-full px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
+              className="w-full px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50"
+              disabled={submitting}
             >
-              {editingId ? 'Update Student' : 'Add Student'}
+              {submitting ? 'Saving...' : editingId ? 'Update Student' : 'Add Student'}
             </button>
           </form>
         </div>
@@ -196,60 +193,70 @@ export default function StudentsPage() {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+            disabled={loading}
           />
         </div>
 
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead className="bg-gray-50 border-b border-gray-200">
-              <tr>
-                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">Name</th>
-                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">Roll Number</th>
-                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">Class</th>
-                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">Email</th>
-                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">Attendance</th>
-                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">Status</th>
-                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-200">
-              {filteredStudents.map((student) => (
-                <tr key={student.id} className="hover:bg-gray-50">
-                  <td className="px-6 py-4 text-sm text-gray-900 font-medium">{student.name}</td>
-                  <td className="px-6 py-4 text-sm text-gray-600">{student.rollNumber}</td>
-                  <td className="px-6 py-4 text-sm text-gray-600">{student.className}</td>
-                  <td className="px-6 py-4 text-sm text-gray-600">{student.email}</td>
-                  <td className="px-6 py-4 text-sm text-gray-600">{student.attendance}</td>
-                  <td className="px-6 py-4 text-sm">
-                    <span className="px-3 py-1 bg-green-100 text-green-800 rounded-full text-xs font-semibold">
-                      {student.status}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 text-sm space-x-2">
-                    <button
-                      onClick={() => setEditingId(student.id)}
-                      className="text-blue-600 hover:text-blue-900 font-medium"
-                    >
-                      Edit
-                    </button>
-                    <button
-                      onClick={() =>
-                        setStudents(students.filter((s) => s.id !== student.id))
-                      }
-                      className="text-red-600 hover:text-red-900 font-medium"
-                    >
-                      Delete
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+        {loading ? (
+          <div className="p-12 text-center">
+            <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+            <p className="mt-4 text-gray-600">Loading students...</p>
+          </div>
+        ) : (
+          <>
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead className="bg-gray-50 border-b border-gray-200">
+                  <tr>
+                    <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">Name</th>
+                    <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">Roll Number</th>
+                    <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">Class</th>
+                    <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">Email</th>
+                    <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">Attendance</th>
+                    <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">Status</th>
+                    <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-200">
+                  {filteredStudents.length === 0 ? (
+                    <tr>
+                      <td colSpan={7} className="px-6 py-8 text-center text-gray-600">
+                        No students found
+                      </td>
+                    </tr>
+                  ) : (
+                    filteredStudents.map((student) => (
+                      <tr key={student.id} className="hover:bg-gray-50">
+                        <td className="px-6 py-4 text-sm text-gray-900 font-medium">{student.name}</td>
+                        <td className="px-6 py-4 text-sm text-gray-600">{student.rollNumber}</td>
+                        <td className="px-6 py-4 text-sm text-gray-600">{student.className}</td>
+                        <td className="px-6 py-4 text-sm text-gray-600">{student.email}</td>
+                        <td className="px-6 py-4 text-sm text-gray-600">{student.attendance || '-'}</td>
+                        <td className="px-6 py-4 text-sm">
+                          <span className="px-3 py-1 bg-green-100 text-green-800 rounded-full text-xs font-semibold">
+                            {student.status}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 text-sm space-x-2">
+                          <button
+                            onClick={() => setEditingId(student.id)}
+                            className="text-blue-600 hover:text-blue-900 font-medium"
+                          >
+                            Edit
+                          </button>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
 
-        <div className="px-6 py-4 border-t border-gray-200 text-sm text-gray-600">
-          Showing {filteredStudents.length} of {students.length} students
-        </div>
+            <div className="px-6 py-4 border-t border-gray-200 text-sm text-gray-600">
+              Showing {filteredStudents.length} of {students.length} students
+            </div>
+          </>
+        )}
       </div>
     </div>
   )

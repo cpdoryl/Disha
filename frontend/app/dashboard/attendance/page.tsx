@@ -1,42 +1,38 @@
 'use client'
 
-import { useState } from 'react'
-
-const mockAttendanceData = [
-  {
-    id: '1',
-    name: 'Raj Kumar',
-    rollNumber: '001',
-    status: 'Present',
-    date: '2026-07-15',
-  },
-  {
-    id: '2',
-    name: 'Priya Singh',
-    rollNumber: '002',
-    status: 'Present',
-    date: '2026-07-15',
-  },
-  {
-    id: '3',
-    name: 'Amit Patel',
-    rollNumber: '003',
-    status: 'Absent',
-    date: '2026-07-15',
-  },
-  {
-    id: '4',
-    name: 'Neha Gupta',
-    rollNumber: '004',
-    status: 'Present',
-    date: '2026-07-15',
-  },
-]
+import { useState, useEffect } from 'react'
+import { attendanceAPI, studentAPI } from '@/lib/api/services'
+import { useAuthStore } from '@/lib/store/authStore'
 
 export default function AttendancePage() {
-  const [attendanceData, setAttendanceData] = useState(mockAttendanceData)
-  const [selectedDate, setSelectedDate] = useState('2026-07-15')
+  const { user } = useAuthStore()
+  const [attendanceData, setAttendanceData] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const [saving, setSaving] = useState(false)
+  const today = new Date().toISOString().split('T')[0]
+  const [selectedDate, setSelectedDate] = useState(today)
   const [selectedClass, setSelectedClass] = useState('10-A')
+
+  useEffect(() => {
+    if (user?.schoolId) {
+      fetchAttendance()
+    }
+  }, [selectedDate, selectedClass, user?.schoolId])
+
+  const fetchAttendance = async () => {
+    try {
+      setLoading(true)
+      setError(null)
+      const data = await attendanceAPI.getByClass(selectedClass, selectedDate)
+      setAttendanceData(Array.isArray(data) ? data : data.records || [])
+    } catch (err: any) {
+      setError(err.response?.data?.message || 'Failed to load attendance')
+      setAttendanceData([])
+    } finally {
+      setLoading(false)
+    }
+  }
 
   const toggleAttendance = (id: string) => {
     setAttendanceData(
@@ -49,6 +45,24 @@ export default function AttendancePage() {
           : record
       )
     )
+  }
+
+  const saveAttendance = async () => {
+    try {
+      setSaving(true)
+      setError(null)
+      const records = attendanceData.map((record) => ({
+        studentId: record.id,
+        status: record.status,
+        date: selectedDate,
+      }))
+      await attendanceAPI.bulkMark(selectedClass, records)
+      alert('Attendance saved successfully!')
+    } catch (err: any) {
+      setError(err.response?.data?.message || 'Failed to save attendance')
+    } finally {
+      setSaving(false)
+    }
   }
 
   const presentCount = attendanceData.filter((r) => r.status === 'Present').length
@@ -80,6 +94,15 @@ export default function AttendancePage() {
           <p className="text-3xl font-bold text-blue-900 mt-2">{percentage}%</p>
         </div>
       </div>
+
+      {error && (
+        <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-red-700">
+          {error}
+          <button onClick={fetchAttendance} className="ml-2 underline font-medium">
+            Retry
+          </button>
+        </div>
+      )}
 
       <div className="bg-white rounded-lg shadow p-6 space-y-6">
         <div>
@@ -115,25 +138,42 @@ export default function AttendancePage() {
             </div>
 
             <div className="flex items-end">
-              <button className="w-full px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 font-medium">
-                Save Attendance
+              <button
+                onClick={saveAttendance}
+                disabled={saving || loading}
+                className="w-full px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 font-medium disabled:opacity-50"
+              >
+                {saving ? 'Saving...' : 'Save Attendance'}
               </button>
             </div>
           </div>
         </div>
 
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead className="bg-gray-50 border-b border-gray-200">
-              <tr>
-                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">Name</th>
-                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">Roll Number</th>
-                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">Status</th>
-                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">Action</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-200">
-              {attendanceData.map((record) => (
+        {loading ? (
+          <div className="p-12 text-center">
+            <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+            <p className="mt-4 text-gray-600">Loading attendance...</p>
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead className="bg-gray-50 border-b border-gray-200">
+                <tr>
+                  <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">Name</th>
+                  <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">Roll Number</th>
+                  <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">Status</th>
+                  <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">Action</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-200">
+                {attendanceData.length === 0 ? (
+                  <tr>
+                    <td colSpan={4} className="px-6 py-8 text-center text-gray-600">
+                      No students found for this class
+                    </td>
+                  </tr>
+                ) : (
+                  attendanceData.map((record) => (
                 <tr key={record.id} className="hover:bg-gray-50">
                   <td className="px-6 py-4 text-sm text-gray-900 font-medium">{record.name}</td>
                   <td className="px-6 py-4 text-sm text-gray-600">{record.rollNumber}</td>
@@ -157,10 +197,12 @@ export default function AttendancePage() {
                     </button>
                   </td>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
