@@ -26,3 +26,23 @@ export interface StudentRiskProfile {
   lowAttendanceStudents: number;
   academiclyStruggling: number;
 }
+
+export interface AttendanceReport {
+  totalDays: number;
+  presentDays: number;
+  absentDays: number;
+  leaveDays: number;
+  attendancePercentage: number;
+}
+
+export interface AcademicAssessment {
+  id: string;
+  subject: string;
+  topic: string;
+  scoreObtained: number;
+  scoreMax: number;
+  percentage: number;
+  status: 'exceeds' | 'meets' | 'approaching' | 'below';
+  term: string;
+  assessmentDate: string;
+}

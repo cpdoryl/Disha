@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, Between } from 'typeorm';
 import {
@@ -12,6 +12,8 @@ import {
   ReferralSeverity,
   ResolutionStatus,
   Gender,
+  ParentStudentLink,
+  GuardianRelationship,
 } from 'src/database/entities';
 
 @Injectable()
@@ -25,6 +27,8 @@ export class StudentService {
     private academicRepository: Repository<StudentAcademicAssessment>,
     @InjectRepository(CounsellorReferral)
     private counsellorRepository: Repository<CounsellorReferral>,
+    @InjectRepository(ParentStudentLink)
+    private parentStudentLinkRepository: Repository<ParentStudentLink>,
   ) {}
 
   async createStudent(createStudentDto: {
@@ -235,5 +239,86 @@ export class StudentService {
       lowAttendanceStudents: 0,
       academiclyStruggling: 0,
     };
+  }
+
+  /**
+   * Resolves a logged-in "student" user to their own student record.
+   */
+  async getMyProfile(userId: string): Promise<Student | null> {
+    return this.studentRepository.findOne({ where: { userId } });
+  }
+
+  private async requireOwnStudentId(userId: string): Promise<string> {
+    const student = await this.getMyProfile(userId);
+    if (!student) {
+      throw new NotFoundException('No student record is linked to this account');
+    }
+    return student.id;
+  }
+
+  /** Self-scoped: resolves the student's own record server-side, never a client-supplied ID. */
+  async getMyAttendanceReport(userId: string, startDate: Date, endDate: Date) {
+    const studentId = await this.requireOwnStudentId(userId);
+    return this.getAttendanceReport(studentId, startDate, endDate);
+  }
+
+  /** Self-scoped: resolves the student's own record server-side, never a client-supplied ID. */
+  async getMyAcademicPerformance(userId: string, term?: string) {
+    const studentId = await this.requireOwnStudentId(userId);
+    return this.getAcademicPerformance(studentId, term);
+  }
+
+  /**
+   * Resolves a logged-in "parent" user to the student record(s) linked to them.
+   */
+  async getMyChildren(parentUserId: string): Promise<Student[]> {
+    const links = await this.parentStudentLinkRepository.find({
+      where: { parentUserId },
+      relations: ['student'],
+    });
+    return links.map((link) => link.student);
+  }
+
+  /**
+   * Links a student's own login account to their student record (admin action).
+   */
+  async linkUserToStudent(studentId: string, userId: string): Promise<Student | null> {
+    const student = await this.studentRepository.findOne({ where: { id: studentId } });
+    if (!student) {
+      throw new NotFoundException('Student not found');
+    }
+    const alreadyLinked = await this.studentRepository.findOne({ where: { userId } });
+    if (alreadyLinked && alreadyLinked.id !== studentId) {
+      throw new ConflictException('This user account is already linked to a different student');
+    }
+
+    await this.studentRepository.update(studentId, { userId });
+    return this.getStudent(studentId);
+  }
+
+  /**
+   * Links a parent's login account to a child's student record (admin action).
+   */
+  async linkParentToStudent(
+    studentId: string,
+    parentUserId: string,
+    relationship?: GuardianRelationship,
+  ): Promise<ParentStudentLink> {
+    const student = await this.studentRepository.findOne({ where: { id: studentId } });
+    if (!student) {
+      throw new NotFoundException('Student not found');
+    }
+
+    const existing = await this.parentStudentLinkRepository.findOne({ where: { studentId, parentUserId } });
+    if (existing) {
+      throw new ConflictException('This parent is already linked to this student');
+    }
+
+    const link = this.parentStudentLinkRepository.create({ studentId, parentUserId, relationship });
+    return this.parentStudentLinkRepository.save(link);
+  }
+
+  async unlinkParentFromStudent(studentId: string, parentUserId: string): Promise<void> {
+    await this.parentStudentLinkRepository.delete({ studentId, parentUserId });
   }
 }

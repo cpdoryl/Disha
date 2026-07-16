@@ -11,6 +11,7 @@ import {
 } from 'typeorm';
 import { School } from './School.entity';
 import { AssessmentResponse } from './AssessmentResponse.entity';
+import { User } from './User.entity';
 
 export enum StudentStatus {
   ACTIVE = 'active',
@@ -97,6 +98,13 @@ export class Student {
 
   @Column({ type: 'varchar', length: 255, nullable: true })
   guardianEmail: string;
+
+  // The student's own login account, if they have one (self-service portal).
+  @ManyToOne(() => User, { nullable: true })
+  user: User;
+
+  @Column({ type: 'uuid', nullable: true, unique: true })
+  userId: string;
 
   @OneToMany(() => AssessmentResponse, (response) => response.respondentId, {
     cascade: false,

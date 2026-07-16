@@ -5,6 +5,7 @@ import {
   StudentAttendance,
   StudentAcademicAssessment,
   CounsellorReferral,
+  ParentStudentLink,
 } from 'src/database/entities';
 import { StudentService } from 'src/services/student.service';
 import { StudentController } from './student.controller';
@@ -16,6 +17,7 @@ import { StudentController } from './student.controller';
       StudentAttendance,
       StudentAcademicAssessment,
       CounsellorReferral,
+      ParentStudentLink,
     ]),
   ],
   controllers: [StudentController],

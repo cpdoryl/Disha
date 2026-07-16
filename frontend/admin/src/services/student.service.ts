@@ -1,5 +1,5 @@
 import { http } from '@/lib/http';
-import type { Student, StudentRiskProfile } from '@/types/student';
+import type { AcademicAssessment, AttendanceReport, Student, StudentRiskProfile } from '@/types/student';
 
 export const studentService = {
   create: (data: Record<string, unknown>) => http.post('/students', data).then((r) => r.data),
@@ -10,8 +10,10 @@ export const studentService = {
     http.patch(`/students/${id}/status`, { status }).then((r) => r.data),
   recordAttendance: (id: string, data: Record<string, unknown>) =>
     http.post(`/students/${id}/attendance`, data).then((r) => r.data),
-  getAttendanceReport: (id: string) =>
-    http.get(`/students/${id}/attendance/report`).then((r) => r.data),
+  getAttendanceReport: (id: string, startDate: string, endDate: string) =>
+    http
+      .get(`/students/${id}/attendance/report?startDate=${startDate}&endDate=${endDate}`)
+      .then((r) => r.data),
   submitAcademicAssessment: (id: string, data: Record<string, unknown>) =>
     http.post(`/students/${id}/academic-assessment`, data).then((r) => r.data),
   getAcademicPerformance: (id: string) =>
@@ -22,4 +24,12 @@ export const studentService = {
     http
       .get<StudentRiskProfile>(`/students/school/${schoolId}/risk-profile`)
       .then((r) => r.data),
+  getMyProfile: () => http.get<Student>('/students/me').then((r) => r.data),
+  getMyChildren: () => http.get<Student[]>('/students/me/children').then((r) => r.data),
+  getMyAttendanceReport: (startDate: string, endDate: string) =>
+    http
+      .get<AttendanceReport>(`/students/me/attendance/report?startDate=${startDate}&endDate=${endDate}`)
+      .then((r) => r.data),
+  getMyAcademicPerformance: () =>
+    http.get<AcademicAssessment[]>('/students/me/academic-performance').then((r) => r.data),
 };

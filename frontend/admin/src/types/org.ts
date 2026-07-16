@@ -48,6 +48,19 @@ export interface ComplaintSummary {
   averageSatisfactionRating: number | null;
 }
 
+export interface FeeLedgerEntry {
+  id: string;
+  schoolId: string;
+  studentId: string;
+  academicYear: string;
+  feeType: string;
+  amount: number;
+  dueDate: string;
+  paidAmount: number;
+  paidDate: string | null;
+  status: 'pending' | 'partial' | 'paid' | 'overdue' | 'waived';
+}
+
 export interface FeeCollectionSummary {
   totalDue: number;
   totalCollected: number;

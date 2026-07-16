@@ -6,6 +6,7 @@ import { Student, Gender, StudentStatus } from '../entities/student.entity';
 import { User, UserType, RoleType } from '../entities/User.entity';
 import { Challenge, PREDEFINED_CHALLENGES } from '../entities/challenge.entity';
 import { Assessment, AssessmentStatus } from '../entities/assessment.entity';
+import { ParentStudentLink, GuardianRelationship } from '../entities/parentstudentlink.entity';
 import * as bcrypt from 'bcrypt';
 
 async function seed() {
@@ -121,6 +122,42 @@ async function seed() {
       }
       console.log(`✅ Created ${studentCount} students for ${schools[i].name}`);
     }
+
+    console.log('👨‍👩‍👧 Creating student & parent self-service accounts...');
+    const selfServiceStudent = students[0];
+
+    const studentUser = new User();
+    studentUser.email = 'student1@disha.local';
+    studentUser.firstName = selfServiceStudent.firstName;
+    studentUser.lastName = selfServiceStudent.lastName;
+    studentUser.passwordHash = await bcrypt.hash('student123', 10);
+    studentUser.userType = UserType.STUDENT;
+    studentUser.roleType = RoleType.USER;
+    studentUser.schoolId = selfServiceStudent.schoolId;
+    studentUser.isActive = true;
+    const savedStudentUser = await AppDataSource.manager.save(studentUser);
+    await AppDataSource.manager.update(Student, selfServiceStudent.id, { userId: savedStudentUser.id });
+    users.push(savedStudentUser);
+    console.log('✅ Created student self-service account (linked to a real student record)');
+
+    const parentUser = new User();
+    parentUser.email = 'parent1@disha.local';
+    parentUser.firstName = 'Parent';
+    parentUser.lastName = 'One';
+    parentUser.passwordHash = await bcrypt.hash('parent123', 10);
+    parentUser.userType = UserType.PARENT;
+    parentUser.roleType = RoleType.USER;
+    parentUser.schoolId = selfServiceStudent.schoolId;
+    parentUser.isActive = true;
+    const savedParentUser = await AppDataSource.manager.save(parentUser);
+    users.push(savedParentUser);
+
+    const parentLink = new ParentStudentLink();
+    parentLink.parentUserId = savedParentUser.id;
+    parentLink.studentId = selfServiceStudent.id;
+    parentLink.relationship = GuardianRelationship.MOTHER;
+    await AppDataSource.manager.save(parentLink);
+    console.log('✅ Created parent self-service account (linked to the same student as a child)');
 
     console.log('🎯 Creating challenges...');
     const challenges: Challenge[] = [];
