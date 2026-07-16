@@ -11,6 +11,10 @@ import { schoolService } from '@/services/school.service';
 import { studentService } from '@/services/student.service';
 import { dataService } from '@/services/data.service';
 import { auditService } from '@/services/audit.service';
+import { staffService } from '@/services/staff.service';
+import { admissionsService } from '@/services/admissions.service';
+import { feeService } from '@/services/fee.service';
+import { complianceService } from '@/services/compliance.service';
 import { isoDaysAgo, isoNow } from '@/lib/dates';
 
 export default function SchoolAdminDashboardPage() {
@@ -31,6 +35,22 @@ export default function SchoolAdminDashboardPage() {
   );
   const failedActions = useAsync(
     () => auditService.getFailedActions(schoolId!, isoDaysAgo(30), isoNow()),
+    [schoolId],
+    hasSchool,
+  );
+  const staffRetention = useAsync(
+    () => staffService.getRetentionSummary(schoolId!),
+    [schoolId],
+    hasSchool,
+  );
+  const admissionsFunnel = useAsync(
+    () => admissionsService.getFunnelSummary(schoolId!),
+    [schoolId],
+    hasSchool,
+  );
+  const feeSummary = useAsync(() => feeService.getCollectionSummary(schoolId!), [schoolId], hasSchool);
+  const complaintSummary = useAsync(
+    () => complianceService.getComplaintSummary(schoolId!),
     [schoolId],
     hasSchool,
   );
@@ -62,6 +82,33 @@ export default function SchoolAdminDashboardPage() {
             value={failedActions.data?.length ?? '—'}
             hint="Security & audit log"
             isLoading={failedActions.isLoading}
+          />
+        </div>
+
+        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
+          <StatCard
+            label="Staff Retention"
+            value={staffRetention.data ? `${staffRetention.data.retentionRate}%` : '—'}
+            hint={staffRetention.data ? `${staffRetention.data.activeStaff} active of ${staffRetention.data.totalStaff}` : undefined}
+            isLoading={staffRetention.isLoading}
+          />
+          <StatCard
+            label="Fee Collection Rate"
+            value={feeSummary.data ? `${feeSummary.data.collectionRate}%` : '—'}
+            hint={feeSummary.data ? `${feeSummary.data.overdueCount} overdue entries` : undefined}
+            isLoading={feeSummary.isLoading}
+          />
+          <StatCard
+            label="Open Admission Inquiries"
+            value={admissionsFunnel.data?.inquiry ?? '—'}
+            hint={admissionsFunnel.data ? `${admissionsFunnel.data.admitted} admitted this cycle` : undefined}
+            isLoading={admissionsFunnel.isLoading}
+          />
+          <StatCard
+            label="Open Complaints"
+            value={complaintSummary.data ? complaintSummary.data.pending + complaintSummary.data.inProgress : '—'}
+            hint={complaintSummary.data ? `${complaintSummary.data.highSeverity} high severity` : undefined}
+            isLoading={complaintSummary.isLoading}
           />
         </div>
 

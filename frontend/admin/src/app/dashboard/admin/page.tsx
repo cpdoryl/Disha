@@ -8,6 +8,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useAsync } from '@/hooks/useAsync';
 import { schoolService } from '@/services/school.service';
 import { auditService } from '@/services/audit.service';
+import { userService } from '@/services/user.service';
 import type { SuspiciousActivityEntry } from '@/types/audit';
 
 const suspiciousColumns: DataTableColumn<SuspiciousActivityEntry>[] = [
@@ -24,6 +25,7 @@ export default function AdminDashboardPage() {
   const { schoolId } = useAuth();
   const hasSchool = Boolean(schoolId);
 
+  const orgOverview = useAsync(() => userService.getOrgOverview(), []);
   const metrics = useAsync(() => schoolService.getMetrics(schoolId!), [schoolId], hasSchool);
   const suspiciousActivity = useAsync(
     () => auditService.getSuspiciousActivity(schoolId!),
@@ -36,41 +38,64 @@ export default function AdminDashboardPage() {
       <div className="space-y-6">
         <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
           <StatCard
-            label="Students (home school)"
-            value={metrics.data?.studentCount ?? '—'}
-            isLoading={metrics.isLoading}
+            label="Total Schools (org-wide)"
+            value={orgOverview.data?.totalSchools ?? '—'}
+            isLoading={orgOverview.isLoading}
           />
           <StatCard
-            label="Staff (home school)"
-            value={metrics.data?.staffCount ?? '—'}
-            isLoading={metrics.isLoading}
+            label="Total Users"
+            value={orgOverview.data?.totalUsers ?? '—'}
+            hint={orgOverview.data ? `${orgOverview.data.activeUsers} active` : undefined}
+            isLoading={orgOverview.isLoading}
           />
-          <StatCard label="Total Schools (org-wide)" value="—" hint="Backend endpoint not yet available" />
-          <StatCard label="Total Users" value="—" hint="Backend endpoint not yet available" />
+          <StatCard
+            label="School Admins"
+            value={orgOverview.data?.usersByType.school_admin ?? '—'}
+            isLoading={orgOverview.isLoading}
+          />
+          <StatCard
+            label="Teachers"
+            value={orgOverview.data?.usersByType.teacher ?? '—'}
+            isLoading={orgOverview.isLoading}
+          />
         </div>
 
-        {!hasSchool && (
-          <EmptyState
-            title="No school associated with this account"
-            description="Organization-wide stats require a new backend endpoint that doesn't exist yet — the current API only exposes data scoped to a single school."
-          />
+        {orgOverview.error && (
+          <EmptyState title="Could not load organization stats" description={orgOverview.error.message} />
         )}
 
-        <div>
-          <p className="mb-4 text-sm font-medium text-gray-500 dark:text-gray-400">
-            Suspicious Activity (10+ actions within 60 minutes)
-          </p>
-          {suspiciousActivity.error ? (
-            <EmptyState title="Could not load audit data" description={suspiciousActivity.error.message} />
-          ) : (
-            <DataTable
-              columns={suspiciousColumns}
-              rows={suspiciousActivity.data ?? []}
-              rowKey={(r) => r.userId}
-              emptyMessage="No suspicious activity detected."
+        {hasSchool && (
+          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
+            <StatCard
+              label="Students (home school)"
+              value={metrics.data?.studentCount ?? '—'}
+              isLoading={metrics.isLoading}
             />
-          )}
-        </div>
+            <StatCard
+              label="Staff (home school)"
+              value={metrics.data?.staffCount ?? '—'}
+              isLoading={metrics.isLoading}
+            />
+          </div>
+        )}
+
+        {hasSchool && (
+          <div>
+            <p className="mb-4 text-sm font-medium text-gray-500 dark:text-gray-400">
+              Suspicious Activity (10+ actions within 60 minutes)
+            </p>
+            {suspiciousActivity.error ? (
+              <EmptyState title="Could not load audit data" description={suspiciousActivity.error.message} />
+            ) : (
+              <DataTable
+                columns={suspiciousColumns}
+                rows={suspiciousActivity.data ?? []}
+                rowKey={(r) => r.userId}
+                emptyMessage="No suspicious activity detected."
+              />
+            )}
+          </div>
+        )}
       </div>
     </DashboardShell>
   );
