@@ -17,13 +17,18 @@ interface StatCardProps {
   label: string;
   value: string | number;
   hint?: string;
+  isLoading?: boolean;
 }
 
-export function StatCard({ label, value, hint }: StatCardProps) {
+export function StatCard({ label, value, hint, isLoading }: StatCardProps) {
   return (
     <Card>
       <p className="text-sm font-medium text-gray-500 dark:text-gray-400">{label}</p>
-      <p className="mt-2 text-3xl font-semibold text-gray-900 dark:text-white">{value}</p>
+      {isLoading ? (
+        <div className="mt-2 h-8 w-16 animate-pulse rounded bg-gray-200 dark:bg-gray-700" />
+      ) : (
+        <p className="mt-2 text-3xl font-semibold text-gray-900 dark:text-white">{value}</p>
+      )}
       {hint && <p className="mt-1 text-xs text-gray-400">{hint}</p>}
     </Card>
   );

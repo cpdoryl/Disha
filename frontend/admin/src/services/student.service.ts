@@ -1,9 +1,11 @@
 import { http } from '@/lib/http';
+import type { Student, StudentRiskProfile } from '@/types/student';
 
 export const studentService = {
   create: (data: Record<string, unknown>) => http.post('/students', data).then((r) => r.data),
   getById: (id: string) => http.get(`/students/${id}`).then((r) => r.data),
-  listBySchool: (schoolId: string) => http.get(`/students/school/${schoolId}`).then((r) => r.data),
+  listBySchool: (schoolId: string) =>
+    http.get<Student[]>(`/students/school/${schoolId}`).then((r) => r.data),
   updateStatus: (id: string, status: string) =>
     http.patch(`/students/${id}/status`, { status }).then((r) => r.data),
   recordAttendance: (id: string, data: Record<string, unknown>) =>
@@ -17,5 +19,7 @@ export const studentService = {
   createCounsellorReferral: (id: string, data: Record<string, unknown>) =>
     http.post(`/students/${id}/counsellor-referral`, data).then((r) => r.data),
   getRiskProfileBySchool: (schoolId: string) =>
-    http.get(`/students/school/${schoolId}/risk-profile`).then((r) => r.data),
+    http
+      .get<StudentRiskProfile>(`/students/school/${schoolId}/risk-profile`)
+      .then((r) => r.data),
 };
