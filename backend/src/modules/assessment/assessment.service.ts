@@ -328,6 +328,30 @@ export class AssessmentService {
   }
 
   /**
+   * List assessments for a school, optionally filtered by status
+   */
+  async getAssessmentsBySchool(schoolId: string, status?: AssessmentStatus): Promise<Assessment[]> {
+    return this.assessmentRepository.find({
+      where: status ? { schoolId, status } : { schoolId },
+      order: { createdAt: 'DESC' },
+    });
+  }
+
+  /**
+   * Active assessments for a school that a given respondent (e.g. the logged-in
+   * teacher) hasn't submitted a response to yet.
+   */
+  async getPendingAssessmentsForRespondent(schoolId: string, respondentId: string): Promise<Assessment[]> {
+    const activeAssessments = await this.getAssessmentsBySchool(schoolId, AssessmentStatus.ACTIVE);
+    const pending: Assessment[] = [];
+    for (const assessment of activeAssessments) {
+      const submitted = await this.hasRespondentSubmitted(assessment.id, respondentId);
+      if (!submitted) pending.push(assessment);
+    }
+    return pending;
+  }
+
+  /**
    * Get data quality report
    */
   async getDataQualityReport(assessmentId: string): Promise<any> {

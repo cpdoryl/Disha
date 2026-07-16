@@ -154,6 +154,48 @@ export class StudentService {
     };
   }
 
+  /**
+   * School-wide attendance summary for a single day (defaults to today).
+   */
+  async getTodayAttendanceSummary(
+    schoolId: string,
+    date: Date = new Date(),
+  ): Promise<{
+    date: string;
+    totalActiveStudents: number;
+    markedCount: number;
+    presentCount: number;
+    absentCount: number;
+    leaveCount: number;
+    unmarkedCount: number;
+  }> {
+    const dateStr = date.toISOString().slice(0, 10);
+
+    const [totalActiveStudents, todayRecords] = await Promise.all([
+      this.studentRepository.count({ where: { schoolId, status: StudentStatus.ACTIVE } }),
+      this.attendanceRepository
+        .createQueryBuilder('attendance')
+        .where('attendance.schoolId = :schoolId', { schoolId })
+        .andWhere('attendance.attendanceDate = :dateStr', { dateStr })
+        .getMany(),
+    ]);
+
+    const presentCount = todayRecords.filter((r) => r.status === 'present').length;
+    const absentCount = todayRecords.filter((r) => r.status === 'absent').length;
+    const leaveCount = todayRecords.filter((r) => r.status === 'leave' || r.status === 'half_day').length;
+    const markedCount = todayRecords.length;
+
+    return {
+      date: dateStr,
+      totalActiveStudents,
+      markedCount,
+      presentCount,
+      absentCount,
+      leaveCount,
+      unmarkedCount: Math.max(0, totalActiveStudents - markedCount),
+    };
+  }
+
   async recordAcademicAssessment(recordAcademicDto: {
     studentId: string;
     schoolId: string;

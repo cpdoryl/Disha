@@ -7,6 +7,8 @@ import { User, UserType, RoleType } from '../entities/User.entity';
 import { Challenge, PREDEFINED_CHALLENGES } from '../entities/challenge.entity';
 import { Assessment, AssessmentStatus } from '../entities/assessment.entity';
 import { ParentStudentLink, GuardianRelationship } from '../entities/parentstudentlink.entity';
+import { Notification, NotificationType, NotificationChannel } from '../entities/notification.entity';
+import { ParentCommunication, CommunicationChannel, CommunicationStatus } from '../entities/parentcommunication.entity';
 import * as bcrypt from 'bcrypt';
 
 async function seed() {
@@ -159,6 +161,51 @@ async function seed() {
     await AppDataSource.manager.save(parentLink);
     console.log('✅ Created parent self-service account (linked to the same student as a child)');
 
+    console.log('🔔 Creating sample notifications for parent1...');
+    const notifications: Notification[] = [];
+    const notificationSeeds: Array<{ type: NotificationType; title: string; message: string }> = [
+      {
+        type: NotificationType.ATTENDANCE_ALERT,
+        title: 'Attendance Alert',
+        message: `${selfServiceStudent.firstName} ${selfServiceStudent.lastName}'s attendance has dropped below 75% this month.`,
+      },
+      {
+        type: NotificationType.ACADEMIC_PERFORMANCE,
+        title: 'Academic Performance Update',
+        message: `${selfServiceStudent.firstName} ${selfServiceStudent.lastName} scored well in the recent assessment.`,
+      },
+      {
+        type: NotificationType.GENERAL_UPDATE,
+        title: 'School Announcement',
+        message: 'Parent-teacher meeting scheduled for next week.',
+      },
+    ];
+    for (const n of notificationSeeds) {
+      const notification = new Notification();
+      notification.recipientUserId = savedParentUser.id;
+      notification.schoolId = selfServiceStudent.schoolId;
+      notification.type = n.type;
+      notification.channel = NotificationChannel.IN_APP;
+      notification.title = n.title;
+      notification.message = n.message;
+      notification.relatedStudentId = selfServiceStudent.id;
+      notifications.push(await AppDataSource.manager.save(notification));
+    }
+    console.log(`✅ Created ${notifications.length} notifications for parent1`);
+
+    console.log('💬 Creating sample parent communication for parent1...');
+    const communication = new ParentCommunication();
+    communication.schoolId = selfServiceStudent.schoolId;
+    communication.parentId = savedParentUser.id;
+    communication.studentId = selfServiceStudent.id;
+    communication.queryDate = new Date();
+    communication.queryChannel = CommunicationChannel.EMAIL;
+    communication.queryTopic = 'Fee payment query';
+    communication.queryDescription = 'Asked about the due date for the next installment.';
+    communication.status = CommunicationStatus.PENDING;
+    const savedCommunication = await AppDataSource.manager.save(communication);
+    console.log('✅ Created parent communication for parent1');
+
     console.log('🎯 Creating challenges...');
     const challenges: Challenge[] = [];
     for (const challengeData of PREDEFINED_CHALLENGES.slice(0, 5)) {
@@ -195,6 +242,8 @@ async function seed() {
       - Students: ${students.length}
       - Challenges: ${challenges.length}
       - Assessments: ${assessments.length}
+      - Notifications: ${notifications.length}
+      - Parent communications: 1 (id: ${savedCommunication.id})
     `);
 
     await AppDataSource.destroy();

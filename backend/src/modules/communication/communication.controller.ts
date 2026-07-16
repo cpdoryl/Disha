@@ -5,6 +5,7 @@ import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
 import { RolesGuard } from 'src/common/guards/roles.guard';
 import { Roles } from 'src/common/decorators/roles.decorator';
 import { CommunicationStatus } from 'src/database/entities';
+import { CurrentUser, AuthenticatedUser } from 'src/common/decorators/current-user.decorator';
 
 @ApiTags('Communication')
 @ApiBearerAuth()
@@ -36,6 +37,13 @@ export class CommunicationController {
   @ApiOperation({ summary: 'Get communications by school' })
   async getBySchool(@Param('schoolId') schoolId: string, @Query('status') status?: CommunicationStatus) {
     return this.communicationService.getBySchool(schoolId, status);
+  }
+
+  @Get('me')
+  @Roles('parent')
+  @ApiOperation({ summary: "Get the logged-in parent's own communications" })
+  async getMyCommunications(@CurrentUser() user: AuthenticatedUser) {
+    return this.communicationService.getByParent(user.userId);
   }
 
   @Get('student/:studentId')

@@ -61,6 +61,16 @@ export interface AttendanceReport {
   attendancePercentage: number;
 }
 
+export interface TodayAttendanceSummary {
+  date: string;
+  totalActiveStudents: number;
+  markedCount: number;
+  presentCount: number;
+  absentCount: number;
+  leaveCount: number;
+  unmarkedCount: number;
+}
+
 export interface AcademicAssessment {
   id: string;
   subject: string;

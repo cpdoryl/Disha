@@ -19,6 +19,7 @@ import { AssessmentService } from './assessment.service';
 import { SubmitResponseDto } from './dto/submit-response.dto';
 import { CreateAssessmentDto } from './dto/assessment-response.dto';
 import { Assessment, AssessmentStatus } from '../../database/entities';
+import { CurrentUser, AuthenticatedUser } from '../../common/decorators/current-user.decorator';
 
 @ApiTags('Assessments')
 @ApiBearerAuth()
@@ -50,6 +51,32 @@ export class AssessmentController {
   ): Promise<Assessment> {
     this.logger.log(`Creating assessment for school ${createAssessmentDto.schoolId}`);
     return this.assessmentService.createAssessment(createAssessmentDto);
+  }
+
+  /**
+   * List assessments for a school
+   */
+  @Get('school/:schoolId')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('ryl_admin', 'school_admin', 'teacher')
+  @ApiParam({ name: 'schoolId', description: 'School ID' })
+  @ApiOperation({ summary: 'List assessments for a school' })
+  async getAssessmentsBySchool(
+    @Param('schoolId') schoolId: string,
+    @Query('status') status?: AssessmentStatus,
+  ) {
+    return this.assessmentService.getAssessmentsBySchool(schoolId, status);
+  }
+
+  /**
+   * Active assessments the logged-in teacher hasn't submitted a response to yet
+   */
+  @Get('me/pending')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('teacher')
+  @ApiOperation({ summary: "Get the logged-in teacher's pending assessments" })
+  async getMyPendingAssessments(@CurrentUser() user: AuthenticatedUser) {
+    return this.assessmentService.getPendingAssessmentsForRespondent(user.schoolId, user.userId);
   }
 
   /**

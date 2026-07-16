@@ -6,6 +6,7 @@ import type {
   Student,
   StudentRiskProfile,
   StudentStatus,
+  TodayAttendanceSummary,
 } from '@/types/student';
 
 export const studentService = {
@@ -30,6 +31,10 @@ export const studentService = {
   getRiskProfileBySchool: (schoolId: string) =>
     http
       .get<StudentRiskProfile>(`/students/school/${schoolId}/risk-profile`)
+      .then((r) => r.data),
+  getTodayAttendanceSummary: (schoolId: string) =>
+    http
+      .get<TodayAttendanceSummary>(`/students/school/${schoolId}/attendance/today`)
       .then((r) => r.data),
   getMyProfile: () => http.get<Student>('/students/me').then((r) => r.data),
   getMyChildren: () => http.get<Student[]>('/students/me/children').then((r) => r.data),

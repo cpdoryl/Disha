@@ -9,7 +9,21 @@ import { useAuth } from '@/hooks/useAuth';
 import { useAsync } from '@/hooks/useAsync';
 import { studentService } from '@/services/student.service';
 import { communicationService } from '@/services/communication.service';
+import { assessmentService } from '@/services/assessment.service';
 import type { CommunicationEntry } from '@/types/org';
+import type { Assessment } from '@/types/assessment';
+
+const pendingAssessmentColumns: DataTableColumn<Assessment>[] = [
+  { key: 'cycleName', header: 'Cycle', render: (a) => a.cycleName },
+  { key: 'description', header: 'Description', render: (a) => a.description ?? '—' },
+  {
+    key: 'endDate',
+    header: 'Deadline',
+    sortable: true,
+    sortValue: (a) => a.endDate,
+    render: (a) => new Date(a.endDate).toLocaleDateString(),
+  },
+];
 
 const communicationColumns: DataTableColumn<CommunicationEntry>[] = [
   {
@@ -46,6 +60,17 @@ export default function TeacherDashboardPage() {
   );
   const pendingCommunications = communications.data?.filter((c) => c.status === 'pending').length ?? 0;
 
+  const pendingAssessments = useAsync(() => assessmentService.getMyPending(), []);
+
+  const todayAttendance = useAsync(
+    () => studentService.getTodayAttendanceSummary(schoolId!),
+    [schoolId],
+    hasSchool,
+  );
+  const attendanceHint = todayAttendance.data
+    ? `${todayAttendance.data.presentCount} present, ${todayAttendance.data.absentCount} absent, ${todayAttendance.data.unmarkedCount} unmarked`
+    : undefined;
+
   return (
     <DashboardShell title="Teacher Dashboard">
       <div className="space-y-6">
@@ -56,8 +81,18 @@ export default function TeacherDashboardPage() {
             hint="Active, this school"
             isLoading={students.isLoading}
           />
-          <StatCard label="Pending Assessments" value="—" hint="Backend endpoint not yet available" />
-          <StatCard label="Today's Attendance" value="—" hint="Backend endpoint not yet available" />
+          <StatCard
+            label="Pending Assessments"
+            value={pendingAssessments.data ? pendingAssessments.data.length : '—'}
+            hint="Awaiting your response"
+            isLoading={pendingAssessments.isLoading}
+          />
+          <StatCard
+            label="Today's Attendance"
+            value={todayAttendance.data ? todayAttendance.data.markedCount : '—'}
+            hint={attendanceHint ?? 'Marked so far today'}
+            isLoading={todayAttendance.isLoading}
+          />
           <StatCard
             label="Pending Parent Queries"
             value={communications.data ? pendingCommunications : '—'}
@@ -71,6 +106,25 @@ export default function TeacherDashboardPage() {
         ) : (
           <StudentTable students={students.data ?? []} title="My School's Students" />
         )}
+
+        <Card>
+          <p className="mb-4 text-sm font-medium text-gray-500 dark:text-gray-400">
+            My Pending Assessments
+          </p>
+          {pendingAssessments.error ? (
+            <EmptyState
+              title="Could not load pending assessments"
+              description={pendingAssessments.error.message}
+            />
+          ) : (
+            <DataTable
+              columns={pendingAssessmentColumns}
+              rows={pendingAssessments.data ?? []}
+              rowKey={(a) => a.id}
+              emptyMessage="No pending assessments — you're all caught up."
+            />
+          )}
+        </Card>
 
         <Card>
           <p className="mb-4 text-sm font-medium text-gray-500 dark:text-gray-400">

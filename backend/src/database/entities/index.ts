@@ -28,6 +28,7 @@ import { Challenge, ChallengeCategory, PREDEFINED_CHALLENGES } from './challenge
 import { GapPrediction, TrendDirection, ConfidenceTier } from './gap-prediction.entity';
 import { FeeLedger, FeeType, FeeStatus, PaymentMethod } from './fee.entity';
 import { ParentStudentLink, GuardianRelationship } from './parentstudentlink.entity';
+import { Notification, NotificationType, NotificationChannel } from './notification.entity';
 
 // Core Entity Exports
 export { Assessment, AssessmentStatus };
@@ -59,6 +60,7 @@ export { Challenge, ChallengeCategory, PREDEFINED_CHALLENGES };
 export { GapPrediction, TrendDirection, ConfidenceTier };
 export { FeeLedger, FeeType, FeeStatus, PaymentMethod };
 export { ParentStudentLink, GuardianRelationship };
+export { Notification, NotificationType, NotificationChannel };
 
 // Array of all entities for TypeORM configuration
 export const DISHA_ENTITIES = [
@@ -89,4 +91,5 @@ export const DISHA_ENTITIES = [
   GapPrediction,
   FeeLedger,
   ParentStudentLink,
+  Notification,
 ];

@@ -2,6 +2,7 @@ import {
   Controller,
   Post,
   Get,
+  Patch,
   Param,
   Body,
   HttpCode,
@@ -13,6 +14,7 @@ import { NotificationService } from '../../services/notification.service';
 import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
 import { RolesGuard } from 'src/common/guards/roles.guard';
 import { Roles } from 'src/common/decorators/roles.decorator';
+import { CurrentUser, AuthenticatedUser } from 'src/common/decorators/current-user.decorator';
 
 @ApiTags('Notifications')
 @ApiBearerAuth()
@@ -21,6 +23,19 @@ import { Roles } from 'src/common/decorators/roles.decorator';
 @Roles('ryl_admin', 'school_admin', 'teacher')
 export class NotificationController {
   constructor(private notificationService: NotificationService) {}
+
+  @Get('me')
+  @Roles('ryl_admin', 'school_admin', 'teacher', 'parent', 'student')
+  async getMyNotifications(@CurrentUser() user: AuthenticatedUser) {
+    return this.notificationService.getMyNotifications(user.userId);
+  }
+
+  @Patch(':id/read')
+  @Roles('ryl_admin', 'school_admin', 'teacher', 'parent', 'student')
+  @ApiParam({ name: 'id', description: 'Notification ID' })
+  async markAsRead(@Param('id') id: string, @CurrentUser() user: AuthenticatedUser) {
+    return this.notificationService.markAsRead(id, user.userId);
+  }
 
   @Post('send')
   @HttpCode(HttpStatus.ACCEPTED)

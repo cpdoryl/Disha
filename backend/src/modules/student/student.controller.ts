@@ -195,4 +195,12 @@ export class StudentController {
   async getStudentRiskProfile(@Param('schoolId') schoolId: string) {
     return this.studentService.getStudentRiskProfile(schoolId);
   }
+
+  @Get('school/:schoolId/attendance/today')
+  @Roles('ryl_admin', 'school_admin', 'teacher')
+  @ApiParam({ name: 'schoolId', description: 'School ID' })
+  @ApiOperation({ summary: "Get today's school-wide attendance summary" })
+  async getTodayAttendanceSummary(@Param('schoolId') schoolId: string) {
+    return this.studentService.getTodayAttendanceSummary(schoolId);
+  }
 }

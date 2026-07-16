@@ -63,6 +63,13 @@ export class CommunicationService {
     });
   }
 
+  async getByParent(parentId: string): Promise<ParentCommunication[]> {
+    return this.communicationRepository.find({
+      where: { parentId },
+      order: { queryDate: 'DESC' },
+    });
+  }
+
   async getResponseMetrics(schoolId: string): Promise<{
     totalQueries: number;
     resolvedQueries: number;
