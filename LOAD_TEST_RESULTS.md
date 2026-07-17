@@ -7,9 +7,20 @@ These are real numbers from a real run, not projections. `TECH_STACK.md`
 and `LOAD_TESTING.md` describe the load-testing tool as Artillery,
 "already installed" — that's inaccurate; there is no Artillery dependency
 or config anywhere in the repo. The actual tooling is `scripts/load-test-
-baseline.sh` and `scripts/load-test-progressive.sh`, both built on **`wrk`**
-(a separate CLI benchmarking tool, not an npm package). See
-`TESTING_STRATEGY.md` § Load Testing for that correction in full.
+baseline.sh`, `scripts/load-test-progressive.sh`, and (added this pass)
+`scripts/load-test-business.sh`, all built on **`wrk`** (a separate CLI
+benchmarking tool, not an npm package). See `TESTING_STRATEGY.md` § Load
+Testing for that correction in full.
+
+**Update (same day):** the original version of this document only tested
+unauthenticated `/health*` endpoints and explicitly flagged that as a gap
+in Future Scaling Requirements. That gap is closed — see
+[Authenticated Business Endpoint Results](#authenticated-business-endpoint-results)
+below. Headline finding: the mixed authenticated workload plateaus at
+**~400 req/s**, about 5x lower than the ~2000 req/s trivial-`/health`
+ceiling, and `POST /api/v2/attendance/bulk` is a real, measured
+bottleneck (not a guess) worth fixing before real classroom-sized
+payloads hit it.
 
 ---
 
@@ -18,11 +29,12 @@ baseline.sh` and `scripts/load-test-progressive.sh`, both built on **`wrk`**
 1. [Test Configuration](#test-configuration)
 2. [Baseline Results (Health Endpoints)](#baseline-results-health-endpoints)
 3. [Progressive Load Results](#progressive-load-results)
-4. [Bottleneck Analysis](#bottleneck-analysis)
-5. [A Real Bug This Test Run Found](#a-real-bug-this-test-run-found)
-6. [Optimization Recommendations](#optimization-recommendations)
-7. [Capacity Planning](#capacity-planning)
-8. [Future Scaling Requirements](#future-scaling-requirements)
+4. [Authenticated Business Endpoint Results](#authenticated-business-endpoint-results)
+5. [Bottleneck Analysis](#bottleneck-analysis)
+6. [A Real Bug This Test Run Found](#a-real-bug-this-test-run-found)
+7. [Optimization Recommendations](#optimization-recommendations)
+8. [Capacity Planning](#capacity-planning)
+9. [Future Scaling Requirements](#future-scaling-requirements)
 
 ---
 
@@ -35,13 +47,13 @@ baseline.sh` and `scripts/load-test-progressive.sh`, both built on **`wrk`**
 | **Host** | 4 vCPU, 15GB RAM, Linux x86_64 |
 | **Node** | v22.22.2 |
 | **Tool** | `wrk` 4.1.0 |
-| **Scripts** | `scripts/load-test-baseline.sh` (fixed 50 concurrent users), `scripts/load-test-progressive.sh` (staged 10→1000 concurrent users) |
-| **Endpoints tested** | `/health`, `/health/live`, `/health/ready`, `/health/startup`, `/health/metrics`, `/health/deep` |
+| **Scripts** | `scripts/load-test-baseline.sh` (fixed 50 concurrent users), `scripts/load-test-progressive.sh` (staged 10→1000 concurrent users), `scripts/load-test-business.sh` (new this pass — authenticated business endpoints) |
+| **Endpoints tested** | `/health`, `/health/live`, `/health/ready`, `/health/startup`, `/health/metrics`, `/health/deep`, plus (new) `GET /api/v2/students/school/:id`, `GET /api/v2/assessments/school/:id`, `GET /api/v2/reports/school/:id/performance`, `POST /api/v2/attendance/bulk` |
 
-These are the only endpoints the existing scripts target — they don't
-exercise authenticated business endpoints (students, assessments, etc.).
-See [Future Scaling Requirements](#future-scaling-requirements) for what a
-more representative test would need.
+The original two scripts only targeted unauthenticated `/health*` —
+addressed this pass, see
+[Authenticated Business Endpoint Results](#authenticated-business-endpoint-results)
+below.
 
 ---
 
@@ -91,6 +103,87 @@ in the event loop's queue, which is exactly what the climbing p99 numbers
 show — 631ms at 200 users, 1.38s at 500 users. Timeouts appear at 500+
 concurrent connections (`wrk`'s default request timeout is hit before a
 queued request gets serviced).
+
+---
+
+## Authenticated Business Endpoint Results
+
+New this pass — closes the gap flagged in the original version of this
+document's Future Scaling Requirements. `scripts/load-test-business.sh`
+logs in for real (`admin1@school.edu`), pulls real seeded IDs from the
+running API (not hardcoded fixtures), and load-tests a mix of real
+authenticated endpoints via a generated `wrk` Lua script. Same host/DB as
+above (single unclustered process, local seeded PostgreSQL).
+
+**Mixed workload** (round-robin across all 4 endpoints below, same
+process as the `/health` progressive test):
+
+| Concurrent Users | Avg Latency | p99 Latency | Throughput (req/s) | Socket Timeouts | Status |
+|---|---|---|---|---|---|
+| 10 | 24.32ms | 61.77ms | 417.79 | 0 | ✅ |
+| 50 | 139.30ms | 435.81ms | 371.09 | 0 | ✅ |
+| 100 | 243.81ms | 580.54ms | 410.08 | 0 | ✅ |
+| 200 | 469.71ms | 1.28s | 415.35 | 2 | ⚠️ degraded |
+
+Every request across all four stages returned a real 2xx — verified via
+a per-status-code breakdown added to the Lua script (`response()`/`done()`
+callbacks aggregating status counts across worker threads), not just
+inferred from throughput. **Throughput plateaus around ~400 req/s** for
+this mixed authenticated workload — roughly **5x lower** than the ~2000
+req/s trivial-`/health` ceiling measured above, which is exactly what
+you'd expect once real Postgres queries, TypeORM entity hydration, and
+`JwtAuthGuard`/`RolesGuard`/`SchoolScopeGuard` checks are actually in the
+request path instead of a static JSON response.
+
+**Per-endpoint breakdown** (isolated, 20 concurrent connections, 8s each,
+each verified with a real token and a real 200 before measuring — see
+note below on why that verification mattered):
+
+| Endpoint | Avg Latency | p99 Latency | Throughput (req/s) |
+|---|---|---|---|
+| `GET /api/v2/reports/school/:id/performance` | 13.80ms | 26.83ms | 1497.12 |
+| `GET /api/v2/assessments/school/:id` | 26.39ms | 44.94ms | 765.50 |
+| `GET /api/v2/students/school/:id` | 37.62ms | 72.44ms | 536.10 |
+| `POST /api/v2/attendance/bulk` (10 students) | 112.07ms | 250.63ms | 178.82 |
+
+Two findings worth acting on:
+
+1. **`POST /api/v2/attendance/bulk` is the clear bottleneck** — 3-8x
+   slower than the read endpoints even at low concurrency. Root cause is
+   visible directly in `AttendanceService.bulkMark`
+   (`backend/src/modules/attendance/attendance.service.ts`): it does one
+   `findOne` + one `save` **per student in the request**, via
+   `Promise.all` — 10 students means up to 20 sequential-per-record DB
+   round trips per HTTP request. A real classroom might mark 30-40
+   students per bulk request, which would scale this cost roughly
+   linearly. Batching into a single upsert query (TypeORM's `upsert()`
+   or a raw `ON CONFLICT` query) would be a meaningfully high-leverage
+   fix before this endpoint sees real classroom-sized payloads.
+2. **`GET /api/v2/students/school/:id` (the roster endpoint) is the
+   slowest read** by a real margin (536 req/s vs. 765-1497 req/s for the
+   other two) — consistent with `DATABASE_SCHEMA.md`'s existing note that
+   this list endpoint is unpaginated. Fine at the seed data's 30
+   students/school; worth re-testing before a school with hundreds of
+   students hits this same endpoint.
+
+**A methodology note worth keeping for the next person who extends this
+test:** the first attempt at isolating per-endpoint numbers accidentally
+ran three `wrk` invocations against an **empty/expired auth token** — the
+setup script's login call had hit the newly-added
+`AUTH_LOGIN_RATE_LIMIT` (5 requests/15min in production mode, see
+`SECURITY_CHECKLIST.md` § Rate Limiting) after several earlier test runs
+in the same session. The resulting numbers (~2400 req/s, ~8ms latency)
+looked like great performance but were actually `JwtAuthGuard` rejecting
+every request with a fast 401, never touching the database — caught only
+because status codes were explicitly re-verified with `curl` before
+trusting the `wrk` output, not because anything looked obviously wrong in
+the `wrk` summary itself. **Numbers from a load test are only as
+trustworthy as the request that produced them** — the same principle this
+whole document has applied to `/health`'s memory bug below applies
+equally to a silently-unauthenticated request in a load test. Restarting
+the backend process reset the in-memory `RateLimitGuard` state (it's a
+plain `Map`, not persisted) and the corrected, verified numbers above are
+what's reported.
 
 ---
 
@@ -171,21 +264,32 @@ pass after this change.
 
 ## Capacity Planning
 
-Based on the measured single-instance ceiling (~2000 req/s on trivial
-endpoints, degrading past ~200 concurrent connections without
-clustering):
+Based on the measured single-instance ceilings — ~2000 req/s on trivial
+`/health` endpoints, ~400 req/s on a realistic mixed authenticated
+workload (see
+[Authenticated Business Endpoint Results](#authenticated-business-endpoint-results)),
+both degrading past ~200 concurrent connections without clustering:
 
 - **Current unclustered deployment**: reasonable for the pilot's stated
   scale (`ROADMAP_TO_LAUNCH.md` targets a 50-user pilot) — nowhere near
-  this ceiling under realistic pilot traffic.
+  even the ~400 req/s realistic ceiling under actual pilot traffic
+  (50-100 users occasionally hitting the API, not 200 concurrent
+  connections hammering it continuously).
 - **Before any deployment beyond the pilot**: cluster the process (see
-  Optimization Recommendations #1) and re-test against real business
-  endpoints with realistic payloads, not `/health`.
-- **Database** was never the bottleneck in this test (a `SELECT 1` health
-  check doesn't stress it) — capacity planning for Postgres itself needs
-  its own test against the actual query patterns in
+  Optimization Recommendations #1) — this pass's business-endpoint numbers
+  make the case concretely: 400 req/s on one core means a clustered
+  4-core deployment plausibly gets into the 1500-2000 req/s range for the
+  same realistic workload, which is the headroom that actually matters at
+  a school-district scale beyond the pilot.
+- **Database was a real bottleneck this time**, unlike the original
+  `/health`-only test (a `SELECT 1` health check doesn't stress it) —
+  `POST /api/v2/attendance/bulk`'s per-student `findOne`+`save` pattern is
+  a measured, not theoretical, capacity concern (see the bottleneck
+  finding above). Capacity planning for Postgres itself still needs its
+  own test against the full query patterns in
   `database/queries/optimized-queries.ts` and the unpaginated list
-  endpoints flagged in `DATABASE_SCHEMA.md` § Query Optimization Notes.
+  endpoints flagged in `DATABASE_SCHEMA.md` § Query Optimization Notes,
+  at realistic data volume rather than the 4-school seed data.
 
 ---
 
@@ -194,16 +298,29 @@ clustering):
 What the *next* load test should cover, now that the harness itself is
 proven to work:
 
-- [ ] Authenticated business endpoints (`POST /api/v2/auth/login` then a
-      mix of `GET /api/v2/students/school/:id`, `POST /api/v2/attendance/bulk`,
-      `POST /api/v2/assessments/:id/submit`) — a Lua script for `wrk` or a
-      small custom script to handle the login-then-authenticated-requests
-      flow, since the current scripts only hit unauthenticated `/health*`.
+- [x] ✅ **Done this pass:** authenticated business endpoints
+      (`scripts/load-test-business.sh` — logs in for real, mixes
+      `GET /api/v2/students/school/:id`, `GET /api/v2/assessments/school/:id`,
+      `GET /api/v2/reports/school/:id/performance`, and
+      `POST /api/v2/attendance/bulk`). See
+      [Authenticated Business Endpoint Results](#authenticated-business-endpoint-results)
+      above. **Still not covered:** `POST /api/v2/assessments/:id/submit`
+      specifically — it's public/unauthenticated (a separate rate-limiting
+      gap, see `SECURITY_CHECKLIST.md`) and a realistic test needs a fresh
+      `respondentId` per request to exercise the real write path rather
+      than short-circuit on the duplicate-submission check; left as a
+      follow-up rather than bolted onto this pass.
 - [ ] A clustered/multi-replica target, to validate the scaling
       recommendation above actually raises the ceiling as expected.
 - [ ] A run against a database with realistic data volume (hundreds of
       schools, thousands of students per school) rather than the 4-school,
       120-student seed data — the unpaginated list endpoints noted in
-      `DATABASE_SCHEMA.md` will behave very differently at that scale.
+      `DATABASE_SCHEMA.md` will behave very differently at that scale, and
+      this pass's finding that `GET /api/v2/students/school/:id` is
+      already the slowest read endpoint at seed-data scale makes this a
+      real, non-hypothetical priority.
 - [ ] `wrk --timeout` set explicitly so timeout counts reflect real
       failures, not the tool's own default cutoff.
+- [ ] Batch `AttendanceService.bulkMark` into a single upsert query
+      instead of one `findOne`+`save` per student — see the bottleneck
+      finding above; this is now a measured, not theoretical, priority.

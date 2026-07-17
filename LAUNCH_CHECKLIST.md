@@ -85,11 +85,18 @@ product decision (pilot role scope). Only the 🟡 items below remain open:
       (`BACKUP_RECOVERY.md`) — a backup that only lives on the same disk
       as the database isn't a real disaster-recovery mechanism. Enable it
       before launch, not after the first incident.
-- [ ] 🟡 **No load test exists against real business endpoints** — only
-      `/health*` has been load-tested (`LOAD_TEST_RESULTS.md`). Reasonable
-      to accept for a 50-100 user pilot given the measured ~2000 req/s
-      single-instance ceiling has huge headroom at that scale, but don't
-      assume it generalizes to endpoints with real query complexity.
+- [x] ✅ **Fixed:** load-tested real authenticated business endpoints for
+      the first time (`scripts/load-test-business.sh`, new this pass) —
+      logs in for real and mixes `GET /students/school/:id`,
+      `GET /assessments/school/:id`, `GET /reports/.../performance`, and
+      `POST /attendance/bulk`. The realistic ceiling is **~400 req/s**,
+      about 5x lower than the trivial-`/health` ~2000 req/s figure — still
+      huge headroom for a 50-100 user pilot, but not the same number.
+      Found a real, measured bottleneck: `POST /attendance/bulk` is
+      3-8x slower than the read endpoints (one `findOne`+`save` per
+      student instead of a batched upsert) — worth fixing before real
+      classroom-sized payloads, not urgent for the pilot itself. See
+      `LOAD_TEST_RESULTS.md` § Authenticated Business Endpoint Results.
 
 ---
 
