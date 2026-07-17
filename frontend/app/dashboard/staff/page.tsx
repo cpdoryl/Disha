@@ -1,9 +1,11 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
+import { staffAPI } from '@/lib/api/services'
+import { useAuthStore } from '@/lib/store/authStore'
 
 const staffSchema = z.object({
   name: z.string().min(2, 'Name required'),
@@ -15,75 +17,36 @@ const staffSchema = z.object({
 
 type StaffFormData = z.infer<typeof staffSchema>
 
-const mockStaff = [
-  {
-    id: '1',
-    name: 'Mrs. Sharma',
-    email: 'sharma@disha.local',
-    role: 'Teacher',
-    department: 'Mathematics',
-    phone: '9876543210',
-    classes: ['10-A', '11-B'],
-    experience: '8 years',
-    qualification: 'M.Sc. Mathematics',
-    status: 'Active',
-  },
-  {
-    id: '2',
-    name: 'Mr. Patel',
-    email: 'patel@disha.local',
-    role: 'Teacher',
-    department: 'Science',
-    phone: '9876543211',
-    classes: ['10-B', '11-A'],
-    experience: '12 years',
-    qualification: 'B.Sc. Physics',
-    status: 'Active',
-  },
-  {
-    id: '3',
-    name: 'Dr. Gupta',
-    email: 'gupta@disha.local',
-    role: 'Principal',
-    department: 'Administration',
-    phone: '9876543212',
-    classes: [],
-    experience: '20 years',
-    qualification: 'Ph.D. Education',
-    status: 'Active',
-  },
-  {
-    id: '4',
-    name: 'Mrs. Khan',
-    email: 'khan@disha.local',
-    role: 'Vice Principal',
-    department: 'Administration',
-    phone: '9876543213',
-    classes: ['11-A'],
-    experience: '15 years',
-    qualification: 'M.Ed',
-    status: 'Active',
-  },
-  {
-    id: '5',
-    name: 'Mr. Singh',
-    email: 'singh@disha.local',
-    role: 'Librarian',
-    department: 'Library',
-    phone: '9876543214',
-    classes: [],
-    experience: '5 years',
-    qualification: 'B.Lib Science',
-    status: 'Active',
-  },
-]
-
 export default function StaffPage() {
-  const [staff, setStaff] = useState(mockStaff)
+  const { user } = useAuthStore()
+  const [staff, setStaff] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const [submitting, setSubmitting] = useState(false)
   const [showForm, setShowForm] = useState(false)
-  const [selectedStaff, setSelectedStaff] = useState<typeof mockStaff[0] | null>(null)
+  const [selectedStaff, setSelectedStaff] = useState<any | null>(null)
   const [search, setSearch] = useState('')
   const [filterRole, setFilterRole] = useState('All')
+
+  useEffect(() => {
+    if (user?.schoolId) {
+      fetchStaff()
+    }
+  }, [user?.schoolId])
+
+  const fetchStaff = async () => {
+    try {
+      setLoading(true)
+      setError(null)
+      const data = await staffAPI.getBySchool(user!.schoolId)
+      setStaff(Array.isArray(data) ? data : data.data || [])
+    } catch (err: any) {
+      setError(err.response?.data?.message || 'Failed to load staff')
+      setStaff([])
+    } finally {
+      setLoading(false)
+    }
+  }
 
   const {
     register,
@@ -100,20 +63,21 @@ export default function StaffPage() {
       member.email.toLowerCase().includes(search.toLowerCase()))
   )
 
-  const onSubmit = (data: StaffFormData) => {
-    setStaff([
-      ...staff,
-      {
-        id: Date.now().toString(),
+  const onSubmit = async (data: StaffFormData) => {
+    try {
+      setSubmitting(true)
+      await staffAPI.create({
         ...data,
-        classes: [],
-        experience: '0 years',
-        qualification: '',
-        status: 'Active',
-      },
-    ])
-    reset()
-    setShowForm(false)
+        schoolId: user!.schoolId,
+      })
+      await fetchStaff()
+      reset()
+      setShowForm(false)
+    } catch (err: any) {
+      setError(err.response?.data?.message || 'Failed to create staff')
+    } finally {
+      setSubmitting(false)
+    }
   }
 
   const roles = ['All', 'Teacher', 'Principal', 'Vice Principal', 'Librarian', 'Administrator']
@@ -127,11 +91,21 @@ export default function StaffPage() {
         </div>
         <button
           onClick={() => setShowForm(!showForm)}
-          className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+          className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
+          disabled={loading}
         >
           {showForm ? 'Cancel' : '+ Add Staff'}
         </button>
       </div>
+
+      {error && (
+        <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-red-700">
+          {error}
+          <button onClick={fetchStaff} className="ml-2 underline font-medium">
+            Retry
+          </button>
+        </div>
+      )}
 
       {showForm && (
         <div className="bg-white rounded-lg shadow p-6">
@@ -208,9 +182,10 @@ export default function StaffPage() {
 
             <button
               type="submit"
-              className="w-full px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
+              className="w-full px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50"
+              disabled={submitting}
             >
-              Add Staff Member
+              {submitting ? 'Adding...' : 'Add Staff Member'}
             </button>
           </form>
         </div>
@@ -239,21 +214,34 @@ export default function StaffPage() {
         </div>
       </div>
 
-      <div className="overflow-x-auto bg-white rounded-lg shadow">
-        <table className="w-full">
-          <thead className="bg-gray-50 border-b border-gray-200">
-            <tr>
-              <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">Name</th>
-              <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">Email</th>
-              <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">Role</th>
-              <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">Department</th>
-              <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">Phone</th>
-              <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">Status</th>
-              <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">Action</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-gray-200">
-            {filteredStaff.map((member) => (
+      {loading ? (
+        <div className="p-12 text-center">
+          <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+          <p className="mt-4 text-gray-600">Loading staff...</p>
+        </div>
+      ) : (
+        <div className="overflow-x-auto bg-white rounded-lg shadow">
+          <table className="w-full">
+            <thead className="bg-gray-50 border-b border-gray-200">
+              <tr>
+                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">Name</th>
+                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">Email</th>
+                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">Role</th>
+                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">Department</th>
+                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">Phone</th>
+                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">Status</th>
+                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">Action</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-200">
+              {filteredStaff.length === 0 ? (
+                <tr>
+                  <td colSpan={7} className="px-6 py-8 text-center text-gray-600">
+                    No staff found
+                  </td>
+                </tr>
+              ) : (
+                filteredStaff.map((member) => (
               <tr key={member.id} className="hover:bg-gray-50">
                 <td className="px-6 py-4 text-sm text-gray-900 font-medium">{member.name}</td>
                 <td className="px-6 py-4 text-sm text-gray-600">{member.email}</td>
@@ -274,10 +262,12 @@ export default function StaffPage() {
                   </button>
                 </td>
               </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+      )}
 
       {selectedStaff && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">

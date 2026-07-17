@@ -1,9 +1,11 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
+import { classAPI } from '@/lib/api/services'
+import { useAuthStore } from '@/lib/store/authStore'
 
 const classSchema = z.object({
   name: z.string().min(2, 'Class name required'),
@@ -14,54 +16,35 @@ const classSchema = z.object({
 
 type ClassFormData = z.infer<typeof classSchema>
 
-const mockClasses = [
-  {
-    id: '1',
-    name: 'Class 10',
-    section: 'A',
-    classTeacher: 'Mrs. Sharma',
-    strength: 25,
-    studentsPresent: 23,
-    averageAttendance: 92,
-    subjects: ['Math', 'Science', 'English', 'History'],
-  },
-  {
-    id: '2',
-    name: 'Class 10',
-    section: 'B',
-    classTeacher: 'Mr. Patel',
-    strength: 24,
-    studentsPresent: 21,
-    averageAttendance: 87,
-    subjects: ['Math', 'Science', 'English', 'Geography'],
-  },
-  {
-    id: '3',
-    name: 'Class 11',
-    section: 'A',
-    classTeacher: 'Dr. Gupta',
-    strength: 20,
-    studentsPresent: 19,
-    averageAttendance: 95,
-    subjects: ['Physics', 'Chemistry', 'Biology', 'English'],
-  },
-  {
-    id: '4',
-    name: 'Class 11',
-    section: 'B',
-    classTeacher: 'Mrs. Khan',
-    strength: 18,
-    studentsPresent: 16,
-    averageAttendance: 89,
-    subjects: ['Math', 'Accounts', 'Economics', 'English'],
-  },
-]
-
 export default function ClassesPage() {
-  const [classes, setClasses] = useState(mockClasses)
+  const { user } = useAuthStore()
+  const [classes, setClasses] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const [submitting, setSubmitting] = useState(false)
   const [showForm, setShowForm] = useState(false)
-  const [selectedClass, setSelectedClass] = useState<typeof mockClasses[0] | null>(null)
+  const [selectedClass, setSelectedClass] = useState<any | null>(null)
   const [search, setSearch] = useState('')
+
+  useEffect(() => {
+    if (user?.schoolId) {
+      fetchClasses()
+    }
+  }, [user?.schoolId])
+
+  const fetchClasses = async () => {
+    try {
+      setLoading(true)
+      setError(null)
+      const data = await classAPI.getBySchool(user!.schoolId)
+      setClasses(Array.isArray(data) ? data : data.data || [])
+    } catch (err: any) {
+      setError(err.response?.data?.message || 'Failed to load classes')
+      setClasses([])
+    } finally {
+      setLoading(false)
+    }
+  }
 
   const {
     register,
@@ -77,20 +60,22 @@ export default function ClassesPage() {
     cls.classTeacher.toLowerCase().includes(search.toLowerCase())
   )
 
-  const onSubmit = (data: ClassFormData) => {
-    setClasses([
-      ...classes,
-      {
-        id: Date.now().toString(),
+  const onSubmit = async (data: ClassFormData) => {
+    try {
+      setSubmitting(true)
+      await classAPI.create({
         ...data,
         strength: parseInt(data.strength),
-        studentsPresent: 0,
-        averageAttendance: 0,
-        subjects: [],
-      },
-    ])
-    reset()
-    setShowForm(false)
+        schoolId: user!.schoolId,
+      })
+      await fetchClasses()
+      reset()
+      setShowForm(false)
+    } catch (err: any) {
+      setError(err.response?.data?.message || 'Failed to create class')
+    } finally {
+      setSubmitting(false)
+    }
   }
 
   return (
@@ -102,11 +87,21 @@ export default function ClassesPage() {
         </div>
         <button
           onClick={() => setShowForm(!showForm)}
-          className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+          className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
+          disabled={loading}
         >
           {showForm ? 'Cancel' : '+ Add Class'}
         </button>
       </div>
+
+      {error && (
+        <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-red-700">
+          {error}
+          <button onClick={fetchClasses} className="ml-2 underline font-medium">
+            Retry
+          </button>
+        </div>
+      )}
 
       {showForm && (
         <div className="bg-white rounded-lg shadow p-6">
@@ -172,9 +167,10 @@ export default function ClassesPage() {
 
             <button
               type="submit"
-              className="w-full px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
+              className="w-full px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50"
+              disabled={submitting}
             >
-              Add Class
+              {submitting ? 'Adding...' : 'Add Class'}
             </button>
           </form>
         </div>
@@ -190,8 +186,19 @@ export default function ClassesPage() {
         />
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {filteredClasses.map((cls) => (
+      {loading ? (
+        <div className="p-12 text-center">
+          <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+          <p className="mt-4 text-gray-600">Loading classes...</p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {filteredClasses.length === 0 ? (
+            <div className="col-span-full text-center py-12 text-gray-600">
+              No classes found
+            </div>
+          ) : (
+            filteredClasses.map((cls) => (
           <div
             key={cls.id}
             onClick={() => setSelectedClass(cls)}
@@ -230,8 +237,10 @@ export default function ClassesPage() {
               View Details
             </button>
           </div>
-        ))}
-      </div>
+            ))
+          )}
+        </div>
+      )}
 
       {selectedClass && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">

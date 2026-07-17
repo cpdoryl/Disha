@@ -1,22 +1,25 @@
 'use client'
 
+import { useState, useEffect } from 'react'
 import { BarChart, Bar, LineChart, Line, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts'
+import { reportingAPI } from '@/lib/api/services'
+import { useAuthStore } from '@/lib/store/authStore'
 
-const attendanceByClass = [
+const defaultAttendanceByClass = [
   { name: '10-A', attendance: 92 },
   { name: '10-B', attendance: 88 },
   { name: '11-A', attendance: 94 },
   { name: '11-B', attendance: 89 },
 ]
 
-const performanceData = [
+const defaultPerformanceData = [
   { name: 'Excellent', value: 18, fill: '#10b981' },
   { name: 'Good', value: 32, fill: '#3b82f6' },
   { name: 'Average', value: 28, fill: '#f59e0b' },
   { name: 'Poor', value: 12, fill: '#ef4444' },
 ]
 
-const trendData = [
+const defaultTrendData = [
   { week: 'Week 1', avg: 75, total: 120 },
   { week: 'Week 2', avg: 78, total: 128 },
   { week: 'Week 3', avg: 82, total: 135 },
@@ -24,7 +27,7 @@ const trendData = [
   { week: 'Week 5', avg: 85, total: 142 },
 ]
 
-const studentPerformance = [
+const defaultStudentPerformance = [
   { name: 'Raj Kumar', math: 85, english: 78, science: 92, history: 88 },
   { name: 'Priya Singh', math: 92, english: 88, science: 85, history: 90 },
   { name: 'Amit Patel', math: 78, english: 82, science: 88, history: 85 },
@@ -32,12 +35,58 @@ const studentPerformance = [
 ]
 
 export default function ReportsPage() {
+  const { user } = useAuthStore()
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const [metrics, setMetrics] = useState<any>(null)
+
+  useEffect(() => {
+    if (user?.schoolId) {
+      fetchReports()
+    }
+  }, [user?.schoolId])
+
+  const fetchReports = async () => {
+    try {
+      setLoading(true)
+      setError(null)
+      const data = await reportingAPI.getSchoolMetrics(user!.schoolId)
+      setMetrics(data)
+    } catch (err: any) {
+      setError(err.response?.data?.message || 'Failed to load reports')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const attendanceByClass = metrics?.attendanceByClass || defaultAttendanceByClass
+  const performanceData = metrics?.performanceData || defaultPerformanceData
+  const trendData = metrics?.trendData || defaultTrendData
+  const studentPerformance = metrics?.studentPerformance || defaultStudentPerformance
   return (
     <div className="space-y-6">
       <div>
         <h1 className="text-3xl font-bold text-gray-900">Reports & Analytics</h1>
         <p className="text-gray-600 mt-2">View comprehensive performance and attendance reports</p>
       </div>
+
+      {error && (
+        <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-red-700">
+          {error}
+          <button onClick={fetchReports} className="ml-2 underline font-medium">
+            Retry
+          </button>
+        </div>
+      )}
+
+      {loading ? (
+        <div className="p-12 text-center">
+          <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+          <p className="mt-4 text-gray-600">Loading reports...</p>
+        </div>
+      ) : (
+        <>
+
 
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <div className="bg-white rounded-lg shadow p-4">
@@ -181,6 +230,8 @@ export default function ReportsPage() {
           </button>
         </div>
       </div>
+        </>
+      )}
     </div>
   )
 }

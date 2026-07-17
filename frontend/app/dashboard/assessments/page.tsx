@@ -1,9 +1,11 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
+import { assessmentAPI } from '@/lib/api/services'
+import { useAuthStore } from '@/lib/store/authStore'
 
 const assessmentSchema = z.object({
   title: z.string().min(3, 'Title required'),
@@ -14,46 +16,35 @@ const assessmentSchema = z.object({
 
 type AssessmentFormData = z.infer<typeof assessmentSchema>
 
-const mockAssessments = [
-  {
-    id: '1',
-    title: 'Mathematics Quiz 1',
-    subject: 'Mathematics',
-    totalMarks: 50,
-    dueDate: '2026-07-20',
-    submitted: 18,
-    total: 25,
-    status: 'In Progress',
-    averageScore: 38,
-  },
-  {
-    id: '2',
-    title: 'Science Mid-term',
-    subject: 'Science',
-    totalMarks: 100,
-    dueDate: '2026-07-25',
-    submitted: 12,
-    total: 25,
-    status: 'Pending',
-    averageScore: 0,
-  },
-  {
-    id: '3',
-    title: 'English Assignment',
-    subject: 'English',
-    totalMarks: 30,
-    dueDate: '2026-07-18',
-    submitted: 25,
-    total: 25,
-    status: 'Completed',
-    averageScore: 26,
-  },
-]
-
 export default function AssessmentsPage() {
-  const [assessments, setAssessments] = useState(mockAssessments)
+  const { user } = useAuthStore()
+  const [assessments, setAssessments] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const [submitting, setSubmitting] = useState(false)
   const [showForm, setShowForm] = useState(false)
-  const [selectedAssessment, setSelectedAssessment] = useState<typeof mockAssessments[0] | null>(null)
+  const [selectedAssessment, setSelectedAssessment] = useState<any | null>(null)
+
+  useEffect(() => {
+    if (user?.schoolId) {
+      fetchAssessments()
+    }
+  }, [user?.schoolId])
+
+  const fetchAssessments = async () => {
+    try {
+      setLoading(true)
+      setError(null)
+      // API endpoint needed: GET /api/v2/assessments/school/:schoolId
+      const data = await assessmentAPI.getById('dummy') // Placeholder
+      setAssessments(Array.isArray(data) ? data : data.data || [])
+    } catch (err: any) {
+      setError(err.response?.data?.message || 'Failed to load assessments')
+      setAssessments([])
+    } finally {
+      setLoading(false)
+    }
+  }
 
   const {
     register,
@@ -64,21 +55,22 @@ export default function AssessmentsPage() {
     resolver: zodResolver(assessmentSchema),
   })
 
-  const onSubmit = (data: AssessmentFormData) => {
-    setAssessments([
-      ...assessments,
-      {
-        id: Date.now().toString(),
+  const onSubmit = async (data: AssessmentFormData) => {
+    try {
+      setSubmitting(true)
+      await assessmentAPI.create({
         ...data,
         totalMarks: parseInt(data.totalMarks),
-        submitted: 0,
-        total: 25,
-        status: 'Pending',
-        averageScore: 0,
-      },
-    ])
-    reset()
-    setShowForm(false)
+        schoolId: user!.schoolId,
+      })
+      await fetchAssessments()
+      reset()
+      setShowForm(false)
+    } catch (err: any) {
+      setError(err.response?.data?.message || 'Failed to create assessment')
+    } finally {
+      setSubmitting(false)
+    }
   }
 
   return (
@@ -90,11 +82,21 @@ export default function AssessmentsPage() {
         </div>
         <button
           onClick={() => setShowForm(!showForm)}
-          className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+          className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
+          disabled={loading}
         >
           {showForm ? 'Cancel' : '+ Create Assessment'}
         </button>
       </div>
+
+      {error && (
+        <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-red-700">
+          {error}
+          <button onClick={fetchAssessments} className="ml-2 underline font-medium">
+            Retry
+          </button>
+        </div>
+      )}
 
       {showForm && (
         <div className="bg-white rounded-lg shadow p-6">
@@ -160,16 +162,28 @@ export default function AssessmentsPage() {
 
             <button
               type="submit"
-              className="w-full px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
+              className="w-full px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50"
+              disabled={submitting}
             >
-              Create Assessment
+              {submitting ? 'Creating...' : 'Create Assessment'}
             </button>
           </form>
         </div>
       )}
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {assessments.map((assessment) => (
+      {loading ? (
+        <div className="p-12 text-center">
+          <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+          <p className="mt-4 text-gray-600">Loading assessments...</p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {assessments.length === 0 ? (
+            <div className="col-span-full text-center py-12 text-gray-600">
+              No assessments found
+            </div>
+          ) : (
+            assessments.map((assessment) => (
           <div
             key={assessment.id}
             onClick={() => setSelectedAssessment(assessment)}
@@ -210,8 +224,10 @@ export default function AssessmentsPage() {
               {assessment.status === 'Completed' ? 'View Results' : 'View Details'}
             </button>
           </div>
-        ))}
-      </div>
+            ))
+          )}
+        </div>
+      )}
 
       {selectedAssessment && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
