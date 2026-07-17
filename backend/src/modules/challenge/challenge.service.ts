@@ -14,7 +14,9 @@ export class ChallengeService {
     const existing = await this.challengeRepository.count();
     if (existing > 0) return;
 
-    const challenges = PREDEFINED_CHALLENGES.map((challenge) => this.challengeRepository.create(challenge));
+    const challenges = PREDEFINED_CHALLENGES.map((challenge: (typeof PREDEFINED_CHALLENGES)[number]) =>
+      this.challengeRepository.create(challenge),
+    );
 
     await this.challengeRepository.save(challenges);
   }

@@ -53,6 +53,18 @@ export class AssessmentController {
   }
 
   /**
+   * Get all assessment cycles for a school
+   */
+  @Get('school/:schoolId')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('ryl_admin', 'school_admin', 'teacher')
+  @ApiParam({ name: 'schoolId', description: 'School ID' })
+  @ApiOperation({ summary: 'Get assessment cycles for a school' })
+  async getAssessmentsBySchool(@Param('schoolId') schoolId: string) {
+    return this.assessmentService.getAssessmentsBySchool(schoolId);
+  }
+
+  /**
    * Get assessment details
    */
   @Get(':id')

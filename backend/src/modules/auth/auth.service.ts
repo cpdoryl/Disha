@@ -94,7 +94,7 @@ export class AuthService {
     const tokens = await this.generateTokens(
       user.id,
       user.schoolId || '',
-      user.roleType,
+      user.userType,
       user.email,
     );
 
@@ -109,7 +109,8 @@ export class AuthService {
         email: user.email,
         firstName: user.firstName,
         lastName: user.lastName || '',
-        role: user.roleType,
+        role: user.userType,
+        schoolId: user.schoolId || null,
       },
     };
   }

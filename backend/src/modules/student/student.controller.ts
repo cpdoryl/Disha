@@ -39,6 +39,14 @@ export class StudentController {
     return this.studentService.getStudent(studentId);
   }
 
+  @Get('school/:schoolId/classes')
+  @Roles('ryl_admin', 'school_admin', 'teacher')
+  @ApiParam({ name: 'schoolId', description: 'School ID' })
+  @ApiOperation({ summary: 'Get classes derived from enrolled students' })
+  async getClassesBySchool(@Param('schoolId') schoolId: string) {
+    return this.studentService.getClassesBySchool(schoolId);
+  }
+
   @Get('school/:schoolId')
   @Roles('ryl_admin', 'school_admin', 'teacher')
   @ApiParam({ name: 'schoolId', description: 'School ID' })

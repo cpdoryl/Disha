@@ -10,13 +10,13 @@ export default function DashboardHome() {
   const { user } = useAuthStore()
   const [metrics, setMetrics] = useState<any>(null)
   const [loading, setLoading] = useState(true)
-  const [data, setData] = useState([
+  const data = [
     { name: 'Jan', students: 400, attendance: 240 },
     { name: 'Feb', students: 300, attendance: 221 },
     { name: 'Mar', students: 200, attendance: 229 },
     { name: 'Apr', students: 278, attendance: 200 },
     { name: 'May', students: 189, attendance: 218 },
-  ])
+  ]
 
   useEffect(() => {
     if (!user?.schoolId) return

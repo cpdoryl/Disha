@@ -68,7 +68,6 @@ const mockMessages = [
 ]
 
 export default function CommunicationsPage() {
-  const [showForm, setShowForm] = useState(false)
   const [selectedMessage, setSelectedMessage] = useState<typeof mockMessages[0] | null>(null)
   const [tab, setTab] = useState<'announcements' | 'messages' | 'send'>('announcements')
 

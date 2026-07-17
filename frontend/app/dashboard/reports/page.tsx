@@ -139,7 +139,7 @@ export default function ReportsPage() {
                 fill="#8884d8"
                 dataKey="value"
               >
-                {performanceData.map((entry, index) => (
+                {performanceData.map((entry: any, index: number) => (
                   <Cell key={`cell-${index}`} fill={entry.fill} />
                 ))}
               </Pie>
@@ -179,7 +179,7 @@ export default function ReportsPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
-              {studentPerformance.map((student, index) => {
+              {studentPerformance.map((student: any, index: number) => {
                 const average = Math.round((student.math + student.english + student.science + student.history) / 4)
                 return (
                   <tr key={index} className="hover:bg-gray-50">

@@ -20,6 +20,7 @@ export class LoginResponseDto {
     firstName: string;
     lastName: string;
     role: string;
+    schoolId: string | null;
   };
 }
 

@@ -74,6 +74,32 @@ export class StudentService {
     });
   }
 
+  async getClassesBySchool(schoolId: string) {
+    const students = await this.getStudentsBySchool(schoolId);
+    const byClass = new Map<string, { gradeLevel: number; classSection: string; strength: number }>();
+
+    for (const student of students) {
+      const key = `${student.gradeLevel ?? 'NA'}-${student.classSection ?? 'NA'}`;
+      const existing = byClass.get(key);
+      if (existing) {
+        existing.strength += 1;
+      } else {
+        byClass.set(key, {
+          gradeLevel: student.gradeLevel,
+          classSection: student.classSection,
+          strength: 1,
+        });
+      }
+    }
+
+    return Array.from(byClass.entries()).map(([key, value]) => ({
+      id: key,
+      name: `Class ${value.gradeLevel ?? 'N/A'}`,
+      section: value.classSection ?? 'N/A',
+      strength: value.strength,
+    }));
+  }
+
   async updateStudentStatus(
     studentId: string,
     status: StudentStatus,
