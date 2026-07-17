@@ -13,6 +13,7 @@ import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { AttendanceService } from './attendance.service';
 import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
 import { RolesGuard } from 'src/common/guards/roles.guard';
+import { SchoolScopeGuard } from 'src/common/guards/school-scope.guard';
 import { Roles } from 'src/common/decorators/roles.decorator';
 
 @ApiTags('Attendance')
@@ -23,6 +24,7 @@ export class AttendanceController {
   constructor(private attendanceService: AttendanceService) {}
 
   @Get()
+  @UseGuards(SchoolScopeGuard)
   @Roles('ryl_admin', 'school_admin', 'teacher')
   @ApiOperation({ summary: 'Get attendance for a class on a given date' })
   async getByClass(
@@ -45,6 +47,7 @@ export class AttendanceController {
   }
 
   @Post('bulk')
+  @UseGuards(SchoolScopeGuard)
   @HttpCode(HttpStatus.OK)
   @Roles('ryl_admin', 'school_admin', 'teacher')
   @ApiOperation({ summary: 'Bulk mark attendance for a class' })

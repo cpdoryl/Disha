@@ -6,6 +6,7 @@ describe('Schools API (Integration)', () => {
   let app: INestApplication;
   let adminToken: string;
   let teacherToken: string;
+  let teacherSchoolId: string;
   let schoolId: string;
 
   beforeAll(async () => {
@@ -29,6 +30,12 @@ describe('Schools API (Integration)', () => {
       });
 
     teacherToken = teacherLogin.body.accessToken;
+    // SchoolScopeGuard now enforces that a non-ryl_admin caller can only
+    // read their own school — the fake 550e8400... UUID used elsewhere in
+    // this file for admin (which bypasses the scope check) isn't a school
+    // the teacher belongs to, so teacher-token assertions below use their
+    // real seeded schoolId instead.
+    teacherSchoolId = teacherLogin.body.user.schoolId;
   });
 
   afterAll(async () => {
@@ -47,11 +54,19 @@ describe('Schools API (Integration)', () => {
 
     it('should get school with teacher token', async () => {
       const response = await request(app.getHttpServer())
-        .get('/api/v2/schools/550e8400-e29b-41d4-a716-446655440000')
+        .get(`/api/v2/schools/${teacherSchoolId}`)
         .set('Authorization', `Bearer ${teacherToken}`);
 
       // Should succeed or 404 depending on data
       expect([200, 404]).toContain(response.status);
+    });
+
+    it('should deny teacher token access to a different school', async () => {
+      const response = await request(app.getHttpServer())
+        .get('/api/v2/schools/550e8400-e29b-41d4-a716-446655440000')
+        .set('Authorization', `Bearer ${teacherToken}`);
+
+      expect(response.status).toBe(403); // SchoolScopeGuard: not the teacher's own school
     });
 
     it('should deny access without token', async () => {
@@ -164,9 +179,9 @@ describe('Schools API (Integration)', () => {
       expect([200, 404]).toContain(response.status);
     });
 
-    it('teacher should be able to get schools', async () => {
+    it('teacher should be able to get their own school', async () => {
       const response = await request(app.getHttpServer())
-        .get('/api/v2/schools/550e8400-e29b-41d4-a716-446655440000')
+        .get(`/api/v2/schools/${teacherSchoolId}`)
         .set('Authorization', `Bearer ${teacherToken}`);
 
       expect([200, 404]).toContain(response.status);

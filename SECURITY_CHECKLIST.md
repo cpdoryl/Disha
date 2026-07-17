@@ -70,17 +70,44 @@ where the fix and its verification live.
   (wrongly) to correctly enforcing role checks. **If this code has ever
   run against real user data, audit access logs for the affected
   endpoints from any role other than the intended ones.**
-- ⚠️ **Cross-school (tenant) isolation is never checked at the guard
-  level** — `RolesGuard` verifies *role*, not that the caller's
-  `schoolId` matches the resource being accessed. A `school_admin` or
-  `teacher` token for School A is not currently prevented from querying
-  School B's data by path parameter alone, at the framework level;
-  whether individual services filter correctly by the caller's own
-  `schoolId` (vs. trusting a client-supplied `schoolId` in the request)
-  needs an endpoint-by-endpoint audit. Flagged as an untested edge case
-  in `TEST_CASES.md` § Gaps: Edge Cases Worth Adding — treat this as the
-  single highest-priority gap to close before handling data from
-  multiple real schools in production.
+- 🔴→✅ **Fixed this pass — was a real cross-tenant data leak, verified
+  live before and after.** `RolesGuard` verified *role* but never that
+  the caller's `schoolId` matched the resource being accessed. Proved it
+  live against real seeded data: `admin1@school.edu` (School A,
+  `16d409ea-...`) could `GET /api/v2/schools/aa006f59-...` (School B) and
+  `GET /api/v2/students/school/aa006f59-...` and get back School B's full
+  record — principal contact info, every enrolled student's name/gender/
+  guardian details — with a 200, using nothing but a path parameter.
+  Fixed by adding `SchoolScopeGuard`
+  (`common/guards/school-scope.guard.ts`): compares the caller's JWT
+  `schoolId` against the school identifier in the request
+  (params/query/body, checked in that order; `ryl_admin` bypasses by
+  design as the platform-wide role) and throws 403 on mismatch. Attached
+  to every endpoint across 9 controllers (Assessment, Attendance, Audit,
+  Data, Notification, Reporting, School, Staff, Student, Wellbeing) that
+  carries a school identifier directly in the request — ~24 routes.
+  Re-verified live post-fix: the same admin1 → School B requests now
+  return 403, admin1's own school still returns 200, and `ryl_admin`
+  cross-school reads still work. Also added 3 new negative tests to
+  `rbac.integration.spec.ts`/`schools.integration.spec.ts` (full suite
+  now 79/79) and fixed 5 existing tests that had used placeholder IDs
+  (`school-1`, a fixed fake UUID) which no longer reflect real caller
+  behavior now that scope is actually enforced.
+  <br><br>
+  **Still open — endpoints without a school identifier directly in the
+  request, which need a resource-owner lookup instead of a simple param
+  compare:** `StudentController`/`StaffController`'s `:id`-based routes
+  (`GET /students/:id`, `PATCH /students/:id/status`, `POST
+  /students/:id/attendance`, etc. — the resource's owning school isn't
+  in the URL, only its own ID); `WellbeingController`'s
+  counsellor-referral/intervention/bullying-incident endpoints (same
+  issue, and higher sensitivity — student mental-health data);
+  `AuditController`'s `GET /activity/user/:userId`; `SchoolController`'s
+  `GET /organization/:orgId` and `GET /district/:districtId` (org/district
+  scope, not school scope — the JWT doesn't carry an `organizationId`
+  today, so this needs a different mechanism, not `SchoolScopeGuard`).
+  Treat the wellbeing endpoints as the next-highest priority within this
+  remaining set given the data sensitivity.
 - ⚠️ `PermissionsGuard` + the fine-grained `Permission` enum
   (`common/constants/permissions.ts`) are fully built but never attached
   via `@RequirePermissions()` anywhere — only the coarser role check is
@@ -142,7 +169,7 @@ where the fix and its verification live.
 |---|---|---|
 | Injection | ✅ Mitigated | TypeORM parameterization throughout |
 | Broken Authentication | ⚠️ Partial | JWT solid; login/refresh now rate-limited (see below), still no MFA |
-| Broken Access Control | 🔴 Was broken, now fixed | See § Authorization above — the class-level `@Roles()` bypass was a real instance of this OWASP category, not hypothetical |
+| Broken Access Control | 🔴 Was broken, now fixed (twice) | See § Authorization above — both the class-level `@Roles()` bypass and the cross-school tenant isolation gap were real, verified instances of this OWASP category, not hypothetical |
 | Cryptographic Failures | ⚠️ Partial | TLS + bcrypt solid; column-level encryption claim in README doesn't match reality |
 | Security Misconfiguration | 🔴 Multiple found, fixed | `database.synchronize` hardcoded `true` regardless of environment (see below); several infra config files had copy-paste artifacts (`INFRASTRUCTURE_SETUP.md`) |
 | Vulnerable Components | ⚠️ Not verified this pass | `npm audit` not run as part of this session — see § Dependency Scanning |

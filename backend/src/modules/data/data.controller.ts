@@ -13,6 +13,7 @@ import { ApiTags, ApiBearerAuth, ApiParam, ApiOperation } from '@nestjs/swagger'
 import { DataService } from '../../services/data.service';
 import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
 import { RolesGuard } from 'src/common/guards/roles.guard';
+import { SchoolScopeGuard } from 'src/common/guards/school-scope.guard';
 import { Roles } from 'src/common/decorators/roles.decorator';
 
 @ApiTags('Data')
@@ -30,6 +31,7 @@ export class DataController {
   }
 
   @Get('operational/school/:schoolId')
+  @UseGuards(SchoolScopeGuard)
   async getOperationalDataForSchool(
     @Param('schoolId') schoolId: string,
     @Query('startDate') startDate: string,
@@ -43,6 +45,7 @@ export class DataController {
   }
 
   @Post('scorecard')
+  @UseGuards(SchoolScopeGuard)
   @HttpCode(HttpStatus.CREATED)
   async generateMonitoringScorecard(
     @Body() scorecardDto: any,
@@ -55,6 +58,7 @@ export class DataController {
   }
 
   @Get('scorecard/school/:schoolId')
+  @UseGuards(SchoolScopeGuard)
   async getScorecardReport(
     @Param('schoolId') schoolId: string,
     @Query('startMonth') startMonth: string,
@@ -68,6 +72,7 @@ export class DataController {
   }
 
   @Get('retention/school/:schoolId')
+  @UseGuards(SchoolScopeGuard)
   async getStudentRetentionMetrics(
     @Param('schoolId') schoolId: string,
     @Query('academicYear') academicYear: string,
@@ -76,6 +81,7 @@ export class DataController {
   }
 
   @Get('teacher-retention/school/:schoolId')
+  @UseGuards(SchoolScopeGuard)
   async getTeacherRetentionMetrics(
     @Param('schoolId') schoolId: string,
     @Query('academicYear') academicYear: string,
@@ -91,6 +97,7 @@ export class DataController {
   }
 
   @Get('academic-performance/school/:schoolId')
+  @UseGuards(SchoolScopeGuard)
   async getAcademicPerformanceDistribution(
     @Param('schoolId') schoolId: string,
   ) {
@@ -98,6 +105,7 @@ export class DataController {
   }
 
   @Get('attendance-trend/school/:schoolId')
+  @UseGuards(SchoolScopeGuard)
   async getAttendanceTrendAnalysis(
     @Param('schoolId') schoolId: string,
     @Query('months') months?: number,

@@ -48,11 +48,25 @@ launch:
       open, lower priority:** `POST /api/v2/assessments/:id/submit` is
       public/unauthenticated and not yet rate-limited — see
       `SECURITY_CHECKLIST.md` § Rate Limiting.
-- [ ] 🔴 **Cross-school tenant isolation was never audited**
-      (`SECURITY_CHECKLIST.md`, `TEST_CASES.md`) — `RolesGuard` verifies
-      role, not that a caller's `schoolId` matches the resource they're
-      accessing. Audit this before onboarding multiple real schools with
-      real (not demo) data, even for a small pilot.
+- [x] ✅ **Fixed the main gap:** cross-school tenant isolation was a real,
+      verified data leak — `admin1@school.edu` (School A) could read
+      School B's full school record and student roster (names, gender,
+      guardian details) with nothing but a path parameter. Fixed via a
+      new `SchoolScopeGuard` attached to every endpoint (~24 routes
+      across 9 controllers) that carries a school identifier directly in
+      the request; verified closed live, and the full suite (79/79,
+      including 3 new negative tests) still passes. See
+      `SECURITY_CHECKLIST.md` § Authorization for the full before/after.
+      **Still open, lower priority:** `:id`-based endpoints where the
+      owning school isn't in the URL (student/staff detail routes, and
+      especially the wellbeing counsellor-referral/intervention/
+      bullying-incident endpoints — higher sensitivity, same class of
+      gap) need a resource-owner lookup rather than a simple param
+      compare, and `SchoolController`'s org/district-scoped queries need
+      a different mechanism entirely since the JWT doesn't carry an
+      `organizationId`. Audit these before onboarding real schools with
+      real (not demo) data if the pilot exercises those specific
+      endpoints.
 - [ ] 🔴 **`.github/workflows/security-quality.yml` was never verified**
       this pass, unlike every other CI/deploy workflow (all of which had
       real bugs found and fixed — see `TESTING_STRATEGY.md`,

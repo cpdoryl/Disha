@@ -13,6 +13,7 @@ import { ApiTags, ApiBearerAuth, ApiParam } from '@nestjs/swagger';
 import { AuditService } from '../../services/audit.service';
 import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
 import { RolesGuard } from 'src/common/guards/roles.guard';
+import { SchoolScopeGuard } from 'src/common/guards/school-scope.guard';
 import { Roles } from 'src/common/decorators/roles.decorator';
 
 @ApiTags('Audit')
@@ -30,6 +31,7 @@ export class AuditController {
   }
 
   @Get('logs/school/:schoolId')
+  @UseGuards(SchoolScopeGuard)
   async getAuditTrail(
     @Param('schoolId') schoolId: string,
     @Query('startDate') startDate: string,
@@ -58,6 +60,7 @@ export class AuditController {
   }
 
   @Get('failed-actions/school/:schoolId')
+  @UseGuards(SchoolScopeGuard)
   async getFailedActions(
     @Param('schoolId') schoolId: string,
     @Query('startDate') startDate: string,
@@ -71,6 +74,7 @@ export class AuditController {
   }
 
   @Get('suspicious-activity/school/:schoolId')
+  @UseGuards(SchoolScopeGuard)
   async getSuspiciousActivity(
     @Param('schoolId') schoolId: string,
     @Query('threshold') threshold?: number,

@@ -5,6 +5,7 @@ import { setupTestApp, teardownTestApp, TEST_USERS } from './setup';
 describe('RBAC Integration Tests', () => {
   let app: INestApplication;
   let tokens: { [key: string]: string } = {};
+  let schoolIds: { [key: string]: string } = {};
 
   beforeAll(async () => {
     app = await setupTestApp();
@@ -19,6 +20,11 @@ describe('RBAC Integration Tests', () => {
         });
 
       tokens[key] = response.body.accessToken;
+      // SchoolScopeGuard enforces that school_admin/teacher can only
+      // access their own school's data — the 'school-1'/'assessment-1'
+      // style placeholder IDs used below only work for ryl_admin, which
+      // bypasses that check by design.
+      schoolIds[key] = response.body.user.schoolId;
     }
   });
 
@@ -79,7 +85,7 @@ describe('RBAC Integration Tests', () => {
 
       it('should allow school_admin to view school', async () => {
         const response = await request(app.getHttpServer())
-          .get('/api/v2/schools/school-1')
+          .get(`/api/v2/schools/${schoolIds.schoolAdmin}`)
           .set('Authorization', `Bearer ${tokens.schoolAdmin}`);
 
         expect([200, 400, 404]).toContain(response.status);
@@ -87,10 +93,18 @@ describe('RBAC Integration Tests', () => {
 
       it('should allow teacher to view school', async () => {
         const response = await request(app.getHttpServer())
-          .get('/api/v2/schools/school-1')
+          .get(`/api/v2/schools/${schoolIds.teacher}`)
           .set('Authorization', `Bearer ${tokens.teacher}`);
 
         expect([200, 400, 404]).toContain(response.status);
+      });
+
+      it('should deny school_admin from viewing a different school', async () => {
+        const response = await request(app.getHttpServer())
+          .get(`/api/v2/schools/${schoolIds.teacher}`)
+          .set('Authorization', `Bearer ${tokens.schoolAdmin}`);
+
+        expect(response.status).toBe(403); // SchoolScopeGuard: not their own school
       });
 
       it('should require authentication', async () => {
@@ -310,7 +324,7 @@ describe('RBAC Integration Tests', () => {
     describe('All Data endpoints require (ryl_admin, school_admin, teacher)', () => {
       it('should allow teacher to access operational data', async () => {
         const response = await request(app.getHttpServer())
-          .get('/api/v2/data/operational/school/school-1')
+          .get(`/api/v2/data/operational/school/${schoolIds.teacher}`)
           .set('Authorization', `Bearer ${tokens.teacher}`)
           .query({
             startDate: '2026-01-01',
@@ -322,9 +336,21 @@ describe('RBAC Integration Tests', () => {
 
       it('should deny unauthorized access to operational data', async () => {
         const response = await request(app.getHttpServer())
-          .get('/api/v2/data/operational/school/school-1');
+          .get(`/api/v2/data/operational/school/${schoolIds.teacher}`);
 
         expect(response.status).toBe(401); // Unauthorized
+      });
+
+      it('should deny teacher from accessing a different school\'s operational data', async () => {
+        const response = await request(app.getHttpServer())
+          .get(`/api/v2/data/operational/school/${schoolIds.schoolAdmin}`)
+          .set('Authorization', `Bearer ${tokens.teacher}`)
+          .query({
+            startDate: '2026-01-01',
+            endDate: '2026-07-14',
+          });
+
+        expect(response.status).toBe(403); // SchoolScopeGuard: not their own school
       });
     });
   });
@@ -333,7 +359,7 @@ describe('RBAC Integration Tests', () => {
     describe('All Audit endpoints require (ryl_admin, school_admin)', () => {
       it('should allow school_admin to access audit logs', async () => {
         const response = await request(app.getHttpServer())
-          .get('/api/v2/audit/logs/school/school-1')
+          .get(`/api/v2/audit/logs/school/${schoolIds.schoolAdmin}`)
           .set('Authorization', `Bearer ${tokens.schoolAdmin}`)
           .query({
             startDate: '2026-01-01',
@@ -345,14 +371,14 @@ describe('RBAC Integration Tests', () => {
 
       it('should deny teacher from accessing audit logs', async () => {
         const response = await request(app.getHttpServer())
-          .get('/api/v2/audit/logs/school/school-1')
+          .get(`/api/v2/audit/logs/school/${schoolIds.teacher}`)
           .set('Authorization', `Bearer ${tokens.teacher}`)
           .query({
             startDate: '2026-01-01',
             endDate: '2026-07-14',
           });
 
-        expect(response.status).toBe(403); // Forbidden
+        expect(response.status).toBe(403); // Forbidden — teacher isn't in AuditController's allowed roles at all
       });
     });
   });

@@ -14,6 +14,7 @@ import { ApiTags, ApiOperation, ApiBearerAuth, ApiParam } from '@nestjs/swagger'
 import { StudentService } from '../../services/student.service';
 import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
 import { RolesGuard } from 'src/common/guards/roles.guard';
+import { SchoolScopeGuard } from 'src/common/guards/school-scope.guard';
 import { Roles } from 'src/common/decorators/roles.decorator';
 
 @ApiTags('Students')
@@ -40,6 +41,7 @@ export class StudentController {
   }
 
   @Get('school/:schoolId/classes')
+  @UseGuards(SchoolScopeGuard)
   @Roles('ryl_admin', 'school_admin', 'teacher')
   @ApiParam({ name: 'schoolId', description: 'School ID' })
   @ApiOperation({ summary: 'Get classes derived from enrolled students' })
@@ -48,6 +50,7 @@ export class StudentController {
   }
 
   @Get('school/:schoolId')
+  @UseGuards(SchoolScopeGuard)
   @Roles('ryl_admin', 'school_admin', 'teacher')
   @ApiParam({ name: 'schoolId', description: 'School ID' })
   @ApiOperation({ summary: 'Get students by school' })
@@ -143,6 +146,7 @@ export class StudentController {
   }
 
   @Get('school/:schoolId/risk-profile')
+  @UseGuards(SchoolScopeGuard)
   @Roles('ryl_admin', 'school_admin', 'teacher')
   @ApiParam({ name: 'schoolId', description: 'School ID' })
   @ApiOperation({ summary: 'Get student risk profiles' })

@@ -12,6 +12,7 @@ import { ApiTags, ApiOperation, ApiBearerAuth, ApiParam } from '@nestjs/swagger'
 import { StaffService } from './staff.service';
 import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
 import { RolesGuard } from 'src/common/guards/roles.guard';
+import { SchoolScopeGuard } from 'src/common/guards/school-scope.guard';
 import { Roles } from 'src/common/decorators/roles.decorator';
 
 @ApiTags('Staff')
@@ -38,6 +39,7 @@ export class StaffController {
   }
 
   @Get('school/:schoolId')
+  @UseGuards(SchoolScopeGuard)
   @Roles('ryl_admin', 'school_admin', 'teacher')
   @ApiParam({ name: 'schoolId', description: 'School ID' })
   @ApiOperation({ summary: 'Get staff by school' })

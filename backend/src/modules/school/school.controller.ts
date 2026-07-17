@@ -13,6 +13,7 @@ import { ApiTags, ApiOperation, ApiBearerAuth, ApiParam } from '@nestjs/swagger'
 import { SchoolService } from '../../services/school.service';
 import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
 import { RolesGuard } from 'src/common/guards/roles.guard';
+import { SchoolScopeGuard, SchoolScope } from 'src/common/guards/school-scope.guard';
 import { Roles } from 'src/common/decorators/roles.decorator';
 
 @ApiTags('Schools')
@@ -31,6 +32,8 @@ export class SchoolController {
   }
 
   @Get(':id')
+  @UseGuards(SchoolScopeGuard)
+  @SchoolScope('id')
   @Roles('ryl_admin', 'school_admin', 'teacher')
   @ApiParam({ name: 'id', description: 'School ID' })
   @ApiOperation({ summary: 'Get school details' })
@@ -39,6 +42,8 @@ export class SchoolController {
   }
 
   @Patch(':id')
+  @UseGuards(SchoolScopeGuard)
+  @SchoolScope('id')
   @Roles('ryl_admin', 'school_admin')
   @ApiParam({ name: 'id', description: 'School ID' })
   @ApiOperation({ summary: 'Update school details' })
@@ -47,6 +52,8 @@ export class SchoolController {
   }
 
   @Get(':id/metrics')
+  @UseGuards(SchoolScopeGuard)
+  @SchoolScope('id')
   @Roles('ryl_admin', 'school_admin', 'teacher')
   @ApiParam({ name: 'id', description: 'School ID' })
   @ApiOperation({ summary: 'Get school metrics' })

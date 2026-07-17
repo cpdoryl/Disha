@@ -12,6 +12,7 @@ import { ApiTags, ApiBearerAuth, ApiParam } from '@nestjs/swagger';
 import { NotificationService } from '../../services/notification.service';
 import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
 import { RolesGuard } from 'src/common/guards/roles.guard';
+import { SchoolScopeGuard } from 'src/common/guards/school-scope.guard';
 import { Roles } from 'src/common/decorators/roles.decorator';
 
 @ApiTags('Notifications')
@@ -29,6 +30,7 @@ export class NotificationController {
   }
 
   @Post('attendance-alert')
+  @UseGuards(SchoolScopeGuard)
   @HttpCode(HttpStatus.ACCEPTED)
   async sendAttendanceAlert(@Body() alertDto: any) {
     return this.notificationService.sendAttendanceAlert(
@@ -40,6 +42,7 @@ export class NotificationController {
   }
 
   @Post('academic-update')
+  @UseGuards(SchoolScopeGuard)
   @HttpCode(HttpStatus.ACCEPTED)
   async sendAcademicUpdate(@Body() updateDto: any) {
     return this.notificationService.sendAcademicUpdateNotification(
@@ -52,6 +55,7 @@ export class NotificationController {
   }
 
   @Post('fee-reminder')
+  @UseGuards(SchoolScopeGuard)
   @HttpCode(HttpStatus.ACCEPTED)
   async sendFeeReminder(@Body() reminderDto: any) {
     return this.notificationService.sendFeeReminder(
@@ -63,6 +67,7 @@ export class NotificationController {
   }
 
   @Post('assessment-invitation')
+  @UseGuards(SchoolScopeGuard)
   @HttpCode(HttpStatus.ACCEPTED)
   async sendAssessmentInvitation(@Body() invitationDto: any) {
     return this.notificationService.sendAssessmentInvitation(
