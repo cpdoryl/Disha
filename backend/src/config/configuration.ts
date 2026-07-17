@@ -13,7 +13,12 @@ export default () => ({
     username: process.env.DB_USERNAME || process.env.DATABASE_USER || 'staging_user',
     password: process.env.DB_PASSWORD || process.env.DATABASE_PASSWORD || 'staging_password_change_me',
     name: process.env.DB_NAME || process.env.DATABASE_NAME || 'disha_staging_db',
-    synchronize: true,
+    // Was hardcoded `true` regardless of environment, meaning TypeORM
+    // auto-altered the live schema from entities on every boot — including
+    // in production — independent of and inconsistent with the migration
+    // files. Now opt-in via DB_SYNCHRONIZE, defaulting to false so
+    // migrations are the source of truth everywhere except local dev.
+    synchronize: process.env.DB_SYNCHRONIZE === 'true',
     logging: process.env.LOG_LEVEL === 'debug',
   },
 

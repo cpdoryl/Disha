@@ -74,6 +74,32 @@ export class StudentService {
     });
   }
 
+  async getClassesBySchool(schoolId: string) {
+    const students = await this.getStudentsBySchool(schoolId);
+    const byClass = new Map<string, { gradeLevel: number; classSection: string; strength: number }>();
+
+    for (const student of students) {
+      const key = `${student.gradeLevel ?? 'NA'}-${student.classSection ?? 'NA'}`;
+      const existing = byClass.get(key);
+      if (existing) {
+        existing.strength += 1;
+      } else {
+        byClass.set(key, {
+          gradeLevel: student.gradeLevel,
+          classSection: student.classSection,
+          strength: 1,
+        });
+      }
+    }
+
+    return Array.from(byClass.entries()).map(([key, value]) => ({
+      id: key,
+      name: `Class ${value.gradeLevel ?? 'N/A'}`,
+      section: value.classSection ?? 'N/A',
+      strength: value.strength,
+    }));
+  }
+
   async updateStudentStatus(
     studentId: string,
     status: StudentStatus,
@@ -101,19 +127,20 @@ export class StudentService {
     markedByStaffId?: string;
     notes?: string;
   }): Promise<StudentAttendance> {
+    // The controller declares its body as `any` (no DTO transform), so
+    // attendanceDate arrives as a JSON string, not a Date instance, even
+    // though this method's signature claims Date — coerce defensively.
+    const attendanceDate = new Date(recordAttendanceDto.attendanceDate);
+
     const attendance = new StudentAttendance();
     attendance.studentId = recordAttendanceDto.studentId;
     attendance.schoolId = recordAttendanceDto.schoolId;
-    attendance.attendanceDate = recordAttendanceDto.attendanceDate;
+    attendance.attendanceDate = attendanceDate;
     attendance.status = recordAttendanceDto.status as any; // Cast to bypass type mismatch
     attendance.term = recordAttendanceDto.term || '';
     attendance.markedByStaffId = recordAttendanceDto.markedByStaffId || '';
     attendance.notes = recordAttendanceDto.notes || '';
-    attendance.monthYear = new Date(
-      recordAttendanceDto.attendanceDate.getFullYear(),
-      recordAttendanceDto.attendanceDate.getMonth(),
-      1,
-    );
+    attendance.monthYear = new Date(attendanceDate.getFullYear(), attendanceDate.getMonth(), 1);
 
     return this.attendanceRepository.save(attendance);
   }

@@ -1,5 +1,5 @@
 import { AppDataSource } from '../datasource';
-import { Organization } from '../entities/Organization.entity';
+import { Organization, OrganizationType } from '../entities/Organization.entity';
 import { District } from '../entities/District.entity';
 import { School } from '../entities/School.entity';
 import { Student, Gender, StudentStatus } from '../entities/Student.entity';
@@ -19,6 +19,7 @@ async function seed() {
     console.log('📋 Creating organizations...');
     const org = new Organization();
     org.name = 'Ryl Education Foundation';
+    org.type = OrganizationType.SCHOOL_CHAIN;
     const savedOrg = await AppDataSource.manager.save(org);
     console.log(`✅ Created organization: ${savedOrg.name}`);
 
@@ -59,6 +60,20 @@ async function seed() {
 
     console.log('👥 Creating users...');
     const users: User[] = [];
+
+    // Platform-level admin — not tied to any single school. Every seeded
+    // "admin" below is a school_admin; ryl_admin-only endpoints need this
+    // separate account (see test/setup.ts's TEST_USERS.rylAdmin).
+    const rylAdmin = new User();
+    rylAdmin.email = 'ryladmin@disha.local';
+    rylAdmin.firstName = 'Ryl';
+    rylAdmin.lastName = 'Admin';
+    rylAdmin.passwordHash = await bcrypt.hash('rylAdmin123', 10);
+    rylAdmin.userType = UserType.RYL_ADMIN;
+    rylAdmin.roleType = RoleType.ADMIN;
+    rylAdmin.isActive = true;
+    users.push(await AppDataSource.manager.save(rylAdmin));
+    console.log('✅ Created platform ryl_admin: ryladmin@disha.local');
 
     for (let i = 0; i < schools.length; i++) {
       // Create school admin

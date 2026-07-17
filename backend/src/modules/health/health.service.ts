@@ -1,5 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { DataSource } from 'typeorm';
+import * as os from 'os';
 
 interface HealthStatus {
   status: string;
@@ -384,6 +385,18 @@ export class HealthService {
 
   /**
    * Get memory usage information in MB
+   *
+   * `percentage` used to be heapUsed/heapTotal — V8 grows heapTotal
+   * incrementally rather than pre-allocating a fixed ceiling, so that
+   * ratio sits at 85-95% on a freshly-booted, perfectly healthy process
+   * simply because the heap hasn't expanded yet, well before any real
+   * memory pressure exists. checkMemoryHealth()/getReadiness()/
+   * getDeepCheck() all gate on this percentage crossing 85-90%, so the
+   * old metric made /health, /health/ready and /health/deep report
+   * "degraded"/"not_ready" under completely normal conditions — exactly
+   * the wrong signal for a load balancer or k8s readiness probe to act
+   * on (found while running a real load test against this endpoint).
+   * RSS against total system memory is what's actually meaningful here.
    */
   private getMemoryUsage(): MemoryInfo {
     const memUsage = process.memoryUsage();
@@ -391,7 +404,7 @@ export class HealthService {
     const heapTotal = Math.round(memUsage.heapTotal / 1024 / 1024);
     const external = Math.round(memUsage.external / 1024 / 1024);
     const rss = Math.round(memUsage.rss / 1024 / 1024);
-    const percentage = Math.round((heapUsed / heapTotal) * 100);
+    const percentage = Math.round((memUsage.rss / os.totalmem()) * 100);
 
     return {
       heapUsed,

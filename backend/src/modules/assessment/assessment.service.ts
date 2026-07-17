@@ -57,6 +57,16 @@ export class AssessmentService {
   }
 
   /**
+   * Get all assessment cycles for a school
+   */
+  async getAssessmentsBySchool(schoolId: string): Promise<Assessment[]> {
+    return this.assessmentRepository.find({
+      where: { schoolId },
+      order: { createdAt: 'DESC' },
+    });
+  }
+
+  /**
    * Get assessment by ID with response summary
    */
   async getAssessment(assessmentId: string): Promise<any> {

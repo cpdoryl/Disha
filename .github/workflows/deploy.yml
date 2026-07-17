@@ -55,8 +55,41 @@ jobs:
         run: npm run build
 
       - name: Run unit tests
+        # `npm run test` with no path filter matches all specs, including
+        # the three *.integration.spec.ts below — but this step has no
+        # DB_HOST/etc. env vars, so their beforeAll hooks would hang
+        # waiting for a database connection that was never configured for
+        # this step. Use test:unit (--passWithNoTests, matches no files
+        # today) here; the same specs get a proper run two steps down
+        # with real DB env vars and seeded data.
         working-directory: ./backend
-        run: npm run test
+        run: npm run test:unit
+
+      - name: Run database migrations
+        working-directory: ./backend
+        env:
+          DB_HOST: localhost
+          DB_PORT: 5432
+          DB_USERNAME: test_user
+          DB_PASSWORD: test_pass
+          DB_NAME: test_db
+          NODE_ENV: test
+        run: npm run migration:run
+
+      - name: Seed test database
+        # The integration specs log in as seeded users (teacher1@school.edu,
+        # ryladmin@disha.local, etc. — see TEST_CASES.md § Seeded Test Data
+        # Reference) — without this step every login-dependent test fails
+        # against an empty, migrated-but-unseeded database.
+        working-directory: ./backend
+        env:
+          DB_HOST: localhost
+          DB_PORT: 5432
+          DB_USERNAME: test_user
+          DB_PASSWORD: test_pass
+          DB_NAME: test_db
+          NODE_ENV: test
+        run: npm run seed:db
 
       - name: Run integration tests
         working-directory: ./backend
@@ -66,7 +99,8 @@ jobs:
           DB_USERNAME: test_user
           DB_PASSWORD: test_pass
           DB_NAME: test_db
-          NODE_ENV: testing
+          JWT_SECRET: ci-test-secret-key
+          NODE_ENV: test
         run: npm run test:integration
 
       - name: Upload coverage

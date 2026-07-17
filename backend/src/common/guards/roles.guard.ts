@@ -7,8 +7,19 @@ export class RolesGuard implements CanActivate {
   constructor(private reflector: Reflector) {}
 
   canActivate(context: ExecutionContext): boolean {
-    // Get required roles from decorator
-    const requiredRoles = this.reflector.get<string[]>('roles', context.getHandler());
+    // Get required roles from decorator — check the handler (method) first,
+    // falling back to the class. Several controllers (Audit, Wellbeing,
+    // Data, Notification) declare @Roles(...) once at the class level;
+    // reading only context.getHandler() misses that metadata entirely,
+    // so requiredRoles comes back empty and every route in those
+    // controllers silently allows any authenticated user through
+    // regardless of role. getAllAndOverride checks both and lets a
+    // method-level @Roles(...) override the class-level default, matching
+    // standard NestJS guard convention.
+    const requiredRoles = this.reflector.getAllAndOverride<string[]>('roles', [
+      context.getHandler(),
+      context.getClass(),
+    ]);
     if (!requiredRoles || requiredRoles.length === 0) {
       // No role requirement, allow access
       return true;

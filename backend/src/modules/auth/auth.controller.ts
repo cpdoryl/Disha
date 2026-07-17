@@ -10,6 +10,12 @@ import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagg
 import { AuthService } from './auth.service';
 import { LoginDto, RefreshTokenDto, LoginResponseDto } from './dto/login.dto';
 import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
+import { RateLimitGuard, RateLimit } from 'src/common/guards/rate-limit.guard';
+import {
+  AUTH_LOGIN_RATE_LIMIT,
+  AUTH_REFRESH_RATE_LIMIT,
+  getRateLimitConfig,
+} from 'src/common/config/rate-limits.config';
 
 @ApiTags('Auth')
 @Controller('api/v2/auth')
@@ -17,6 +23,8 @@ export class AuthController {
   constructor(private authService: AuthService) {}
 
   @Post('login')
+  @UseGuards(RateLimitGuard)
+  @RateLimit(getRateLimitConfig(AUTH_LOGIN_RATE_LIMIT))
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
     summary: 'User login',
@@ -28,11 +36,14 @@ export class AuthController {
     type: LoginResponseDto,
   })
   @ApiResponse({ status: 401, description: 'Invalid credentials' })
+  @ApiResponse({ status: 429, description: 'Too many login attempts' })
   async login(@Body() loginDto: LoginDto): Promise<LoginResponseDto> {
     return this.authService.login(loginDto.email, loginDto.password);
   }
 
   @Post('refresh')
+  @UseGuards(RateLimitGuard)
+  @RateLimit(getRateLimitConfig(AUTH_REFRESH_RATE_LIMIT))
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
     summary: 'Refresh access token',
@@ -43,6 +54,7 @@ export class AuthController {
     description: 'New tokens generated',
   })
   @ApiResponse({ status: 401, description: 'Invalid refresh token' })
+  @ApiResponse({ status: 429, description: 'Too many refresh requests' })
   async refresh(@Body() refreshTokenDto: RefreshTokenDto) {
     const decoded = await this.authService.verifyToken(refreshTokenDto.refreshToken);
     return this.authService.refreshTokens(refreshTokenDto.refreshToken, decoded.sub);

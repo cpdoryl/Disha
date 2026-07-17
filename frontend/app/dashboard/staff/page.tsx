@@ -8,14 +8,24 @@ import { staffAPI } from '@/lib/api/services'
 import { useAuthStore } from '@/lib/store/authStore'
 
 const staffSchema = z.object({
-  name: z.string().min(2, 'Name required'),
-  email: z.string().email('Invalid email'),
-  role: z.string().min(1, 'Role required'),
-  department: z.string().min(1, 'Department required'),
-  phone: z.string().min(10, 'Valid phone required'),
+  employeeId: z.string().min(1, 'Employee ID required'),
+  firstName: z.string().min(2, 'First name required'),
+  lastName: z.string().optional(),
+  position: z.enum(['principal', 'vice_principal', 'teacher', 'counsellor', 'admin_staff']),
+  subjectTaught: z.string().optional(),
+  gradeLevel: z.string().optional(),
+  startDate: z.string().min(1, 'Start date required'),
 })
 
 type StaffFormData = z.infer<typeof staffSchema>
+
+const positionLabels: Record<string, string> = {
+  principal: 'Principal',
+  vice_principal: 'Vice Principal',
+  teacher: 'Teacher',
+  counsellor: 'Counsellor',
+  admin_staff: 'Admin Staff',
+}
 
 export default function StaffPage() {
   const { user } = useAuthStore()
@@ -26,7 +36,7 @@ export default function StaffPage() {
   const [showForm, setShowForm] = useState(false)
   const [selectedStaff, setSelectedStaff] = useState<any | null>(null)
   const [search, setSearch] = useState('')
-  const [filterRole, setFilterRole] = useState('All')
+  const [filterPosition, setFilterPosition] = useState('All')
 
   useEffect(() => {
     if (user?.schoolId) {
@@ -57,10 +67,11 @@ export default function StaffPage() {
     resolver: zodResolver(staffSchema),
   })
 
+  const fullName = (member: any) => `${member.firstName} ${member.lastName || ''}`.trim()
+
   const filteredStaff = staff.filter((member) =>
-    (filterRole === 'All' || member.role === filterRole) &&
-    (member.name.toLowerCase().includes(search.toLowerCase()) ||
-      member.email.toLowerCase().includes(search.toLowerCase()))
+    (filterPosition === 'All' || member.position === filterPosition) &&
+    fullName(member).toLowerCase().includes(search.toLowerCase())
   )
 
   const onSubmit = async (data: StaffFormData) => {
@@ -68,6 +79,7 @@ export default function StaffPage() {
       setSubmitting(true)
       await staffAPI.create({
         ...data,
+        gradeLevel: data.gradeLevel ? parseInt(data.gradeLevel, 10) : undefined,
         schoolId: user!.schoolId,
       })
       await fetchStaff()
@@ -80,7 +92,7 @@ export default function StaffPage() {
     }
   }
 
-  const roles = ['All', 'Teacher', 'Principal', 'Vice Principal', 'Librarian', 'Administrator']
+  const positions = ['All', 'principal', 'vice_principal', 'teacher', 'counsellor', 'admin_staff']
 
   return (
     <div className="space-y-6">
@@ -113,70 +125,79 @@ export default function StaffPage() {
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Name</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Employee ID</label>
                 <input
-                  {...register('name')}
+                  {...register('employeeId')}
                   type="text"
-                  placeholder="Full name"
+                  placeholder="EMP-001"
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                 />
-                {errors.name && <p className="text-red-500 text-sm mt-1">{errors.name.message}</p>}
+                {errors.employeeId && <p className="text-red-500 text-sm mt-1">{errors.employeeId.message}</p>}
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">First Name</label>
                 <input
-                  {...register('email')}
-                  type="email"
-                  placeholder="email@disha.local"
+                  {...register('firstName')}
+                  type="text"
+                  placeholder="First name"
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                 />
-                {errors.email && <p className="text-red-500 text-sm mt-1">{errors.email.message}</p>}
+                {errors.firstName && <p className="text-red-500 text-sm mt-1">{errors.firstName.message}</p>}
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Role</label>
-                <select
-                  {...register('role')}
+                <label className="block text-sm font-medium text-gray-700 mb-1">Last Name</label>
+                <input
+                  {...register('lastName')}
+                  type="text"
+                  placeholder="Last name"
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                >
-                  <option value="">Select role</option>
-                  <option value="Teacher">Teacher</option>
-                  <option value="Principal">Principal</option>
-                  <option value="Vice Principal">Vice Principal</option>
-                  <option value="Librarian">Librarian</option>
-                  <option value="Administrator">Administrator</option>
-                </select>
-                {errors.role && <p className="text-red-500 text-sm mt-1">{errors.role.message}</p>}
+                />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Department</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Position</label>
                 <select
-                  {...register('department')}
+                  {...register('position')}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                 >
-                  <option value="">Select department</option>
-                  <option value="Mathematics">Mathematics</option>
-                  <option value="Science">Science</option>
-                  <option value="English">English</option>
-                  <option value="History">History</option>
-                  <option value="Geography">Geography</option>
-                  <option value="Administration">Administration</option>
-                  <option value="Library">Library</option>
+                  <option value="">Select position</option>
+                  {Object.entries(positionLabels).map(([value, label]) => (
+                    <option key={value} value={value}>{label}</option>
+                  ))}
                 </select>
-                {errors.department && <p className="text-red-500 text-sm mt-1">{errors.department.message}</p>}
+                {errors.position && <p className="text-red-500 text-sm mt-1">{errors.position.message}</p>}
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Subject Taught</label>
+                <input
+                  {...register('subjectTaught')}
+                  type="text"
+                  placeholder="e.g., Mathematics"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Grade Level</label>
+                <input
+                  {...register('gradeLevel')}
+                  type="number"
+                  placeholder="10"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                />
               </div>
 
               <div className="md:col-span-2">
-                <label className="block text-sm font-medium text-gray-700 mb-1">Phone</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Start Date</label>
                 <input
-                  {...register('phone')}
-                  type="tel"
-                  placeholder="10-digit phone number"
+                  {...register('startDate')}
+                  type="date"
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                 />
-                {errors.phone && <p className="text-red-500 text-sm mt-1">{errors.phone.message}</p>}
+                {errors.startDate && <p className="text-red-500 text-sm mt-1">{errors.startDate.message}</p>}
               </div>
             </div>
 
@@ -195,19 +216,19 @@ export default function StaffPage() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <input
             type="text"
-            placeholder="Search by name or email..."
+            placeholder="Search by name..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
           />
           <select
-            value={filterRole}
-            onChange={(e) => setFilterRole(e.target.value)}
+            value={filterPosition}
+            onChange={(e) => setFilterPosition(e.target.value)}
             className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
           >
-            {roles.map((role) => (
-              <option key={role} value={role}>
-                {role === 'All' ? 'All Roles' : role}
+            {positions.map((position) => (
+              <option key={position} value={position}>
+                {position === 'All' ? 'All Positions' : positionLabels[position]}
               </option>
             ))}
           </select>
@@ -225,10 +246,9 @@ export default function StaffPage() {
             <thead className="bg-gray-50 border-b border-gray-200">
               <tr>
                 <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">Name</th>
-                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">Email</th>
-                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">Role</th>
-                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">Department</th>
-                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">Phone</th>
+                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">Employee ID</th>
+                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">Position</th>
+                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">Subject</th>
                 <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">Status</th>
                 <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">Action</th>
               </tr>
@@ -236,21 +256,20 @@ export default function StaffPage() {
             <tbody className="divide-y divide-gray-200">
               {filteredStaff.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="px-6 py-8 text-center text-gray-600">
+                  <td colSpan={6} className="px-6 py-8 text-center text-gray-600">
                     No staff found
                   </td>
                 </tr>
               ) : (
                 filteredStaff.map((member) => (
               <tr key={member.id} className="hover:bg-gray-50">
-                <td className="px-6 py-4 text-sm text-gray-900 font-medium">{member.name}</td>
-                <td className="px-6 py-4 text-sm text-gray-600">{member.email}</td>
-                <td className="px-6 py-4 text-sm text-gray-600">{member.role}</td>
-                <td className="px-6 py-4 text-sm text-gray-600">{member.department}</td>
-                <td className="px-6 py-4 text-sm text-gray-600">{member.phone}</td>
+                <td className="px-6 py-4 text-sm text-gray-900 font-medium">{fullName(member)}</td>
+                <td className="px-6 py-4 text-sm text-gray-600">{member.employeeId}</td>
+                <td className="px-6 py-4 text-sm text-gray-600">{positionLabels[member.position] || member.position}</td>
+                <td className="px-6 py-4 text-sm text-gray-600">{member.subjectTaught || '-'}</td>
                 <td className="px-6 py-4 text-sm">
-                  <span className="px-3 py-1 bg-green-100 text-green-800 rounded-full text-xs font-semibold">
-                    {member.status}
+                  <span className="px-3 py-1 bg-green-100 text-green-800 rounded-full text-xs font-semibold capitalize">
+                    {member.employmentStatus}
                   </span>
                 </td>
                 <td className="px-6 py-4 text-sm">
@@ -275,8 +294,11 @@ export default function StaffPage() {
             <div className="p-6 border-b border-gray-200">
               <div className="flex justify-between items-start">
                 <div>
-                  <h2 className="text-2xl font-bold text-gray-900">{selectedStaff.name}</h2>
-                  <p className="text-gray-600 mt-1">{selectedStaff.role} • {selectedStaff.department}</p>
+                  <h2 className="text-2xl font-bold text-gray-900">{fullName(selectedStaff)}</h2>
+                  <p className="text-gray-600 mt-1">
+                    {positionLabels[selectedStaff.position] || selectedStaff.position}
+                    {selectedStaff.subjectTaught ? ` • ${selectedStaff.subjectTaught}` : ''}
+                  </p>
                 </div>
                 <button
                   onClick={() => setSelectedStaff(null)}
@@ -290,49 +312,23 @@ export default function StaffPage() {
             <div className="p-6 space-y-6">
               <div className="grid grid-cols-2 gap-4">
                 <div className="bg-gray-50 p-4 rounded">
-                  <p className="text-sm text-gray-600">Email</p>
-                  <p className="font-semibold text-gray-900 mt-1">{selectedStaff.email}</p>
+                  <p className="text-sm text-gray-600">Employee ID</p>
+                  <p className="font-semibold text-gray-900 mt-1">{selectedStaff.employeeId}</p>
                 </div>
                 <div className="bg-gray-50 p-4 rounded">
-                  <p className="text-sm text-gray-600">Phone</p>
-                  <p className="font-semibold text-gray-900 mt-1">{selectedStaff.phone}</p>
+                  <p className="text-sm text-gray-600">Grade Level</p>
+                  <p className="font-semibold text-gray-900 mt-1">{selectedStaff.gradeLevel || '-'}</p>
                 </div>
                 <div className="bg-gray-50 p-4 rounded">
-                  <p className="text-sm text-gray-600">Qualification</p>
-                  <p className="font-semibold text-gray-900 mt-1">{selectedStaff.qualification}</p>
+                  <p className="text-sm text-gray-600">Start Date</p>
+                  <p className="font-semibold text-gray-900 mt-1">
+                    {selectedStaff.startDate ? new Date(selectedStaff.startDate).toLocaleDateString() : '-'}
+                  </p>
                 </div>
                 <div className="bg-gray-50 p-4 rounded">
-                  <p className="text-sm text-gray-600">Experience</p>
-                  <p className="font-semibold text-gray-900 mt-1">{selectedStaff.experience}</p>
+                  <p className="text-sm text-gray-600">Employment Status</p>
+                  <p className="font-semibold text-gray-900 mt-1 capitalize">{selectedStaff.employmentStatus}</p>
                 </div>
-              </div>
-
-              {selectedStaff.classes.length > 0 && (
-                <div>
-                  <h3 className="font-semibold text-gray-900 mb-2">Classes Assigned</h3>
-                  <div className="flex flex-wrap gap-2">
-                    {selectedStaff.classes.map((cls) => (
-                      <span
-                        key={cls}
-                        className="px-3 py-1 bg-blue-100 text-blue-700 rounded font-medium text-sm"
-                      >
-                        {cls}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              <div className="grid grid-cols-3 gap-3">
-                <button className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium text-sm">
-                  Edit Details
-                </button>
-                <button className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 font-medium text-sm">
-                  Assign Classes
-                </button>
-                <button className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 font-medium text-sm">
-                  Deactivate
-                </button>
               </div>
             </div>
           </div>

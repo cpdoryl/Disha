@@ -1,8 +1,13 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { attendanceAPI, studentAPI } from '@/lib/api/services'
+import { attendanceAPI } from '@/lib/api/services'
 import { useAuthStore } from '@/lib/store/authStore'
+
+function parseClass(selectedClass: string): { gradeLevel: number; classSection: string } {
+  const [grade, section] = selectedClass.split('-')
+  return { gradeLevel: parseInt(grade, 10), classSection: section }
+}
 
 export default function AttendancePage() {
   const { user } = useAuthStore()
@@ -24,7 +29,8 @@ export default function AttendancePage() {
     try {
       setLoading(true)
       setError(null)
-      const data = await attendanceAPI.getByClass(selectedClass, selectedDate)
+      const { gradeLevel, classSection } = parseClass(selectedClass)
+      const data = await attendanceAPI.getByClass(user!.schoolId, gradeLevel, classSection, selectedDate)
       setAttendanceData(Array.isArray(data) ? data : data.records || [])
     } catch (err: any) {
       setError(err.response?.data?.message || 'Failed to load attendance')
@@ -54,9 +60,8 @@ export default function AttendancePage() {
       const records = attendanceData.map((record) => ({
         studentId: record.id,
         status: record.status,
-        date: selectedDate,
       }))
-      await attendanceAPI.bulkMark(selectedClass, records)
+      await attendanceAPI.bulkMark(user!.schoolId, selectedDate, records)
       alert('Attendance saved successfully!')
     } catch (err: any) {
       setError(err.response?.data?.message || 'Failed to save attendance')

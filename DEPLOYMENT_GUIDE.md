@@ -117,16 +117,29 @@ DB_PORT=5432
 DB_USERNAME=disha_user
 DB_PASSWORD=<STRONG_PASSWORD_HERE>
 DB_NAME=disha_prod
-DB_SYNC=false
+# Must be exactly DB_SYNCHRONIZE — the app only reads this name (see
+# backend/src/config/configuration.ts). A typo'd/renamed var here is
+# silently ignored and the app falls back to synchronize:false, which is
+# actually the safe default, but don't rely on that by accident.
+DB_SYNCHRONIZE=false
 
 # API
 API_URL=https://disha.yourdomain.com
-API_PORT=3001
+# Must be exactly PORT, not API_PORT — configuration.ts reads
+# process.env.PORT (default 3000). The docker-compose.prod.yml template
+# below sets this directly on the api service (PORT: 3001, to avoid
+# colliding with the frontend's 3000) rather than interpolating this var —
+# keep both in sync if you change either.
+PORT=3001
 FRONTEND_URL=https://disha.yourdomain.com
 
 # JWT
 JWT_SECRET=<GENERATE_STRONG_SECRET>
-JWT_EXPIRATION=24h
+# Must be exactly JWT_EXPIRES_IN (a jsonwebtoken duration string like
+# "24h" or "900s") — configuration.ts does not read JWT_EXPIRATION at
+# all, so that name is silently ignored and the 900s (15 min) default
+# applies instead.
+JWT_EXPIRES_IN=24h
 
 # Frontend
 NEXT_PUBLIC_API_URL=https://disha.yourdomain.com
@@ -197,6 +210,14 @@ services:
       - ./logs/api:/app/logs
     environment:
       NODE_ENV: production
+      # Must be set explicitly — configuration.ts defaults PORT to 3000,
+      # but the rest of this guide (nginx upstream below, Prometheus
+      # target in Step 8) assumes the API is reachable on 3001 so it
+      # doesn't collide with the frontend's 3000. Without this line the
+      # container listens on 3000 while everything else expects 3001, and
+      # the healthcheck immediately below can never pass — exactly the
+      # bug that was here before this line was added.
+      PORT: 3001
       DB_HOST: postgres
       DB_PORT: 5432
       DB_USERNAME: ${DB_USERNAME}
@@ -207,7 +228,8 @@ services:
     ports:
       - "127.0.0.1:3001:3001"
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:3001/api/v2/health"]
+      # health.controller.ts is @Controller('health') — no /api/v2 prefix.
+      test: ["CMD", "curl", "-f", "http://localhost:3001/health"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -467,11 +489,15 @@ docker-compose -f docker-compose.prod.yml logs -f
 ### **6.2 Initialize Database**
 
 ```bash
-# Run database migrations
-docker-compose -f docker-compose.prod.yml exec api npm run typeorm migration:run
+# Run database migrations — the script is `migration:run`, not `typeorm
+# migration:run` (see backend/package.json). Never rely on
+# database.synchronize for this in production — see DATABASE_SCHEMA.md.
+docker-compose -f docker-compose.prod.yml exec api npm run migration:run
 
-# Seed initial data (if available)
-docker-compose -f docker-compose.prod.yml exec api npm run typeorm seed:run
+# Seed initial data — script is `seed:db`. Only run this against a fresh
+# database; it's meant for demo data (see TEST_CASES.md § Seeded Test Data
+# Reference for what it creates), not a repeatable prod-safe operation.
+docker-compose -f docker-compose.prod.yml exec api npm run seed:db
 ```
 
 ---
@@ -547,18 +573,25 @@ global:
   evaluation_interval: 15s
 
 scrape_configs:
-  # API Server
+  # API Server — /metrics (prom-client default, see MONITORING_SETUP.md).
+  # No metrics_path override needed; Prometheus scrapes /metrics by
+  # default. An earlier version of this file pointed at /api/v2/metrics,
+  # a route that has never existed — see MONITORING_SETUP.md for the full
+  # story of why this scrape target used to be a permanent 404.
   - job_name: 'disha-api'
     static_configs:
       - targets: ['127.0.0.1:3001']
-    metrics_path: '/api/v2/metrics'
-    
-  # Nginx
+
+  # Nginx — requires the nginx-prometheus-exporter sidecar (not currently
+  # deployed anywhere in this repo's docker-compose files). Remove this
+  # job until that exporter is actually running, or Prometheus will show
+  # it permanently down.
   - job_name: 'nginx'
     static_configs:
       - targets: ['127.0.0.1:9113']
-    
-  # PostgreSQL
+
+  # PostgreSQL — requires postgres_exporter (also not currently deployed).
+  # Same caveat as the nginx job above.
   - job_name: 'postgres'
     static_configs:
       - targets: ['127.0.0.1:9187']
@@ -619,8 +652,14 @@ jobs:
             git pull origin main
             docker-compose -f docker-compose.prod.yml pull
             docker-compose -f docker-compose.prod.yml up -d
-            docker-compose -f docker-compose.prod.yml exec -T api npm run typeorm migration:run
+            docker-compose -f docker-compose.prod.yml exec -T api npm run migration:run
 ```
+
+**Note:** `.github/workflows/deploy.yml` already exists in this repo with
+more complete content than the snippet above (it has real test/build/push
+jobs — see `TESTING_STRATEGY.md` for what was fixed in the adjacent
+`backend-ci.yml`/`frontend-ci.yml`). Treat this section as background on
+the intended shape rather than instructions to overwrite that file.
 
 ---
 
@@ -632,8 +671,8 @@ jobs:
 # Check all services
 docker-compose -f docker-compose.prod.yml ps
 
-# Check API health
-curl https://disha.yourdomain.com/api/v2/health
+# Check API health — no /api/v2 prefix on health routes
+curl https://disha.yourdomain.com/health
 
 # Check frontend
 curl https://disha.yourdomain.com/

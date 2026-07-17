@@ -1,6 +1,7 @@
 import { Injectable, NestMiddleware } from '@nestjs/common';
 import { Request, Response, NextFunction } from 'express';
 import { HealthService } from '../../modules/health/health.service';
+import { httpRequestsTotal, httpRequestDurationSeconds } from '../monitoring/prometheus';
 
 /**
  * Middleware to track API request metrics
@@ -26,6 +27,11 @@ export class MetricsMiddleware implements NestMiddleware {
       // Track the request
       try {
         this.healthService.trackRequest(statusCode, responseTime);
+        httpRequestsTotal.inc({ method: req.method, status_code: statusCode });
+        httpRequestDurationSeconds.observe(
+          { method: req.method, status_code: statusCode },
+          responseTime / 1000,
+        );
       } catch (error) {
         // Silently fail - metrics tracking shouldn't break the app
         console.error('Failed to track metrics:', error);

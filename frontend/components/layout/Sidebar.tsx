@@ -7,13 +7,24 @@ interface SidebarProps {
   userRole: string
 }
 
+// Keys must match User.userType values exactly (school_admin, teacher,
+// parent, student, ryl_admin, ryl_support — see ADMIN_GUIDE.md /
+// USER_GUIDES.md). This used to have a key literally named "admin", which
+// no real role value has ever matched — a ryl_admin login silently fell
+// through to the `student` menu below (the `|| menuItems.student`
+// fallback), which itself linked to /dashboard/courses and
+// /dashboard/performance, neither of which exists as a page. Every link
+// here has been verified against an actual file under
+// frontend/app/dashboard/ — see ADMIN_GUIDE.md and USER_GUIDES.md for
+// which roles have genuinely working navigation today and which don't.
 const menuItems = {
-  admin: [
+  ryl_admin: [
     { name: 'Dashboard', href: '/dashboard', icon: '📊' },
-    { name: 'Users', href: '/dashboard/users', icon: '👥' },
-    { name: 'Schools', href: '/dashboard/schools', icon: '🏫' },
     { name: 'Reports', href: '/dashboard/reports', icon: '📈' },
-    { name: 'System Health', href: '/dashboard/health', icon: '💚' },
+  ],
+  ryl_support: [
+    { name: 'Dashboard', href: '/dashboard', icon: '📊' },
+    { name: 'Reports', href: '/dashboard/reports', icon: '📈' },
   ],
   school_admin: [
     { name: 'Dashboard', href: '/dashboard', icon: '📊' },
@@ -31,14 +42,11 @@ const menuItems = {
   ],
   student: [
     { name: 'Dashboard', href: '/dashboard', icon: '📊' },
-    { name: 'Courses', href: '/dashboard/courses', icon: '📚' },
     { name: 'Assessments', href: '/dashboard/assessments', icon: '✏️' },
-    { name: 'Performance', href: '/dashboard/performance', icon: '📈' },
     { name: 'Attendance', href: '/dashboard/attendance', icon: '📝' },
   ],
   parent: [
     { name: 'Dashboard', href: '/dashboard', icon: '📊' },
-    { name: 'Child Progress', href: '/dashboard/progress', icon: '📈' },
     { name: 'Attendance', href: '/dashboard/attendance', icon: '📝' },
     { name: 'Communications', href: '/dashboard/communications', icon: '💬' },
   ],
@@ -46,7 +54,9 @@ const menuItems = {
 
 export default function Sidebar({ userRole }: SidebarProps) {
   const pathname = usePathname()
-  const items = menuItems[userRole as keyof typeof menuItems] || menuItems.student
+  const items = menuItems[userRole as keyof typeof menuItems] || [
+    { name: 'Dashboard', href: '/dashboard', icon: '📊' },
+  ]
 
   return (
     <aside className="w-64 bg-gray-900 text-white flex flex-col">

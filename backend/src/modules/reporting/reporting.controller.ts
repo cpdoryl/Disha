@@ -13,6 +13,7 @@ import { ApiTags, ApiBearerAuth, ApiParam, ApiOperation } from '@nestjs/swagger'
 import { ReportingService } from '../../services/reporting.service';
 import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
 import { RolesGuard } from 'src/common/guards/roles.guard';
+import { SchoolScopeGuard } from 'src/common/guards/school-scope.guard';
 import { Roles } from 'src/common/decorators/roles.decorator';
 
 @ApiTags('Reports')
@@ -31,6 +32,7 @@ export class ReportingController {
   }
 
   @Get('school/:schoolId/performance')
+  @UseGuards(SchoolScopeGuard)
   @Roles('ryl_admin', 'school_admin', 'teacher')
   @ApiParam({ name: 'schoolId', description: 'School ID' })
   @ApiOperation({ summary: 'Get school performance report' })
@@ -66,6 +68,7 @@ export class ReportingController {
   }
 
   @Post('schedule')
+  @UseGuards(SchoolScopeGuard)
   @HttpCode(HttpStatus.CREATED)
   @Roles('ryl_admin', 'school_admin')
   @ApiOperation({ summary: 'Schedule report generation' })

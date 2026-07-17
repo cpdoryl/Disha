@@ -14,7 +14,13 @@ services:
       - "${DB_PORT:-5432}:5432"
     volumes:
       - postgres_staging_data:/var/lib/postgresql/data
-      - ./backend/database/migrations:/docker-entrypoint-initdb.d
+      # Was mounting ./backend/database/migrations, a path that doesn't
+      # exist (real migrations are TypeORM .ts classes under
+      # backend/src/database/migrations — Postgres's docker-entrypoint-
+      # initdb.d only runs .sh/.sql/.sql.gz on first init, so even the
+      # correct path wouldn't have run them). Schema setup happens via
+      # `npm run migration:run` against the running container instead —
+      # see BACKUP_RECOVERY.md / INFRASTRUCTURE_SETUP.md for that step.
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${DB_USERNAME:-staging_user}"]
       interval: 10s

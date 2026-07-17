@@ -68,21 +68,56 @@ jobs:
         continue-on-error: true
 
       - name: Run unit tests
+        # No spec file matches --testPathPattern='unit' yet (all three
+        # existing specs are *.integration.spec.ts) — this step failed on
+        # every run before --passWithNoTests was added to the npm script,
+        # since Jest exits 1 on an empty match set by default.
         run: npm run test:unit
         working-directory: backend
         env:
-          DATABASE_URL: postgresql://disha_user:test_password@localhost:5432/disha_test
-          REDIS_URL: redis://localhost:6379
+          NODE_ENV: test
+
+      - name: Run database migrations
+        run: npm run migration:run
+        working-directory: backend
+        env:
+          DB_HOST: localhost
+          DB_PORT: 5432
+          DB_USERNAME: disha_user
+          DB_PASSWORD: test_password
+          DB_NAME: disha_test
+          NODE_ENV: test
+
+      - name: Seed test database
+        # Integration specs log in as seeded users (e.g. teacher1@school.edu,
+        # ryladmin@disha.local) — they need real seed data, not just a
+        # migrated empty schema.
+        run: npm run seed:db
+        working-directory: backend
+        env:
+          DB_HOST: localhost
+          DB_PORT: 5432
+          DB_USERNAME: disha_user
+          DB_PASSWORD: test_password
+          DB_NAME: disha_test
           NODE_ENV: test
 
       - name: Run integration tests
         run: npm run test:integration
         working-directory: backend
         env:
-          DATABASE_URL: postgresql://disha_user:test_password@localhost:5432/disha_test
-          REDIS_URL: redis://localhost:6379
+          # The app reads DB_HOST/DB_PORT/DB_USERNAME/DB_PASSWORD/DB_NAME
+          # (see src/config/configuration.ts) — it does not parse
+          # DATABASE_URL at all, so the previous env block here silently
+          # never reached the Postgres service container and this step's
+          # failures were masked by continue-on-error.
+          DB_HOST: localhost
+          DB_PORT: 5432
+          DB_USERNAME: disha_user
+          DB_PASSWORD: test_password
+          DB_NAME: disha_test
+          JWT_SECRET: ci-test-secret-key
           NODE_ENV: test
-        continue-on-error: true
 
       - name: Build application
         run: npm run build

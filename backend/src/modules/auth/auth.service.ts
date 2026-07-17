@@ -43,11 +43,19 @@ export class AuthService {
       }),
     ]);
 
+    // jwt.expiresIn is a human duration string (e.g. "15m", "900s"), not a
+    // number of seconds — parseInt() on "15m" silently truncates to 15,
+    // wrongly reporting "expires in 15 seconds" for a token that actually
+    // lasts 15 minutes. Decode the token that was just signed and compute
+    // the real expiresIn from its own exp/iat claims instead.
+    const decoded = this.jwtService.decode(accessToken) as JwtPayload;
+    const expiresIn = decoded.exp - decoded.iat;
+
     return {
       accessToken,
       refreshToken,
       tokenType: 'Bearer',
-      expiresIn: parseInt(this.configService.get('jwt.expiresIn') || '900'),
+      expiresIn,
     };
   }
 
@@ -94,7 +102,7 @@ export class AuthService {
     const tokens = await this.generateTokens(
       user.id,
       user.schoolId || '',
-      user.roleType,
+      user.userType,
       user.email,
     );
 
@@ -109,7 +117,8 @@ export class AuthService {
         email: user.email,
         firstName: user.firstName,
         lastName: user.lastName || '',
-        role: user.roleType,
+        role: user.userType,
+        schoolId: user.schoolId || null,
       },
     };
   }

@@ -11,7 +11,7 @@ import { TeacherTraining, CompletionStatus } from './TeacherTraining.entity';
 // Additional Entity Imports (Day 2)
 import { District } from './District.entity';
 import { User, UserType, RoleType } from './User.entity';
-import { StudentAttendance } from './studentattendance.entity';
+import { StudentAttendance, AttendanceStatus } from './studentattendance.entity';
 import { StudentAcademicAssessment, AcademicStatus } from './studentacademicassessment.entity';
 import { CounsellorReferral, ReferralSeverity, ResolutionStatus } from './counsellorreferral.entity';
 import { BullyingIncident, IncidentType, IncidentSeverity } from './bullyingincident.entity';
@@ -40,7 +40,7 @@ export { TeacherTraining, CompletionStatus };
 // Additional Entity Exports (Day 2)
 export { District };
 export { User, UserType, RoleType };
-export { StudentAttendance };
+export { StudentAttendance, AttendanceStatus };
 export { StudentAcademicAssessment, AcademicStatus };
 export { CounsellorReferral, ReferralSeverity, ResolutionStatus };
 export { BullyingIncident, IncidentType, IncidentSeverity };

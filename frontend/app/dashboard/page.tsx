@@ -10,16 +10,26 @@ export default function DashboardHome() {
   const { user } = useAuthStore()
   const [metrics, setMetrics] = useState<any>(null)
   const [loading, setLoading] = useState(true)
-  const [data, setData] = useState([
+  const data = [
     { name: 'Jan', students: 400, attendance: 240 },
     { name: 'Feb', students: 300, attendance: 221 },
     { name: 'Mar', students: 200, attendance: 229 },
     { name: 'Apr', students: 278, attendance: 200 },
     { name: 'May', students: 189, attendance: 218 },
-  ])
+  ]
 
   useEffect(() => {
-    if (!user?.schoolId) return
+    // ryl_admin/ryl_support have no schoolId (they're not scoped to one
+    // school) — this used to leave `loading` stuck at its initial `true`
+    // forever, since fetchMetrics() (the only thing that clears it) never
+    // ran. There's no cross-school metrics endpoint to call instead yet,
+    // so just stop showing a loading state rather than spin indefinitely;
+    // the StatCards below already render sensible placeholders when
+    // metrics is null.
+    if (!user?.schoolId) {
+      setLoading(false)
+      return
+    }
     fetchMetrics()
   }, [user?.schoolId])
 
@@ -41,7 +51,7 @@ export default function DashboardHome() {
         <h1 className="text-3xl font-bold text-gray-900">
           Welcome, {user?.name}!
         </h1>
-        <p className="text-gray-600 mt-2">Here's your dashboard overview</p>
+        <p className="text-gray-600 mt-2">Here&apos;s your dashboard overview</p>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">

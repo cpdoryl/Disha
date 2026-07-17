@@ -45,7 +45,7 @@ export class AddPerformanceIndexes1724056802000 implements MigrationInterface {
       `CREATE INDEX IF NOT EXISTS "IDX_responses_respondentId" ON "assessment_responses" ("respondentId")`,
     );
     await queryRunner.query(
-      `CREATE INDEX IF NOT EXISTS "IDX_responses_submittedAt" ON "assessment_responses" ("submittedAt")`,
+      `CREATE INDEX IF NOT EXISTS "IDX_responses_submissionTimestamp" ON "assessment_responses" ("submissionTimestamp")`,
     );
 
     // User indexes for login and access control
@@ -58,10 +58,10 @@ export class AddPerformanceIndexes1724056802000 implements MigrationInterface {
 
     // Audit log indexes for efficient querying
     await queryRunner.query(
-      `CREATE INDEX IF NOT EXISTS "IDX_audit_logs_action" ON "audit_logs" ("action")`,
+      `CREATE INDEX IF NOT EXISTS "IDX_audit_logs_actionType" ON "audit_logs" ("actionType")`,
     );
     await queryRunner.query(
-      `CREATE INDEX IF NOT EXISTS "IDX_audit_logs_userId_createdAt" ON "audit_logs" ("userId", "createdAt")`,
+      `CREATE INDEX IF NOT EXISTS "IDX_audit_logs_userId_actionTimestamp" ON "audit_logs" ("userId", "actionTimestamp")`,
     );
 
     // Attendance indexes
@@ -76,27 +76,24 @@ export class AddPerformanceIndexes1724056802000 implements MigrationInterface {
     await queryRunner.query(
       `CREATE INDEX IF NOT EXISTS "IDX_gaps_challengeId" ON "gap_predictions" ("challengeId")`,
     );
-    await queryRunner.query(
-      `CREATE INDEX IF NOT EXISTS "IDX_gaps_assessmentId" ON "gap_predictions" ("assessmentId")`,
-    );
 
     // Parent communication indexes
     await queryRunner.query(
-      `CREATE INDEX IF NOT EXISTS "IDX_communication_status" ON "parent_communication" ("status")`,
+      `CREATE INDEX IF NOT EXISTS "IDX_communication_status" ON "parent_communications" ("status")`,
     );
     await queryRunner.query(
-      `CREATE INDEX IF NOT EXISTS "IDX_communication_studentId_status" ON "parent_communication" ("studentId", "status")`,
+      `CREATE INDEX IF NOT EXISTS "IDX_communication_studentId_status" ON "parent_communications" ("studentId", "status")`,
     );
 
     // Wellbeing-related indexes
     await queryRunner.query(
-      `CREATE INDEX IF NOT EXISTS "IDX_referral_status" ON "counsellor_referrals" ("status")`,
+      `CREATE INDEX IF NOT EXISTS "IDX_referral_resolutionStatus" ON "counsellor_referrals" ("resolutionStatus")`,
     );
     await queryRunner.query(
       `CREATE INDEX IF NOT EXISTS "IDX_intervention_status" ON "remediation_interventions" ("status")`,
     );
     await queryRunner.query(
-      `CREATE INDEX IF NOT EXISTS "IDX_bullying_status" ON "bullying_incidents" ("status")`,
+      `CREATE INDEX IF NOT EXISTS "IDX_bullying_resolutionStatus" ON "bullying_incidents" ("resolutionStatus")`,
     );
 
     // Academic assessment indexes
@@ -109,10 +106,10 @@ export class AddPerformanceIndexes1724056802000 implements MigrationInterface {
 
     // Operational data indexes
     await queryRunner.query(
-      `CREATE INDEX IF NOT EXISTS "IDX_operational_category" ON "operational_data" ("category")`,
+      `CREATE INDEX IF NOT EXISTS "IDX_operational_dataType" ON "operational_data" ("dataType")`,
     );
     await queryRunner.query(
-      `CREATE INDEX IF NOT EXISTS "IDX_operational_recordedDate" ON "operational_data" ("recordedDate")`,
+      `CREATE INDEX IF NOT EXISTS "IDX_operational_dataDate" ON "operational_data" ("dataDate")`,
     );
   }
 
@@ -129,23 +126,22 @@ export class AddPerformanceIndexes1724056802000 implements MigrationInterface {
     await queryRunner.query(`DROP INDEX IF EXISTS "IDX_assessments_schoolId_status"`);
     await queryRunner.query(`DROP INDEX IF EXISTS "IDX_assessments_startDate_endDate"`);
     await queryRunner.query(`DROP INDEX IF EXISTS "IDX_responses_respondentId"`);
-    await queryRunner.query(`DROP INDEX IF EXISTS "IDX_responses_submittedAt"`);
+    await queryRunner.query(`DROP INDEX IF EXISTS "IDX_responses_submissionTimestamp"`);
     await queryRunner.query(`DROP INDEX IF EXISTS "IDX_users_isActive"`);
     await queryRunner.query(`DROP INDEX IF EXISTS "IDX_users_schoolId_isActive"`);
-    await queryRunner.query(`DROP INDEX IF EXISTS "IDX_audit_logs_action"`);
-    await queryRunner.query(`DROP INDEX IF EXISTS "IDX_audit_logs_userId_createdAt"`);
+    await queryRunner.query(`DROP INDEX IF EXISTS "IDX_audit_logs_actionType"`);
+    await queryRunner.query(`DROP INDEX IF EXISTS "IDX_audit_logs_userId_actionTimestamp"`);
     await queryRunner.query(`DROP INDEX IF EXISTS "IDX_attendance_status"`);
     await queryRunner.query(`DROP INDEX IF EXISTS "IDX_attendance_attendanceDate"`);
     await queryRunner.query(`DROP INDEX IF EXISTS "IDX_gaps_challengeId"`);
-    await queryRunner.query(`DROP INDEX IF EXISTS "IDX_gaps_assessmentId"`);
     await queryRunner.query(`DROP INDEX IF EXISTS "IDX_communication_status"`);
     await queryRunner.query(`DROP INDEX IF EXISTS "IDX_communication_studentId_status"`);
-    await queryRunner.query(`DROP INDEX IF EXISTS "IDX_referral_status"`);
+    await queryRunner.query(`DROP INDEX IF EXISTS "IDX_referral_resolutionStatus"`);
     await queryRunner.query(`DROP INDEX IF EXISTS "IDX_intervention_status"`);
-    await queryRunner.query(`DROP INDEX IF EXISTS "IDX_bullying_status"`);
+    await queryRunner.query(`DROP INDEX IF EXISTS "IDX_bullying_resolutionStatus"`);
     await queryRunner.query(`DROP INDEX IF EXISTS "IDX_academic_subject"`);
     await queryRunner.query(`DROP INDEX IF EXISTS "IDX_academic_assessmentType"`);
-    await queryRunner.query(`DROP INDEX IF EXISTS "IDX_operational_category"`);
-    await queryRunner.query(`DROP INDEX IF EXISTS "IDX_operational_recordedDate"`);
+    await queryRunner.query(`DROP INDEX IF EXISTS "IDX_operational_dataType"`);
+    await queryRunner.query(`DROP INDEX IF EXISTS "IDX_operational_dataDate"`);
   }
 }

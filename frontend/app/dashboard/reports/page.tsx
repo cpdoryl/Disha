@@ -41,8 +41,15 @@ export default function ReportsPage() {
   const [metrics, setMetrics] = useState<any>(null)
 
   useEffect(() => {
+    // ryl_admin/ryl_support have no schoolId — there's no cross-school
+    // reporting endpoint to call for them yet, so stop the loading state
+    // rather than spin forever (same issue as dashboard/page.tsx). The
+    // charts below already fall back to the default* mock datasets when
+    // metrics is null.
     if (user?.schoolId) {
       fetchReports()
+    } else {
+      setLoading(false)
     }
   }, [user?.schoolId])
 
@@ -139,7 +146,7 @@ export default function ReportsPage() {
                 fill="#8884d8"
                 dataKey="value"
               >
-                {performanceData.map((entry, index) => (
+                {performanceData.map((entry: any, index: number) => (
                   <Cell key={`cell-${index}`} fill={entry.fill} />
                 ))}
               </Pie>
@@ -179,7 +186,7 @@ export default function ReportsPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
-              {studentPerformance.map((student, index) => {
+              {studentPerformance.map((student: any, index: number) => {
                 const average = Math.round((student.math + student.english + student.science + student.history) / 4)
                 return (
                   <tr key={index} className="hover:bg-gray-50">

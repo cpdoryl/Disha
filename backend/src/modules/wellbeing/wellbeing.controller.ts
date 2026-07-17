@@ -13,6 +13,7 @@ import { ApiTags, ApiBearerAuth, ApiParam, ApiOperation } from '@nestjs/swagger'
 import { WellbeingService } from '../../services/wellbeing.service';
 import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
 import { RolesGuard } from 'src/common/guards/roles.guard';
+import { SchoolScopeGuard } from 'src/common/guards/school-scope.guard';
 import { Roles } from 'src/common/decorators/roles.decorator';
 
 @ApiTags('Wellbeing')
@@ -79,11 +80,13 @@ export class WellbeingController {
   }
 
   @Get('dashboard/school/:schoolId')
+  @UseGuards(SchoolScopeGuard)
   async getSchoolWellbeingDashboard(@Param('schoolId') schoolId: string) {
     return this.wellbeingService.getSchoolWellbeingDashboard(schoolId);
   }
 
   @Get('intervention-effectiveness/school/:schoolId')
+  @UseGuards(SchoolScopeGuard)
   async getInterventionEffectivenessReport(
     @Param('schoolId') schoolId: string,
   ) {
