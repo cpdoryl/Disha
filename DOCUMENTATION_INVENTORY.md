@@ -1,11 +1,15 @@
 # Disha v2.0 - Documentation Inventory & Pending Tasks
 
-**Updated:** 2026-07-17 | **Status:** 55% Complete  
-**Total Documents Required:** 25 | **Completed:** 8 | **Pending:** 17
+**Updated:** 2026-07-17 | **Status:** 12/25 documents complete
+**Total Documents Required:** 25 | **Completed:** 12 | **Pending:** 13
+
+> Week 1 critical path is done: ARCHITECTURE_GUIDE.md, DATABASE_SCHEMA.md,
+> CODING_STANDARDS.md, and API_DOCUMENTATION.md all shipped — see
+> ✅ COMPLETED below. Week 2+ items (testing, deployment ops, training) remain.
 
 ---
 
-## 📋 COMPLETED DOCUMENTS (✅ 8 of 25)
+## 📋 COMPLETED DOCUMENTS (✅ 12 of 25 total — these 8 pre-date this update; see Phase 1 section below for docs 9-12)
 
 ### **1. TECH_STACK.md** ✅
 - **Status:** COMPLETE
@@ -71,128 +75,84 @@
 
 ---
 
-## 🔴 PENDING DOCUMENTS (CRITICAL) - 17 Required
+## ✅ PHASE 1 COMPLETE — Development Guidelines
 
-### **PHASE 1: Development Guidelines (Week 1-2)**
-
-#### **9. ARCHITECTURE_GUIDE.md** 🔴 HIGH PRIORITY
+#### **9. ARCHITECTURE_GUIDE.md** ✅ COMPLETE
 - **Priority:** CRITICAL
 - **Owner:** Tech Lead
-- **Effort:** 8 hours
-- **Deadline:** Week 1
-- **Contents:**
-  - System architecture diagram (ASCII/visual)
-  - Component relationships
-  - Data flow diagrams
-  - Database schema documentation
-  - API endpoint list (complete)
-  - Module dependencies
-  - Design patterns used
-  - Folder structure explanation
+- **Location:** `/ARCHITECTURE_GUIDE.md`
+- **Contents delivered:**
+  - System architecture diagram (browser → Nginx → NestJS → Postgres, plus the not-yet-wired extraction service)
+  - Repository layout with folder-by-folder explanation
+  - Backend module map — real vs. stub status for all 19 modules
+  - Frontend architecture (state, data-fetching, forms conventions)
+  - Request lifecycle + two key business flows (diagnostic assessment, school-admin CRUD)
+  - Design patterns in use
+  - Known gaps & inconsistencies (stub modules, missing `Class` entity, mixed DTO discipline, unused `PermissionsGuard`, case-sensitivity bug fixed this cycle)
+  - Module dependency graph
 - **Audience:** All developers
-- **Status:** NOT STARTED
+- **Status:** COMPLETE (2026-07-17)
 - **Dependencies:** None
-
-**Pending Tasks:**
-- [ ] Create system architecture diagram
-- [ ] Document all API endpoints (CRUD operations)
-- [ ] Create database entity-relationship diagram
-- [ ] Document folder structure with explanations
-- [ ] Add design pattern documentation
-- [ ] Create data flow diagrams
-- [ ] Document dependency graph
 
 ---
 
-#### **10. API_DOCUMENTATION.md** 🔴 HIGH PRIORITY
+#### **10. API_DOCUMENTATION.md** ✅ COMPLETE
 - **Priority:** CRITICAL
 - **Owner:** Backend Lead
-- **Effort:** 12 hours
-- **Deadline:** Week 2
-- **Contents:**
-  - All REST API endpoints
-  - Request/response examples
-  - Authentication flow
-  - Error codes and meanings
-  - Rate limiting rules
-  - Pagination details
-  - Sorting & filtering
-  - Validation rules
+- **Location:** `/API_DOCUMENTATION.md`
+- **Contents delivered:**
+  - Every route across all 13 live controllers (~65 endpoints), grouped by module, with roles and query/body params
+  - Authentication flow with real request/response examples
+  - Error format + status code reference
+  - Roles table
+  - Detailed request/response examples for auth, students, staff, attendance, assessments
+  - Explicit "Not Yet Implemented" section (admissions/fee/compliance/infrastructure/communication have no routes; gap-prediction has no controller)
+  - Rate limiting status (built, not enabled) and pagination status (built, not wired to any endpoint)
 - **Audience:** Frontend developers, mobile team
-- **Status:** NOT STARTED
+- **Status:** COMPLETE (2026-07-17)
 - **Dependencies:** Backend services complete
 
-**Pending Tasks:**
-- [ ] Document all 50+ API endpoints
-- [ ] Add cURL examples for each endpoint
-- [ ] Document authentication flow (JWT)
-- [ ] Create error code reference
-- [ ] Add response examples for success & error
-- [ ] Document pagination (limit/offset)
-- [ ] Document sorting parameters
-- [ ] Add validation rules per endpoint
-
 ---
 
-#### **11. DATABASE_SCHEMA.md** 🔴 HIGH PRIORITY
+#### **11. DATABASE_SCHEMA.md** ✅ COMPLETE
 - **Priority:** CRITICAL
 - **Owner:** Database Admin
-- **Effort:** 10 hours
-- **Deadline:** Week 1
-- **Contents:**
-  - All tables with columns
-  - Data types and constraints
-  - Primary/foreign keys
-  - Indexes
-  - Relationships (1-to-many, many-to-many)
-  - Migration history
-  - Backup strategy
-  - Query optimization notes
+- **Location:** `/DATABASE_SCHEMA.md`
+- **Contents delivered:**
+  - Full column-level tables for the 8 core entities (organizations, districts, schools, users, students, staff, teacher_training, plus the diagnostic-engine tables)
+  - Summarized reference table for the 14 extended/compliance entities
+  - ASCII entity-relationship overview, including the `User` vs `Staff`/`Student` split explained
+  - Index inventory
+  - Migration file inventory + `synchronize` warning for prod
+  - Query optimization notes (eager-loading, unpaginated lists)
+  - Cross-reference to DEPLOYMENT_GUIDE.md for backup strategy (not duplicated)
 - **Audience:** Backend developers, DBAs
-- **Status:** NOT STARTED
+- **Status:** COMPLETE (2026-07-17)
 - **Dependencies:** TypeORM entities
 
-**Pending Tasks:**
-- [ ] Document all database tables
-- [ ] List columns and data types
-- [ ] Document primary/foreign keys
-- [ ] List all indexes
-- [ ] Create ER diagram (entity-relationship)
-- [ ] Document migration procedures
-- [ ] Add query optimization notes
-- [ ] Document backup strategy
-
 ---
 
-#### **12. CODING_STANDARDS.md** 🔴 HIGH PRIORITY
+#### **12. CODING_STANDARDS.md** ✅ COMPLETE
 - **Priority:** HIGH
 - **Owner:** Tech Lead
-- **Effort:** 6 hours
-- **Deadline:** Week 1
-- **Contents:**
-  - Code style guidelines
-  - Naming conventions
-  - Comment standards
-  - Error handling patterns
-  - Testing requirements
-  - Performance guidelines
-  - Security best practices
-  - Git commit message format
+- **Location:** `/CODING_STANDARDS.md`
+- **Contents delivered:**
+  - Formatting/linting config (backend `.eslintrc.js`/`.prettierrc`; frontend gap flagged — no config file exists yet)
+  - TypeScript strict-mode rules that have actually broken builds before
+  - NestJS module/controller/service/DTO patterns, with the `any`-typed-body debt called out explicitly
+  - React/Next.js page-fetching, forms, and API-client conventions (exact shape to copy)
+  - Naming conventions table
+  - Error handling pattern (`AllExceptionsFilter` envelope) for both ends
+  - Security guidelines, including the JWT `userType` vs `roleType` bug fixed this cycle as a cautionary example
+  - Git commit convention (from README, now canonical here)
+  - Testing requirements, including the known broken `supertest` import in the integration specs
 - **Audience:** All developers
-- **Status:** NOT STARTED
+- **Status:** COMPLETE (2026-07-17)
 - **Dependencies:** None
 
-**Pending Tasks:**
-- [ ] Define TypeScript coding standards
-- [ ] Define React component patterns
-- [ ] Define NestJS service patterns
-- [ ] Document naming conventions (variables, functions, classes)
-- [ ] Create Git commit message template
-- [ ] Document error handling patterns
-- [ ] Add security guidelines
-- [ ] Document performance targets
-
 ---
+
+## 🔴 PENDING DOCUMENTS (CRITICAL) - 13 Required
 
 ### **PHASE 2: Testing Documentation (Week 3-4)**
 
@@ -606,10 +566,10 @@
 | 6 | Backend README.md | ✅ | MEDIUM | BE Lead | 2 | Week 1 | 1 |
 | 7 | .env.example | ✅ | HIGH | DevOps | 2 | Week 1 | 1 |
 | 8 | docker-compose.yml | ✅ | HIGH | DevOps | 4 | Week 1 | 1 |
-| 9 | ARCHITECTURE_GUIDE.md | 🔴 | CRITICAL | Tech Lead | 8 | Week 1 | 1 |
-| 10 | API_DOCUMENTATION.md | 🔴 | CRITICAL | BE Lead | 12 | Week 2 | 1 |
-| 11 | DATABASE_SCHEMA.md | 🔴 | CRITICAL | DBA | 10 | Week 1 | 1 |
-| 12 | CODING_STANDARDS.md | 🔴 | HIGH | Tech Lead | 6 | Week 1 | 1 |
+| 9 | ARCHITECTURE_GUIDE.md | ✅ | CRITICAL | Tech Lead | 8 | Week 1 | 1 |
+| 10 | API_DOCUMENTATION.md | ✅ | CRITICAL | BE Lead | 12 | Week 2 | 1 |
+| 11 | DATABASE_SCHEMA.md | ✅ | CRITICAL | DBA | 10 | Week 1 | 1 |
+| 12 | CODING_STANDARDS.md | ✅ | HIGH | Tech Lead | 6 | Week 1 | 1 |
 | 13 | TESTING_STRATEGY.md | 🟡 | HIGH | QA Lead | 8 | Week 3 | 2 |
 | 14 | TEST_CASES.md | 🟡 | HIGH | QA Lead | 20 | Week 3 | 2 |
 | 15 | LOAD_TEST_RESULTS.md | 🟡 | MEDIUM | DevOps/QA | 4 | Week 4 | 2 |
@@ -667,12 +627,12 @@ Week 8:
 
 | Phase | Documents | Hours | Status |
 |-------|-----------|-------|--------|
-| Phase 1 (Week 1-2) | 8 docs | 42 hours | 0% |
+| Phase 1 (Week 1-2) | 8 docs | 42 hours | ✅ 100% |
 | Phase 2 (Week 3-4) | 3 docs | 32 hours | 0% |
 | Phase 3 (Week 5-6) | 4 docs | 30 hours | 0% |
 | Phase 4 (Week 7-8) | 4 docs | 45 hours | 0% |
 | Phase 5-6 (Week 8-10) | 2 docs | 16 hours | 0% |
-| **TOTAL** | **25 docs** | **165 hours** | **0%** |
+| **TOTAL** | **25 docs** | **165 hours** | **~25%** (42/165h) |
 
 **Effort per week:**
 - Week 1: 18 hours (CRITICAL)
@@ -688,11 +648,11 @@ Week 8:
 
 ## 📋 QUICK START: Priority Order
 
-### 🔴 **CRITICAL - Week 1 (Must Complete)**
-1. **ARCHITECTURE_GUIDE.md** (Tech Lead, 8h)
-2. **DATABASE_SCHEMA.md** (DBA, 10h)
-3. **CODING_STANDARDS.md** (Tech Lead, 6h)
-4. **API_DOCUMENTATION.md** (Backend Lead, 12h - starts Week 1, ends Week 2)
+### ✅ **CRITICAL - Week 1 (Complete)**
+1. **ARCHITECTURE_GUIDE.md** (Tech Lead, 8h) ✅
+2. **DATABASE_SCHEMA.md** (DBA, 10h) ✅
+3. **CODING_STANDARDS.md** (Tech Lead, 6h) ✅
+4. **API_DOCUMENTATION.md** (Backend Lead, 12h) ✅
 
 ### 🟡 **HIGH - Week 1-2**
 5. Update README.md files (2h each)
@@ -750,16 +710,13 @@ USER_GUIDES.md + ADMIN_GUIDE.md
 
 ## ✅ IMPLEMENTATION GUIDE
 
-### **For Week 1:**
+### **For Week 1:** ✅ DONE
 ```bash
-# Create and assign these documents immediately
-1. Assign ARCHITECTURE_GUIDE.md to Tech Lead
-2. Assign DATABASE_SCHEMA.md to DBA
-3. Assign CODING_STANDARDS.md to Tech Lead
-4. Start API_DOCUMENTATION.md (Backend Lead)
-
-# Set up daily stand-ups to track progress
-# Target: All week 1 docs 50% complete by mid-week
+# All four shipped 2026-07-17:
+1. ARCHITECTURE_GUIDE.md   ✅
+2. DATABASE_SCHEMA.md       ✅
+3. CODING_STANDARDS.md      ✅
+4. API_DOCUMENTATION.md     ✅
 ```
 
 ### **For Week 2:**
@@ -805,16 +762,22 @@ USER_GUIDES.md + ADMIN_GUIDE.md
 
 **Immediate Actions (This Week):**
 1. ✅ Review completed documents (TECH_STACK, DEPLOYMENT_GUIDE, ROADMAP)
-2. ⏳ Assign document owners (see ownership table)
-3. ⏳ Create document tracking board
-4. ⏳ Schedule kickoff meetings per phase
+2. ✅ Week 1 critical path shipped (ARCHITECTURE_GUIDE, DATABASE_SCHEMA, CODING_STANDARDS, API_DOCUMENTATION)
+3. ⏳ Assign owners for Phase 2 (TESTING_STRATEGY.md, TEST_CASES.md — QA Lead)
+4. ⏳ Create document tracking board
 5. ⏳ Set up documentation review process
+
+**Next up:** Phase 2 Testing Documentation (Week 3-4) — TESTING_STRATEGY.md,
+TEST_CASES.md, LOAD_TEST_RESULTS.md. These need an actual test framework
+decision first (see CODING_STANDARDS.md § Testing Requirements — no test
+runner is configured on the frontend yet, and the backend's three
+integration specs currently fail to compile).
 
 **This is your master checklist for building to pilot launch!**
 
 ---
 
-**Documentation Inventory Version:** 1.0  
-**Last Updated:** 2026-07-17  
-**Next Review:** Weekly  
-**Total Pages:** 25 documents, 165 hours effort
+**Documentation Inventory Version:** 1.1
+**Last Updated:** 2026-07-17
+**Next Review:** Weekly
+**Total Pages:** 25 documents, 165 hours effort (42h / ~25% complete)
