@@ -1,19 +1,22 @@
 # Disha v2.0 - Documentation Inventory & Pending Tasks
 
-**Updated:** 2026-07-17 | **Status:** 14/25 documents complete
-**Total Documents Required:** 25 | **Completed:** 14 | **Pending:** 11
+**Updated:** 2026-07-17 | **Status:** 15/25 documents complete
+**Total Documents Required:** 25 | **Completed:** 15 | **Pending:** 10
 
-> Week 1 (ARCHITECTURE_GUIDE, DATABASE_SCHEMA, CODING_STANDARDS,
-> API_DOCUMENTATION) and Week 2 Phase 2 (TESTING_STRATEGY, TEST_CASES) are
-> both done — see ✅ COMPLETED sections below. Phase 2 also included real
-> engineering, not just docs: the backend integration suite went from
-> never-having-run to 76/76 passing, with 17 real bugs found and fixed
-> along the way (see TESTING_STRATEGY.md for the full list). Next:
-> LOAD_TEST_RESULTS.md, then Phase 3 (deployment/security docs).
+> Phase 1 (ARCHITECTURE_GUIDE, DATABASE_SCHEMA, CODING_STANDARDS,
+> API_DOCUMENTATION) and Phase 2 (TESTING_STRATEGY, TEST_CASES,
+> LOAD_TEST_RESULTS) are both fully done — see ✅ COMPLETED sections below.
+> This wasn't just writing docs: the backend integration suite went from
+> never-having-run to 76/76 passing, a real authorization bypass and 16
+> other bugs were found and fixed, both CI workflows were repaired, and a
+> real load test found and fixed a health-check bug that would have
+> caused a production load balancer to pull healthy instances from
+> rotation. Next: Phase 3 (INFRASTRUCTURE_SETUP.md, SECURITY_CHECKLIST.md,
+> MONITORING_SETUP.md, BACKUP_RECOVERY.md).
 
 ---
 
-## 📋 COMPLETED DOCUMENTS (✅ 14 of 25 total — these 8 pre-date this update; see Phase 1 / Phase 2 sections below for docs 9-14)
+## 📋 COMPLETED DOCUMENTS (✅ 15 of 25 total — these 8 pre-date this update; see Phase 1 / Phase 2 sections below for docs 9-15)
 
 ### **1. TECH_STACK.md** ✅
 - **Status:** COMPLETE
@@ -206,31 +209,28 @@
 
 ---
 
-#### **15. LOAD_TEST_RESULTS.md** 🟡 MEDIUM PRIORITY
+#### **15. LOAD_TEST_RESULTS.md** ✅ COMPLETE
 - **Priority:** MEDIUM
 - **Owner:** DevOps/QA
-- **Effort:** 4 hours (after testing phase)
-- **Deadline:** Week 4
-- **Contents:**
-  - Load test configuration
-  - Test results (throughput, latency, errors)
-  - Bottleneck analysis
-  - Optimization recommendations
-  - Performance baselines
-  - Capacity planning results
-  - Future scaling requirements
+- **Location:** `/LOAD_TEST_RESULTS.md`
+- **Contents delivered:** Real `wrk` runs (not Artillery — see the tooling
+  correction in `TESTING_STRATEGY.md`) against a live local instance:
+  baseline latency/throughput for all 6 health endpoints at 50 concurrent
+  users, and a progressive test stepping 10→1000 concurrent users that
+  found the actual single-process throughput ceiling (~2000 req/s,
+  unrelated to the database — the process is CPU/event-loop bound, not
+  I/O bound, since `/health` does trivial work) and where it degrades
+  (socket timeouts appear past 500 concurrent connections). Also fixed a
+  real bug this run surfaced: `/health` reported `"degraded"` on a
+  completely idle, freshly-booted process because its memory-health
+  signal compared heap usage against V8's *current* (not maximum) heap
+  size — normal, healthy behavior was being misread as memory pressure,
+  exactly the kind of thing that gets a healthy instance pulled from a
+  load balancer's rotation in production. Fixed to compare RSS against
+  actual system memory instead; verified before/after.
 - **Audience:** Technical team, stakeholders
-- **Status:** NOT STARTED
+- **Status:** COMPLETE (2026-07-17)
 - **Dependencies:** Load testing complete
-
-**Pending Tasks:**
-- [ ] Run load tests with Artillery
-- [ ] Document test configuration
-- [ ] Capture results (throughput, latency, errors)
-- [ ] Analyze bottlenecks
-- [ ] Document optimization recommendations
-- [ ] Create capacity planning report
-- [ ] Document scaling requirements
 
 ---
 
@@ -562,7 +562,7 @@
 | 12 | CODING_STANDARDS.md | ✅ | HIGH | Tech Lead | 6 | Week 1 | 1 |
 | 13 | TESTING_STRATEGY.md | ✅ | HIGH | QA Lead | 8 | Week 3 | 2 |
 | 14 | TEST_CASES.md | ✅ | HIGH | QA Lead | 20 | Week 3 | 2 |
-| 15 | LOAD_TEST_RESULTS.md | 🟡 | MEDIUM | DevOps/QA | 4 | Week 4 | 2 |
+| 15 | LOAD_TEST_RESULTS.md | ✅ | MEDIUM | DevOps/QA | 4 | Week 4 | 2 |
 | 16 | INFRASTRUCTURE_SETUP.md | 🟡 | CRITICAL | DevOps | 8 | Week 5 | 3 |
 | 17 | MONITORING_SETUP.md | 🟡 | HIGH | DevOps | 6 | Week 5 | 3 |
 | 18 | BACKUP_RECOVERY.md | 🟡 | HIGH | DevOps | 6 | Week 5 | 3 |
@@ -618,11 +618,11 @@ Week 8:
 | Phase | Documents | Hours | Status |
 |-------|-----------|-------|--------|
 | Phase 1 (Week 1-2) | 8 docs | 42 hours | ✅ 100% |
-| Phase 2 (Week 3-4) | 3 docs | 32 hours | 🟡 88% (28/32h — LOAD_TEST_RESULTS.md remains) |
+| Phase 2 (Week 3-4) | 3 docs | 32 hours | ✅ 100% |
 | Phase 3 (Week 5-6) | 4 docs | 30 hours | 0% |
 | Phase 4 (Week 7-8) | 4 docs | 45 hours | 0% |
 | Phase 5-6 (Week 8-10) | 2 docs | 16 hours | 0% |
-| **TOTAL** | **25 docs** | **165 hours** | **~42%** (70/165h) |
+| **TOTAL** | **25 docs** | **165 hours** | **~45%** (74/165h) |
 
 **Effort per week:**
 - Week 1: 18 hours (CRITICAL)
@@ -648,12 +648,12 @@ Week 8:
 5. Update README.md files (2h each)
 6. Update .env.example files (2h)
 
-### ✅ **Week 3 Testing Docs (Complete)**
+### ✅ **Phase 2 Testing Docs (Complete)**
 7. TESTING_STRATEGY.md (QA, 8h) ✅
 8. TEST_CASES.md (QA, 20h) ✅
+9. LOAD_TEST_RESULTS.md (DevOps/QA, 4h) ✅
 
-### 🟡 **MEDIUM - Week 4-5 (Next)**
-9. LOAD_TEST_RESULTS.md (DevOps/QA, 4h) — needs an actual `wrk` run against a live instance
+### 🟡 **MEDIUM - Week 5 (Next)**
 10. INFRASTRUCTURE_SETUP.md (DevOps, 8h)
 11. SECURITY_CHECKLIST.md (Security, 10h)
 
@@ -755,21 +755,19 @@ USER_GUIDES.md + ADMIN_GUIDE.md
 
 **Immediate Actions (This Week):**
 1. ✅ Review completed documents (TECH_STACK, DEPLOYMENT_GUIDE, ROADMAP)
-2. ✅ Week 1 critical path shipped (ARCHITECTURE_GUIDE, DATABASE_SCHEMA, CODING_STANDARDS, API_DOCUMENTATION)
-3. ✅ Phase 2 testing docs shipped (TESTING_STRATEGY.md, TEST_CASES.md) — plus the backend integration suite now actually passes (76/76) for the first time, with 17 real bugs fixed along the way
+2. ✅ Phase 1 critical path shipped (ARCHITECTURE_GUIDE, DATABASE_SCHEMA, CODING_STANDARDS, API_DOCUMENTATION)
+3. ✅ Phase 2 testing docs shipped (TESTING_STRATEGY.md, TEST_CASES.md, LOAD_TEST_RESULTS.md) — the backend integration suite now actually passes (76/76) for the first time, a real authorization bypass and 16 other bugs were fixed, both CI workflows were repaired, and a real load test caught and fixed a health-check bug
 4. ⏳ Create document tracking board
 5. ⏳ Set up documentation review process
 
-**Next up:** LOAD_TEST_RESULTS.md (needs a real `wrk` run against a live
-instance — see TESTING_STRATEGY.md § Load Testing for the corrected
-tooling info), then Phase 3 (INFRASTRUCTURE_SETUP.md, SECURITY_CHECKLIST.md,
-MONITORING_SETUP.md, BACKUP_RECOVERY.md).
+**Next up:** Phase 3 (Week 5-6) — INFRASTRUCTURE_SETUP.md,
+SECURITY_CHECKLIST.md, MONITORING_SETUP.md, BACKUP_RECOVERY.md.
 
 **This is your master checklist for building to pilot launch!**
 
 ---
 
-**Documentation Inventory Version:** 1.2
+**Documentation Inventory Version:** 1.3
 **Last Updated:** 2026-07-17
 **Next Review:** Weekly
-**Total Pages:** 25 documents, 165 hours effort (70h / ~42% complete)
+**Total Pages:** 25 documents, 165 hours effort (74h / ~45% complete)
