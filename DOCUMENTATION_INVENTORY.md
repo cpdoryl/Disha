@@ -1,25 +1,24 @@
 # Disha v2.0 - Documentation Inventory & Pending Tasks
 
-**Updated:** 2026-07-17 | **Status:** 19/25 documents complete
-**Total Documents Required:** 25 | **Completed:** 19 | **Pending:** 6
+**Updated:** 2026-07-17 | **Status:** 23/25 documents complete
+**Total Documents Required:** 25 | **Completed:** 23 | **Pending:** 2
 
-> Phases 1-3 are all fully done — see ✅ COMPLETED sections below. This
-> wasn't just writing docs: the backend integration suite went from
-> never-having-run to 76/76 passing; a real authorization bypass
-> (class-level `@Roles()` silently ignored, leaving four controllers
-> unprotected by role) and 20+ other concrete bugs were found and fixed;
-> three CI/deploy workflows were repaired; a real load test found and
-> fixed a health-check bug that would have caused a production load
-> balancer to pull healthy instances from rotation; and an entire
-> Prometheus monitoring stack that was correctly provisioned but scraping
-> a `/metrics` endpoint that had never existed was made to actually work,
-> verified end-to-end. Next: Phase 4 (Training & Support —
-> ADMIN_GUIDE.md, USER_GUIDES.md, SUPPORT_PROCEDURES.md, TRAINING_PLAN.md),
-> which needs product/UX input this pass can't supply on its own.
+> Phases 1-4 are all fully done — see ✅ COMPLETED sections below. Phase 4
+> was written by actually logging into a running instance as every role
+> and clicking through it, which found (and fixed) two more real bugs:
+> `ryl_admin` silently got the wrong sidebar menu (linking to pages that
+> 404) due to a dead menu key nothing ever matched, and the
+> dashboard/reports pages hung on an infinite spinner for any
+> schoolId-less user. It also surfaced that Student/Parent portal access
+> isn't a documentation gap — zero such accounts exist and the schema has
+> no way to create one — and flagged a direct conflict with
+> ROADMAP_TO_LAUNCH.md's pilot plan, which currently expects a "mix of
+> roles including student and parent." Only Phase 5-6 (LAUNCH_CHECKLIST.md,
+> OPERATIONS_RUNBOOK.md) remains.
 
 ---
 
-## 📋 COMPLETED DOCUMENTS (✅ 19 of 25 total — these 8 pre-date this update; see Phase 1 / Phase 2 / Phase 3 sections below for docs 9-19)
+## 📋 COMPLETED DOCUMENTS (✅ 23 of 25 total — these 8 pre-date this update; see Phase 1 / Phase 2 / Phase 3 / Phase 4 sections below for docs 9-23)
 
 ### **1. TECH_STACK.md** ✅
 - **Status:** COMPLETE
@@ -329,125 +328,88 @@
 
 ---
 
-### **PHASE 4: Training & Support (Week 7-8)**
+### ✅ PHASE 4 COMPLETE — Training & Support
 
-#### **20. ADMIN_GUIDE.md** 🟡 MEDIUM PRIORITY
+#### **20. ADMIN_GUIDE.md** ✅ COMPLETE
 - **Priority:** MEDIUM
 - **Owner:** Product/Tech Writer
-- **Effort:** 12 hours
-- **Deadline:** Week 7
-- **Contents:**
-  - Admin dashboard overview
-  - User management
-  - School/organization setup
-  - Reporting features
-  - System configuration
-  - Bulk operations
-  - Troubleshooting
-  - FAQ for administrators
+- **Location:** `/ADMIN_GUIDE.md`
+- **Contents delivered:** Written by actually logging into a running
+  instance as both admin-tier roles and clicking through every link, not
+  from reading code. Found there are **two very different "admin"
+  roles** — `school_admin` (fully working: Students/Staff/Attendance/
+  Reports) and `ryl_admin` (can log in, but no real platform-admin
+  console exists — Dashboard/Reports show placeholder data only, no
+  Users/Schools/System Health pages exist despite what the sidebar used
+  to link to). Writing this guide directly surfaced and fixed two real
+  bugs: `ryl_admin` was silently getting the **student** sidebar menu
+  (a dead `admin` key in `Sidebar.tsx` that no real role value ever
+  matched), and the dashboard/reports pages hung on an infinite loading
+  spinner for any schoolId-less user. Both verified fixed with a
+  scripted browser login before/after. Also fixed the login page's fake
+  "Demo Credentials" hint, which pointed at an account that has never
+  existed in any seed data.
 - **Audience:** System administrators, school admins
-- **Status:** NOT STARTED
+- **Status:** COMPLETE (2026-07-17)
 - **Dependencies:** Admin features complete
 
-**Pending Tasks:**
-- [ ] Document admin dashboard features
-- [ ] Create user management guide
-- [ ] Document school setup procedures
-- [ ] Create reporting guide
-- [ ] Document system configuration options
-- [ ] Add bulk operation procedures
-- [ ] Create admin FAQ
-- [ ] Add troubleshooting tips
-
 ---
 
-#### **21. USER_GUIDES.md** 🟡 MEDIUM PRIORITY
+#### **21. USER_GUIDES.md** ✅ COMPLETE
 - **Priority:** MEDIUM
 - **Owner:** Product/Tech Writer
-- **Effort:** 15 hours
-- **Deadline:** Week 7
-- **Contents:**
-  - Teacher user guide
-  - Student user guide
-  - Parent user guide
-  - Quick start guides
-  - Feature tutorials
-  - Common tasks
-  - Troubleshooting
-  - FAQ per role
+- **Location:** `/USER_GUIDES.md`
+- **Contents delivered:** Teacher guide is real and verified (Classes,
+  Students, Assessments, Attendance all confirmed working end-to-end).
+  **Major finding:** Student and Parent portal access isn't a documentation
+  gap, it's a missing feature — queried the seeded database directly and
+  confirmed zero Student or Parent login accounts exist, and the
+  `Student` entity has no email/password fields or link to `User` at all
+  (see `ARCHITECTURE_GUIDE.md`) — there's no account-linking model to
+  build a login on top of yet. Documented plainly rather than writing
+  guides for a login flow that doesn't exist.
 - **Audience:** End users (teachers, students, parents)
-- **Status:** NOT STARTED
+- **Status:** COMPLETE (2026-07-17)
 - **Dependencies:** All features complete
 
-**Pending Tasks:**
-- [ ] Create teacher user guide
-- [ ] Create student user guide
-- [ ] Create parent user guide
-- [ ] Create quick start guides
-- [ ] Add feature tutorials with screenshots
-- [ ] Document common tasks
-- [ ] Create role-specific FAQ
-- [ ] Add troubleshooting tips
-
 ---
 
-#### **22. SUPPORT_PROCEDURES.md** 🟡 MEDIUM PRIORITY
+#### **22. SUPPORT_PROCEDURES.md** ✅ COMPLETE
 - **Priority:** MEDIUM
 - **Owner:** Support Lead
-- **Effort:** 8 hours
-- **Deadline:** Week 7
-- **Contents:**
-  - Support channels
-  - Escalation procedures
-  - Ticket classification
-  - SLA definitions
-  - Common issues & solutions
-  - Support team training
-  - Knowledge base articles
-  - Incident response procedures
+- **Location:** `/SUPPORT_PROCEDURES.md`
+- **Contents delivered:** Channel/SLA/escalation structure sized
+  reasonably for the pilot's 50-100 users (no prior organizational
+  process existed anywhere in the repo to transcribe instead). The
+  valuable part is grounded in this pass's real findings, not
+  generic advice: a "Known Issues — Don't Re-Diagnose These" section
+  listing verified current behaviors (e.g. `ryl_admin` placeholder
+  dashboards, no student/parent login) so support agents don't waste
+  time re-discovering things already documented, plus a troubleshooting
+  playbook entry for the exact "stuck loading forever" bug class found
+  and fixed while writing `ADMIN_GUIDE.md`.
 - **Audience:** Support team
-- **Status:** NOT STARTED
+- **Status:** COMPLETE (2026-07-17)
 - **Dependencies:** None
-
-**Pending Tasks:**
-- [ ] Define support channels (email, chat, phone)
-- [ ] Create escalation procedures
-- [ ] Define ticket SLA
-- [ ] Document common issues & solutions
-- [ ] Create support team training plan
-- [ ] Build knowledge base
-- [ ] Create incident response plan
-- [ ] Add emergency procedures
 
 ---
 
-#### **23. TRAINING_PLAN.md** 🟡 MEDIUM PRIORITY
+#### **23. TRAINING_PLAN.md** ✅ COMPLETE
 - **Priority:** MEDIUM
 - **Owner:** Training Coordinator
-- **Effort:** 10 hours
-- **Deadline:** Week 7
-- **Contents:**
-  - Training schedule
-  - Training modules
-  - Trainer qualifications
-  - Training materials
-  - Assessment criteria
-  - Certification process
-  - Refresher schedule
-  - Training videos/slides
+- **Location:** `/TRAINING_PLAN.md`
+- **Contents delivered:** Opens with a flagged, verified conflict:
+  `ROADMAP_TO_LAUNCH.md`'s Phase 5 pilot plan calls for selecting users
+  "a mix of roles (admin, teacher, student, parent)" — but per
+  `USER_GUIDES.md`'s finding, student/parent accounts cannot currently
+  be created at all. Training scope, modules, and schedule are built
+  around what's actually trainable today (`school_admin` and `teacher`
+  only), with that conflict called out explicitly for whoever owns the
+  pilot launch decision to resolve before Week 9, rather than silently
+  training around a plan that isn't deliverable as written.
 - **Audience:** Training team, pilot users
-- **Status:** NOT STARTED
+- **Status:** COMPLETE (2026-07-17)
 - **Dependencies:** Documentation complete
-
-**Pending Tasks:**
-- [ ] Create training schedule
-- [ ] Develop training modules (by role)
-- [ ] Create trainer guides
-- [ ] Develop training materials
-- [ ] Create assessment criteria
-- [ ] Plan certification process
-- [ ] Schedule refresher training
-- [ ] Create training videos
 
 ---
 
@@ -536,10 +498,10 @@
 | 17 | MONITORING_SETUP.md | ✅ | HIGH | DevOps | 6 | Week 5 | 3 |
 | 18 | BACKUP_RECOVERY.md | ✅ | HIGH | DevOps | 6 | Week 5 | 3 |
 | 19 | SECURITY_CHECKLIST.md | ✅ | CRITICAL | Security | 10 | Week 5 | 3 |
-| 20 | ADMIN_GUIDE.md | 🟡 | MEDIUM | Product | 12 | Week 7 | 4 |
-| 21 | USER_GUIDES.md | 🟡 | MEDIUM | Tech Writer | 15 | Week 7 | 4 |
-| 22 | SUPPORT_PROCEDURES.md | 🟡 | MEDIUM | Support | 8 | Week 7 | 4 |
-| 23 | TRAINING_PLAN.md | 🟡 | MEDIUM | Trainer | 10 | Week 7 | 4 |
+| 20 | ADMIN_GUIDE.md | ✅ | MEDIUM | Product | 12 | Week 7 | 4 |
+| 21 | USER_GUIDES.md | ✅ | MEDIUM | Tech Writer | 15 | Week 7 | 4 |
+| 22 | SUPPORT_PROCEDURES.md | ✅ | MEDIUM | Support | 8 | Week 7 | 4 |
+| 23 | TRAINING_PLAN.md | ✅ | MEDIUM | Trainer | 10 | Week 7 | 4 |
 | 24 | LAUNCH_CHECKLIST.md | 🟡 | HIGH | PM | 4 | Week 8 | 5 |
 | 25 | OPERATIONS_RUNBOOK.md | 🟡 | HIGH | Ops Lead | 12 | Week 8 | 6 |
 
@@ -589,9 +551,9 @@ Week 8:
 | Phase 1 (Week 1-2) | 8 docs | 42 hours | ✅ 100% |
 | Phase 2 (Week 3-4) | 3 docs | 32 hours | ✅ 100% |
 | Phase 3 (Week 5-6) | 4 docs | 30 hours | ✅ 100% |
-| Phase 4 (Week 7-8) | 4 docs | 45 hours | 0% |
+| Phase 4 (Week 7-8) | 4 docs | 45 hours | ✅ 100% |
 | Phase 5-6 (Week 8-10) | 2 docs | 16 hours | 0% |
-| **TOTAL** | **25 docs** | **165 hours** | **~63%** (104/165h) |
+| **TOTAL** | **25 docs** | **165 hours** | **~89%** (149/165h) |
 
 **Effort per week:**
 - Week 1: 18 hours (CRITICAL)
@@ -628,11 +590,15 @@ Week 8:
 12. BACKUP_RECOVERY.md (DevOps, 6h) ✅
 13. SECURITY_CHECKLIST.md (Security, 10h) ✅
 
-### 🟢 **TRAINING - Week 7-8 (Next — needs product/UX input)**
-14. ADMIN_GUIDE.md (Product, 12h)
-15. USER_GUIDES.md (Tech Writer, 15h)
-16. TRAINING_PLAN.md (Trainer, 10h)
-17. SUPPORT_PROCEDURES.md (Support, 8h)
+### ✅ **Phase 4 Training & Support (Complete)**
+14. ADMIN_GUIDE.md (Product, 12h) ✅
+15. USER_GUIDES.md (Tech Writer, 15h) ✅
+16. TRAINING_PLAN.md (Trainer, 10h) ✅
+17. SUPPORT_PROCEDURES.md (Support, 8h) ✅
+
+### 🟡 **Phase 5-6 (Next)**
+18. LAUNCH_CHECKLIST.md (PM, 4h)
+19. OPERATIONS_RUNBOOK.md (Ops Lead, 12h)
 
 ---
 
@@ -730,21 +696,19 @@ USER_GUIDES.md + ADMIN_GUIDE.md
 2. ✅ Phase 1 critical path shipped (ARCHITECTURE_GUIDE, DATABASE_SCHEMA, CODING_STANDARDS, API_DOCUMENTATION)
 3. ✅ Phase 2 testing docs shipped (TESTING_STRATEGY.md, TEST_CASES.md, LOAD_TEST_RESULTS.md) — the backend integration suite now actually passes (76/76) for the first time, a real authorization bypass and 16 other bugs were fixed, both CI workflows were repaired, and a real load test caught and fixed a health-check bug
 4. ✅ Phase 3 deployment/ops docs shipped (INFRASTRUCTURE_SETUP.md, MONITORING_SETUP.md, BACKUP_RECOVERY.md, SECURITY_CHECKLIST.md) — a fully non-functional Prometheus monitoring stack was made to actually work end-to-end, three unreconciled deployment strategies were surfaced, a restore procedure was written from scratch, and several README security/DPDP claims were checked against real code and corrected
-5. ⏳ Create document tracking board
-6. ⏳ Set up documentation review process
+5. ✅ Phase 4 training/support docs shipped (ADMIN_GUIDE.md, USER_GUIDES.md, TRAINING_PLAN.md, SUPPORT_PROCEDURES.md) — written by actually logging into a running instance as every role; found and fixed two more real bugs (ryl_admin's dead sidebar menu, an infinite-loading-spinner bug), discovered Student/Parent login is a missing feature rather than a docs gap, and flagged a direct conflict with ROADMAP_TO_LAUNCH.md's pilot-role mix that needs a product decision before Week 9
+6. ⏳ Create document tracking board
+7. ⏳ Set up documentation review process
+8. 🔴 **Resolve the student/parent pilot-role conflict** flagged in TRAINING_PLAN.md before committing to ROADMAP_TO_LAUNCH.md's Phase 5 as currently scoped
 
-**Next up:** Phase 4 (Training & Support, Week 7-8) —
-ADMIN_GUIDE.md, USER_GUIDES.md, TRAINING_PLAN.md, SUPPORT_PROCEDURES.md.
-Unlike Phases 1-3, this phase is mostly product/UX content (screenshots,
-role-specific tutorials, support SLAs) rather than something derivable by
-reading and exercising the codebase — expect it to need real product
-input, not just more code archaeology.
+**Next up:** Phase 5-6 (Launch & Operations) — LAUNCH_CHECKLIST.md,
+OPERATIONS_RUNBOOK.md. The last two documents in this inventory.
 
 **This is your master checklist for building to pilot launch!**
 
 ---
 
-**Documentation Inventory Version:** 1.4
+**Documentation Inventory Version:** 1.5
 **Last Updated:** 2026-07-17
 **Next Review:** Weekly
-**Total Pages:** 25 documents, 165 hours effort (104h / ~63% complete)
+**Total Pages:** 25 documents, 165 hours effort (149h / ~89% complete)

@@ -41,8 +41,15 @@ export default function ReportsPage() {
   const [metrics, setMetrics] = useState<any>(null)
 
   useEffect(() => {
+    // ryl_admin/ryl_support have no schoolId — there's no cross-school
+    // reporting endpoint to call for them yet, so stop the loading state
+    // rather than spin forever (same issue as dashboard/page.tsx). The
+    // charts below already fall back to the default* mock datasets when
+    // metrics is null.
     if (user?.schoolId) {
       fetchReports()
+    } else {
+      setLoading(false)
     }
   }, [user?.schoolId])
 

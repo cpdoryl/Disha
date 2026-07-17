@@ -19,7 +19,17 @@ export default function DashboardHome() {
   ]
 
   useEffect(() => {
-    if (!user?.schoolId) return
+    // ryl_admin/ryl_support have no schoolId (they're not scoped to one
+    // school) — this used to leave `loading` stuck at its initial `true`
+    // forever, since fetchMetrics() (the only thing that clears it) never
+    // ran. There's no cross-school metrics endpoint to call instead yet,
+    // so just stop showing a loading state rather than spin indefinitely;
+    // the StatCards below already render sensible placeholders when
+    // metrics is null.
+    if (!user?.schoolId) {
+      setLoading(false)
+      return
+    }
     fetchMetrics()
   }, [user?.schoolId])
 

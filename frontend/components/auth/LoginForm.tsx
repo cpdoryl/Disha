@@ -87,8 +87,8 @@ export default function LoginForm() {
       </button>
 
       <div className="text-center text-sm text-gray-600 mt-4">
-        <p>Demo Credentials:</p>
-        <p className="font-mono text-xs">admin@disha.local / password123</p>
+        <p>Demo Credentials (after `npm run seed:db` — see TEST_CASES.md):</p>
+        <p className="font-mono text-xs">admin1@school.edu / admin123</p>
       </div>
     </form>
   )
