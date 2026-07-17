@@ -40,7 +40,7 @@ export default function ClassesPage() {
       <div>
         <h1 className="text-3xl font-bold text-gray-900">Classes</h1>
         <p className="text-gray-600 mt-2">
-          Classes are derived automatically from enrolled students' grade and section
+          Classes are derived automatically from enrolled students&apos; grade and section
         </p>
       </div>
 

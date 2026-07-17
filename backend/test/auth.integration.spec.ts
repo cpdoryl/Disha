@@ -1,5 +1,5 @@
 import { INestApplication } from '@nestjs/common';
-import * as request from 'supertest';
+import request from 'supertest';
 import { setupTestApp, teardownTestApp, TEST_USERS } from './setup';
 
 describe('Authentication (Integration)', () => {
@@ -161,10 +161,14 @@ describe('Authentication (Integration)', () => {
       accessToken = loginResponse.body.accessToken;
     });
 
+    // There is no bare `GET /api/v2/schools` list route — SchoolController
+    // only exposes GET /api/v2/schools/:id and friends. JwtAuthGuard runs
+    // before the handler looks up the id, so a placeholder id still
+    // exercises the guard behavior these tests care about without
+    // depending on a real school existing.
     it('should allow access to protected endpoint with valid token', async () => {
-      // Assuming GET /api/v2/schools requires auth
       const response = await request(app.getHttpServer())
-        .get('/api/v2/schools')
+        .get('/api/v2/schools/dummy-id-for-auth-test')
         .set('Authorization', `Bearer ${accessToken}`);
 
       // Should not return 401
@@ -173,13 +177,13 @@ describe('Authentication (Integration)', () => {
 
     it('should deny access to protected endpoint without token', async () => {
       await request(app.getHttpServer())
-        .get('/api/v2/schools')
+        .get('/api/v2/schools/dummy-id-for-auth-test')
         .expect(401);
     });
 
     it('should deny access with malformed token', async () => {
       await request(app.getHttpServer())
-        .get('/api/v2/schools')
+        .get('/api/v2/schools/dummy-id-for-auth-test')
         .set('Authorization', 'Bearer malformed.token')
         .expect(401);
     });

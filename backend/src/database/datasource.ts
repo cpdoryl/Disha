@@ -13,8 +13,16 @@ export const AppDataSource = new DataSource({
   username: process.env.DB_USERNAME || 'postgres',
   password: process.env.DB_PASSWORD || 'postgres',
   database: process.env.DB_NAME || 'disha_db',
-  entities: [path.join(__dirname, '../../dist/**/*.entity.js')],
-  migrations: [path.join(__dirname, '../../dist/database/migrations/*.js')],
+  // This datasource is only used by CLI tooling (migration:generate/run,
+  // seed:db), which always runs through ts-node — so it registers entities
+  // straight from TS source, matching what seed.ts and the migration files
+  // import directly. Pointing this at compiled dist/ output instead causes
+  // TypeORM to see two different class instances for the "same" entity
+  // (one ts-node-compiled in memory, one precompiled on disk) and fail with
+  // "No metadata for X was found." The running NestJS app has its own
+  // separate entities glob in app.module.ts and is unaffected by this.
+  entities: [path.join(__dirname, '../**/*.entity.{ts,js}')],
+  migrations: [path.join(__dirname, 'migrations/*.{ts,js}')],
   synchronize: false,
   logging: false,
   ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,

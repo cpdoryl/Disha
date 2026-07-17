@@ -1,15 +1,19 @@
 # Disha v2.0 - Documentation Inventory & Pending Tasks
 
-**Updated:** 2026-07-17 | **Status:** 12/25 documents complete
-**Total Documents Required:** 25 | **Completed:** 12 | **Pending:** 13
+**Updated:** 2026-07-17 | **Status:** 14/25 documents complete
+**Total Documents Required:** 25 | **Completed:** 14 | **Pending:** 11
 
-> Week 1 critical path is done: ARCHITECTURE_GUIDE.md, DATABASE_SCHEMA.md,
-> CODING_STANDARDS.md, and API_DOCUMENTATION.md all shipped — see
-> ✅ COMPLETED below. Week 2+ items (testing, deployment ops, training) remain.
+> Week 1 (ARCHITECTURE_GUIDE, DATABASE_SCHEMA, CODING_STANDARDS,
+> API_DOCUMENTATION) and Week 2 Phase 2 (TESTING_STRATEGY, TEST_CASES) are
+> both done — see ✅ COMPLETED sections below. Phase 2 also included real
+> engineering, not just docs: the backend integration suite went from
+> never-having-run to 76/76 passing, with 17 real bugs found and fixed
+> along the way (see TESTING_STRATEGY.md for the full list). Next:
+> LOAD_TEST_RESULTS.md, then Phase 3 (deployment/security docs).
 
 ---
 
-## 📋 COMPLETED DOCUMENTS (✅ 12 of 25 total — these 8 pre-date this update; see Phase 1 section below for docs 9-12)
+## 📋 COMPLETED DOCUMENTS (✅ 14 of 25 total — these 8 pre-date this update; see Phase 1 / Phase 2 sections below for docs 9-14)
 
 ### **1. TECH_STACK.md** ✅
 - **Status:** COMPLETE
@@ -152,67 +156,53 @@
 
 ---
 
-## 🔴 PENDING DOCUMENTS (CRITICAL) - 13 Required
+## ✅ PHASE 2 COMPLETE — Testing Documentation
 
-### **PHASE 2: Testing Documentation (Week 3-4)**
-
-#### **13. TESTING_STRATEGY.md** 🟡 MEDIUM PRIORITY
+#### **13. TESTING_STRATEGY.md** ✅ COMPLETE
 - **Priority:** HIGH
 - **Owner:** QA Lead
-- **Effort:** 8 hours
-- **Deadline:** Week 3
-- **Contents:**
-  - Test plan overview
-  - Unit testing requirements
-  - Integration testing scenarios
-  - Load testing procedures
-  - Test data setup
-  - Test result reporting
-  - Regression testing checklist
-  - Acceptance criteria
+- **Location:** `/TESTING_STRATEGY.md`
+- **Contents delivered:** Not a plan for hypothetical future testing — this
+  pass actually got the pre-existing (never-successfully-run) backend
+  integration suite green for the first time: 0 → 76/76 passing against a
+  real seeded PostgreSQL database. Along the way it found and fixed 17
+  concrete bugs, including a severe RBAC authorization bypass (`RolesGuard`
+  ignored class-level `@Roles()` entirely — Audit/Wellbeing/Data/
+  Notification controllers were unprotected by role), a migrations/entities
+  schema-drift issue serious enough that `migration:run` never worked on a
+  clean database, `database.synchronize` being hardcoded `true` regardless
+  of environment, and both `backend-ci.yml` and `frontend-ci.yml` pointing
+  at wrong env vars / wrong directories such that neither pipeline was
+  actually testing real code. All fixed and verified by rerunning the real
+  commands, not just described. Also documents: test pyramid, local setup
+  procedure, coverage targets, regression checklist, acceptance criteria,
+  and honest load-testing tooling (it's `wrk`-based bash scripts, not
+  Artillery, correcting a claim in TECH_STACK.md).
 - **Audience:** QA team, developers
-- **Status:** NOT STARTED
-- **Dependencies:** TESTING_STRATEGY in TECH_STACK.md
-
-**Pending Tasks:**
-- [ ] Create detailed test plan
-- [ ] List unit test cases (70% coverage target)
-- [ ] List integration test scenarios
-- [ ] Create load test profiles
-- [ ] Document test data requirements
-- [ ] Create regression test checklist
-- [ ] Define acceptance criteria
-- [ ] Create bug report template
+- **Status:** COMPLETE (2026-07-17)
+- **Dependencies:** None
 
 ---
 
-#### **14. TEST_CASES.md** 🟡 MEDIUM PRIORITY
+#### **14. TEST_CASES.md** ✅ COMPLETE
 - **Priority:** HIGH
 - **Owner:** QA Lead
-- **Effort:** 20 hours
-- **Deadline:** Week 3
-- **Contents:**
-  - Feature test cases (positive & negative)
-  - Edge cases
-  - Error scenarios
-  - Performance test cases
-  - Security test cases
-  - User acceptance test criteria
-  - Regression test cases
-  - Test execution checklist
+- **Location:** `/TEST_CASES.md`
+- **Contents delivered:** A real inventory of all 76 passing test cases
+  (mapped to actual `it(...)` blocks, not estimated), the RBAC coverage
+  matrix across 9 controllers, and an honest, prioritized gap list of
+  untested endpoints cross-referenced against `API_DOCUMENTATION.md` —
+  including the brand-new Staff and Attendance endpoints, which currently
+  have zero test coverage despite being real, working code. Also includes
+  edge-case patterns worth adding everywhere (cross-school tenant
+  isolation is never actually checked today — only role, not schoolId
+  ownership), a regression-case table tying each bug found this cycle to
+  its guarding test (or flagging the few that are still only manually
+  verified), a frontend test-case priority list for once RTL lands, and
+  the real seeded test account credentials.
 - **Audience:** QA team
-- **Status:** NOT STARTED
+- **Status:** COMPLETE (2026-07-17)
 - **Dependencies:** Feature development complete
-
-**Pending Tasks:**
-- [ ] Create test cases for each feature
-- [ ] List positive test scenarios
-- [ ] List negative test scenarios
-- [ ] Document edge cases
-- [ ] Create performance test cases
-- [ ] Create security test cases
-- [ ] Create UAT scenarios
-- [ ] Create regression test suite
 
 ---
 
@@ -570,8 +560,8 @@
 | 10 | API_DOCUMENTATION.md | ✅ | CRITICAL | BE Lead | 12 | Week 2 | 1 |
 | 11 | DATABASE_SCHEMA.md | ✅ | CRITICAL | DBA | 10 | Week 1 | 1 |
 | 12 | CODING_STANDARDS.md | ✅ | HIGH | Tech Lead | 6 | Week 1 | 1 |
-| 13 | TESTING_STRATEGY.md | 🟡 | HIGH | QA Lead | 8 | Week 3 | 2 |
-| 14 | TEST_CASES.md | 🟡 | HIGH | QA Lead | 20 | Week 3 | 2 |
+| 13 | TESTING_STRATEGY.md | ✅ | HIGH | QA Lead | 8 | Week 3 | 2 |
+| 14 | TEST_CASES.md | ✅ | HIGH | QA Lead | 20 | Week 3 | 2 |
 | 15 | LOAD_TEST_RESULTS.md | 🟡 | MEDIUM | DevOps/QA | 4 | Week 4 | 2 |
 | 16 | INFRASTRUCTURE_SETUP.md | 🟡 | CRITICAL | DevOps | 8 | Week 5 | 3 |
 | 17 | MONITORING_SETUP.md | 🟡 | HIGH | DevOps | 6 | Week 5 | 3 |
@@ -628,11 +618,11 @@ Week 8:
 | Phase | Documents | Hours | Status |
 |-------|-----------|-------|--------|
 | Phase 1 (Week 1-2) | 8 docs | 42 hours | ✅ 100% |
-| Phase 2 (Week 3-4) | 3 docs | 32 hours | 0% |
+| Phase 2 (Week 3-4) | 3 docs | 32 hours | 🟡 88% (28/32h — LOAD_TEST_RESULTS.md remains) |
 | Phase 3 (Week 5-6) | 4 docs | 30 hours | 0% |
 | Phase 4 (Week 7-8) | 4 docs | 45 hours | 0% |
 | Phase 5-6 (Week 8-10) | 2 docs | 16 hours | 0% |
-| **TOTAL** | **25 docs** | **165 hours** | **~25%** (42/165h) |
+| **TOTAL** | **25 docs** | **165 hours** | **~42%** (70/165h) |
 
 **Effort per week:**
 - Week 1: 18 hours (CRITICAL)
@@ -658,11 +648,14 @@ Week 8:
 5. Update README.md files (2h each)
 6. Update .env.example files (2h)
 
-### 🟡 **MEDIUM - Week 3-5**
-7. TESTING_STRATEGY.md (QA, 8h)
-8. TEST_CASES.md (QA, 20h)
-9. INFRASTRUCTURE_SETUP.md (DevOps, 8h)
-10. SECURITY_CHECKLIST.md (Security, 10h)
+### ✅ **Week 3 Testing Docs (Complete)**
+7. TESTING_STRATEGY.md (QA, 8h) ✅
+8. TEST_CASES.md (QA, 20h) ✅
+
+### 🟡 **MEDIUM - Week 4-5 (Next)**
+9. LOAD_TEST_RESULTS.md (DevOps/QA, 4h) — needs an actual `wrk` run against a live instance
+10. INFRASTRUCTURE_SETUP.md (DevOps, 8h)
+11. SECURITY_CHECKLIST.md (Security, 10h)
 
 ### 🟢 **TRAINING - Week 7-8**
 11. ADMIN_GUIDE.md (Product, 12h)
@@ -763,21 +756,20 @@ USER_GUIDES.md + ADMIN_GUIDE.md
 **Immediate Actions (This Week):**
 1. ✅ Review completed documents (TECH_STACK, DEPLOYMENT_GUIDE, ROADMAP)
 2. ✅ Week 1 critical path shipped (ARCHITECTURE_GUIDE, DATABASE_SCHEMA, CODING_STANDARDS, API_DOCUMENTATION)
-3. ⏳ Assign owners for Phase 2 (TESTING_STRATEGY.md, TEST_CASES.md — QA Lead)
+3. ✅ Phase 2 testing docs shipped (TESTING_STRATEGY.md, TEST_CASES.md) — plus the backend integration suite now actually passes (76/76) for the first time, with 17 real bugs fixed along the way
 4. ⏳ Create document tracking board
 5. ⏳ Set up documentation review process
 
-**Next up:** Phase 2 Testing Documentation (Week 3-4) — TESTING_STRATEGY.md,
-TEST_CASES.md, LOAD_TEST_RESULTS.md. These need an actual test framework
-decision first (see CODING_STANDARDS.md § Testing Requirements — no test
-runner is configured on the frontend yet, and the backend's three
-integration specs currently fail to compile).
+**Next up:** LOAD_TEST_RESULTS.md (needs a real `wrk` run against a live
+instance — see TESTING_STRATEGY.md § Load Testing for the corrected
+tooling info), then Phase 3 (INFRASTRUCTURE_SETUP.md, SECURITY_CHECKLIST.md,
+MONITORING_SETUP.md, BACKUP_RECOVERY.md).
 
 **This is your master checklist for building to pilot launch!**
 
 ---
 
-**Documentation Inventory Version:** 1.1
+**Documentation Inventory Version:** 1.2
 **Last Updated:** 2026-07-17
 **Next Review:** Weekly
-**Total Pages:** 25 documents, 165 hours effort (42h / ~25% complete)
+**Total Pages:** 25 documents, 165 hours effort (70h / ~42% complete)

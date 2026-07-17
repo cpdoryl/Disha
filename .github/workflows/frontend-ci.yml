@@ -4,12 +4,12 @@ on:
   push:
     branches: [main, develop]
     paths:
-      - 'frontend/admin/**'
+      - 'frontend/**'
       - '.github/workflows/frontend-ci.yml'
   pull_request:
     branches: [develop]
     paths:
-      - 'frontend/admin/**'
+      - 'frontend/**'
 
 env:
   REGISTRY: ghcr.io
@@ -30,39 +30,44 @@ jobs:
 
       - name: Install dependencies
         run: npm install
-        working-directory: frontend/admin
+        working-directory: frontend
 
       - name: Run linter (ESLint)
         run: npm run lint
-        working-directory: frontend/admin
+        working-directory: frontend
         continue-on-error: true
 
       - name: Type check (TypeScript)
         run: npm run type-check
-        working-directory: frontend/admin
+        working-directory: frontend
         continue-on-error: true
 
       - name: Run unit tests
+        # No test runner is configured yet (see TESTING_STRATEGY.md) —
+        # `test:unit` doesn't exist in frontend/package.json. Left as
+        # continue-on-error until Jest + React Testing Library land.
         run: npm run test:unit
-        working-directory: frontend/admin
+        working-directory: frontend
         continue-on-error: true
 
       - name: Build application
         run: npm run build
-        working-directory: frontend/admin
+        working-directory: frontend
         env:
           NODE_ENV: production
           NEXT_PUBLIC_API_URL: https://api.disha.local
 
       - name: Check Next.js bundle size
+        # No `analyze` script exists in frontend/package.json yet.
         run: npm run analyze
-        working-directory: frontend/admin
+        working-directory: frontend
+        continue-on-error: true
         continue-on-error: true
 
       - name: Upload coverage
         uses: codecov/codecov-action@v4
         with:
-          files: ./frontend/admin/coverage/lcov.info
+          files: ./frontend/coverage/lcov.info
           flags: frontend
           name: frontend-coverage
         continue-on-error: true
@@ -104,7 +109,7 @@ jobs:
       - name: Build and push Docker image
         uses: docker/build-push-action@v5
         with:
-          context: ./frontend/admin
+          context: ./frontend
           push: ${{ github.event_name != 'pull_request' }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
