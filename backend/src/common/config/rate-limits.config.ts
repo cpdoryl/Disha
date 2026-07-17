@@ -180,8 +180,10 @@ export function getRateLimitConfig(
     };
   }
 
-  if (env === 'testing') {
-    // Disable rate limiting for testing
+  if (env === 'test' || env === 'testing') {
+    // Disable rate limiting for testing — 'test' is what .env.test and
+    // Jest's own default actually set NODE_ENV to; 'testing' never occurs
+    // anywhere in this repo but is kept for compatibility.
     return {
       ...baseConfig,
       maxRequests: 999999,

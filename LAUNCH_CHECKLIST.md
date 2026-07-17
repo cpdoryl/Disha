@@ -38,11 +38,16 @@ launch:
       `school_admin`/`teacher` only, or delay launch until account-linking
       is built. This is the single highest-priority decision blocking an
       accurate launch plan.
-- [ ] 🔴 **Rate limiting is built but attached to zero routes**
-      (`SECURITY_CHECKLIST.md`) — nothing currently prevents a
-      credential-stuffing attempt against `POST /api/v2/auth/login` at
-      any rate. Attach `STRICT_RATE_LIMIT` before exposing login
-      publicly.
+- [x] ✅ **Fixed:** rate limiting is now attached to `POST
+      /api/v2/auth/login` and `POST /api/v2/auth/refresh`
+      (`SECURITY_CHECKLIST.md` § Rate Limiting) — verified live (429 with
+      correct headers after exceeding the limit) and against the full
+      76/76 integration suite. Found and fixed a second bug along the way
+      (`NODE_ENV=test` vs. the config's `'testing'` check, which would
+      have made the strict limit apply for real during test runs). **Still
+      open, lower priority:** `POST /api/v2/assessments/:id/submit` is
+      public/unauthenticated and not yet rate-limited — see
+      `SECURITY_CHECKLIST.md` § Rate Limiting.
 - [ ] 🔴 **Cross-school tenant isolation was never audited**
       (`SECURITY_CHECKLIST.md`, `TEST_CASES.md`) — `RolesGuard` verifies
       role, not that a caller's `schoolId` matches the resource they're

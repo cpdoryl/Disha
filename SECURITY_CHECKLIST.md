@@ -38,10 +38,14 @@ where the fix and its verification live.
   `TESTING_STRATEGY.md` bug #12.
 - ⚠️ **No MFA.** `TECH_STACK.md`'s pending stack lists TOTP as planned;
   not implemented anywhere in the codebase today.
-- ⚠️ **No account lockout after repeated failed logins.** `STRICT_RATE_LIMIT`
-  (5 requests/15min, IP-based) is *defined* in
-  `common/config/rate-limits.config.ts` for exactly this purpose but — see
-  § Rate Limiting below — never actually applied to any route.
+- ✅ **Fixed this pass:** `AUTH_LOGIN_RATE_LIMIT` (5 requests/15min in
+  production, 50/15min in dev, IP-based) is now actually attached to
+  `POST /api/v2/auth/login` via `@UseGuards(RateLimitGuard)` +
+  `@RateLimit(...)`, and `AUTH_REFRESH_RATE_LIMIT` to `POST
+  /api/v2/auth/refresh` the same way. Verified live: 429 with correct
+  `Retry-After`/`X-RateLimit-*` headers after exhausting the limit. See
+  § Rate Limiting below for the environment-detection bug this fix also
+  found and fixed.
 
 ---
 
@@ -137,7 +141,7 @@ where the fix and its verification live.
 | Risk | Status | Notes |
 |---|---|---|
 | Injection | ✅ Mitigated | TypeORM parameterization throughout |
-| Broken Authentication | ⚠️ Partial | JWT solid; no MFA, no lockout (rate limit built but unused — see below) |
+| Broken Authentication | ⚠️ Partial | JWT solid; login/refresh now rate-limited (see below), still no MFA |
 | Broken Access Control | 🔴 Was broken, now fixed | See § Authorization above — the class-level `@Roles()` bypass was a real instance of this OWASP category, not hypothetical |
 | Cryptographic Failures | ⚠️ Partial | TLS + bcrypt solid; column-level encryption claim in README doesn't match reality |
 | Security Misconfiguration | 🔴 Multiple found, fixed | `database.synchronize` hardcoded `true` regardless of environment (see below); several infra config files had copy-paste artifacts (`INFRASTRUCTURE_SETUP.md`) |
@@ -163,23 +167,38 @@ explicitly, defaulting to `false`.
 
 ## Rate Limiting
 
-**Built, not enabled.** `common/guards/rate-limit.guard.ts` implements a
-working token-bucket limiter, and `common/config/rate-limits.config.ts`
-defines sensible tiers (`STRICT_RATE_LIMIT`: 5 req/15min for auth
-endpoints; `MODERATE_RATE_LIMIT`: 100 req/15min general; `RELAXED_RATE_LIMIT`:
-1000 req/hour for trusted/internal use) — but `RateLimitGuard` is not
-attached via `@UseGuards()` on any controller in the current codebase.
-Verified by searching for every usage: none found outside the guard's own
-definition file.
+**Fixed this pass — attached to the auth endpoints.**
+`common/guards/rate-limit.guard.ts` implements a working in-memory
+token-bucket limiter, and `common/config/rate-limits.config.ts` defines
+sensible tiers (`AUTH_LOGIN_RATE_LIMIT`: 5 req/15min IP-based;
+`AUTH_REFRESH_RATE_LIMIT`: 30 req/hour; `MODERATE_RATE_LIMIT`: 100
+req/15min general; `RELAXED_RATE_LIMIT`: 1000 req/hour for trusted/internal
+use). Before this pass, `RateLimitGuard` was never attached via
+`@UseGuards()` on any controller — verified by searching for every usage,
+none found outside the guard's own definition file. Now attached to
+`POST /api/v2/auth/login` (`AUTH_LOGIN_RATE_LIMIT`) and
+`POST /api/v2/auth/refresh` (`AUTH_REFRESH_RATE_LIMIT`).
 
-**Before this goes live:** attach `STRICT_RATE_LIMIT` to
-`POST /api/v2/auth/login` at minimum — right now nothing prevents a
-credential-stuffing attempt at any rate the attacker's infrastructure can
-sustain. The public, unauthenticated
+**A second real bug found while wiring this up:**
+`getRateLimitConfig()`'s test-environment override checked
+`env === 'testing'`, but every `.env` file in this repo (and Jest's own
+default) actually sets `NODE_ENV=test`. That mismatch meant the override
+never fired — had the guard been attached without also fixing this, the
+strict 5-req/15min login limit would have applied for real during test
+runs, and every integration spec that logs in more than 5 times (all of
+them share `127.0.0.1`) would have started failing with 429s. Fixed to
+check both `'test'` and `'testing'`. Verified: full integration suite
+(76/76) still passes with the guard attached, and a live dev-server curl
+loop confirmed the 429 actually fires at the configured limit with
+correct `Retry-After`/`X-RateLimit-*` headers.
+
+**Still open:** the public, unauthenticated
 `POST /api/v2/assessments/:id/submit` endpoint (see `API_DOCUMENTATION.md`)
 is the next highest priority — it's designed to be publicly reachable by
 survey respondents, which also makes it the easiest endpoint to abuse for
 junk data or a denial-of-service attempt without any rate limiting.
+`ASSESSMENT_SUBMIT_RATE_LIMIT` is already defined in
+`rate-limits.config.ts` for this but, like login was, not yet attached.
 
 ---
 
