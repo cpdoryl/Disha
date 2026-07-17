@@ -1,22 +1,25 @@
 # Disha v2.0 - Documentation Inventory & Pending Tasks
 
-**Updated:** 2026-07-17 | **Status:** 15/25 documents complete
-**Total Documents Required:** 25 | **Completed:** 15 | **Pending:** 10
+**Updated:** 2026-07-17 | **Status:** 19/25 documents complete
+**Total Documents Required:** 25 | **Completed:** 19 | **Pending:** 6
 
-> Phase 1 (ARCHITECTURE_GUIDE, DATABASE_SCHEMA, CODING_STANDARDS,
-> API_DOCUMENTATION) and Phase 2 (TESTING_STRATEGY, TEST_CASES,
-> LOAD_TEST_RESULTS) are both fully done — see ✅ COMPLETED sections below.
-> This wasn't just writing docs: the backend integration suite went from
-> never-having-run to 76/76 passing, a real authorization bypass and 16
-> other bugs were found and fixed, both CI workflows were repaired, and a
-> real load test found and fixed a health-check bug that would have
-> caused a production load balancer to pull healthy instances from
-> rotation. Next: Phase 3 (INFRASTRUCTURE_SETUP.md, SECURITY_CHECKLIST.md,
-> MONITORING_SETUP.md, BACKUP_RECOVERY.md).
+> Phases 1-3 are all fully done — see ✅ COMPLETED sections below. This
+> wasn't just writing docs: the backend integration suite went from
+> never-having-run to 76/76 passing; a real authorization bypass
+> (class-level `@Roles()` silently ignored, leaving four controllers
+> unprotected by role) and 20+ other concrete bugs were found and fixed;
+> three CI/deploy workflows were repaired; a real load test found and
+> fixed a health-check bug that would have caused a production load
+> balancer to pull healthy instances from rotation; and an entire
+> Prometheus monitoring stack that was correctly provisioned but scraping
+> a `/metrics` endpoint that had never existed was made to actually work,
+> verified end-to-end. Next: Phase 4 (Training & Support —
+> ADMIN_GUIDE.md, USER_GUIDES.md, SUPPORT_PROCEDURES.md, TRAINING_PLAN.md),
+> which needs product/UX input this pass can't supply on its own.
 
 ---
 
-## 📋 COMPLETED DOCUMENTS (✅ 15 of 25 total — these 8 pre-date this update; see Phase 1 / Phase 2 sections below for docs 9-15)
+## 📋 COMPLETED DOCUMENTS (✅ 19 of 25 total — these 8 pre-date this update; see Phase 1 / Phase 2 / Phase 3 sections below for docs 9-19)
 
 ### **1. TECH_STACK.md** ✅
 - **Status:** COMPLETE
@@ -234,129 +237,95 @@
 
 ---
 
-### **PHASE 3: Deployment & Operations (Week 5-6)**
+### ✅ PHASE 3 COMPLETE — Deployment & Operations
 
-#### **16. INFRASTRUCTURE_SETUP.md** 🔴 HIGH PRIORITY
+#### **16. INFRASTRUCTURE_SETUP.md** ✅ COMPLETE
 - **Priority:** CRITICAL
 - **Owner:** DevOps Lead
-- **Effort:** 8 hours
-- **Deadline:** Week 5
-- **Contents:**
-  - Server requirements
-  - Network configuration
-  - Firewall rules
-  - Load balancer setup
-  - SSL/TLS configuration
-  - CDN configuration
-  - Backup infrastructure
-  - Disaster recovery setup
+- **Location:** `/INFRASTRUCTURE_SETUP.md`
+- **Contents delivered:** Not just extracted from `DEPLOYMENT_GUIDE.md` —
+  found that the repo describes **three unreconciled deployment targets**
+  (local docker-compose, staging docker-compose+Nginx, AWS ECS via
+  `deploy.yml`) that were never aligned with each other, none of which
+  deploy the frontend. Documents server sizing grounded in
+  `LOAD_TEST_RESULTS.md`'s real numbers, network topology, firewall
+  rules, and a full list of concrete infra bugs found and fixed this
+  pass: a Postgres init-script volume mount pointing at a nonexistent
+  path, `nginx.conf` being a literal unmodified copy of the staging
+  config (wrong upstream name, wrong domain), three wrong env var names
+  in `DEPLOYMENT_GUIDE.md`'s `.env.production` template
+  (`DB_SYNC`/`API_PORT`/`JWT_EXPIRATION` vs. what the app actually reads),
+  a Docker healthcheck port mismatch that could never pass, wrong health
+  URLs and npm script names throughout the guide, and a broken CI test
+  job in `deploy.yml`. All fixed at the source, not just noted.
 - **Audience:** DevOps, infrastructure team
-- **Status:** PARTIAL (in DEPLOYMENT_GUIDE.md)
+- **Status:** COMPLETE (2026-07-17)
 - **Dependencies:** DEPLOYMENT_GUIDE.md
-
-**Pending Tasks:**
-- [ ] Create separate infrastructure document
-- [ ] Document network topology
-- [ ] List firewall rules
-- [ ] Document load balancer configuration
-- [ ] Document backup infrastructure
-- [ ] Create disaster recovery procedures
-- [ ] Document high availability setup
-- [ ] Create network diagrams
 
 ---
 
-#### **17. MONITORING_SETUP.md** 🟡 MEDIUM PRIORITY
+#### **17. MONITORING_SETUP.md** ✅ COMPLETE
 - **Priority:** HIGH
 - **Owner:** DevOps Lead
-- **Effort:** 6 hours
-- **Deadline:** Week 5
-- **Contents:**
-  - Prometheus configuration
-  - Grafana dashboard setup
-  - Alert rules
-  - Metrics definition
-  - Monitoring checklist
-  - Alert escalation procedures
-  - Log aggregation setup
-  - Metrics export configuration
+- **Location:** `/MONITORING_SETUP.md`
+- **Contents delivered:** Discovered the entire Prometheus/Grafana stack
+  (already correctly provisioned in `docker-compose.staging.yml`) was
+  scraping a `/metrics` endpoint that **had never existed anywhere in the
+  codebase** — no `prom-client` dependency, no route, nothing; the
+  scrape target would show permanently DOWN forever regardless of how
+  correctly everything else was configured. Fixed for real: added
+  `prom-client`, a shared metrics registry, a working `GET /metrics`
+  endpoint wired into the existing request-tracking middleware, verified
+  end-to-end against a running instance (`curl /metrics` → real
+  Prometheus text output; a real login request → counter increments
+  visible). Also documents the health-check memory bug found via
+  `LOAD_TEST_RESULTS.md`, alert rule suggestions now that the underlying
+  metrics are real, and network-level access control for the new
+  unauthenticated-by-design endpoint.
 - **Audience:** DevOps, operations team
-- **Status:** PARTIAL (in DEPLOYMENT_GUIDE.md)
+- **Status:** COMPLETE (2026-07-17)
 - **Dependencies:** DEPLOYMENT_GUIDE.md
-
-**Pending Tasks:**
-- [ ] Create Prometheus configuration guide
-- [ ] Document Grafana dashboard setup
-- [ ] List alert rules and thresholds
-- [ ] Document metrics to monitor
-- [ ] Create alert escalation procedures
-- [ ] Set up log aggregation (ELK/Loki)
-- [ ] Configure metrics export
-- [ ] Create monitoring runbook
 
 ---
 
-#### **18. BACKUP_RECOVERY.md** 🟡 MEDIUM PRIORITY
+#### **18. BACKUP_RECOVERY.md** ✅ COMPLETE
 - **Priority:** HIGH
 - **Owner:** DevOps Lead
-- **Effort:** 6 hours
-- **Deadline:** Week 5
-- **Contents:**
-  - Backup procedures
-  - Backup schedule
-  - Backup verification
-  - Recovery procedures
-  - RTO/RPO definitions
-  - Disaster recovery plan
-  - Testing backup restoration
-  - Backup storage locations
+- **Location:** `/BACKUP_RECOVERY.md`
+- **Contents delivered:** `DEPLOYMENT_GUIDE.md` had a working backup
+  script but **no restore procedure existed anywhere in the repo** —
+  written from scratch, including the destructive-operation warning for
+  restoring onto a non-empty database. Honest RTO/RPO estimates derived
+  from what the tooling actually supports (not aspirational SLAs), a
+  restore-testing procedure (never previously run), and an explicit
+  scope statement of what isn't backed up (secrets, uploaded documents,
+  monitoring data) so that isn't assumed to be covered by the DB backup
+  alone.
 - **Audience:** DevOps, operations team
-- **Status:** PARTIAL (in DEPLOYMENT_GUIDE.md)
+- **Status:** COMPLETE (2026-07-17)
 - **Dependencies:** DEPLOYMENT_GUIDE.md
-
-**Pending Tasks:**
-- [ ] Document backup procedures
-- [ ] Define backup schedule (daily, weekly, monthly)
-- [ ] Document recovery procedures
-- [ ] Define RTO (Recovery Time Objective)
-- [ ] Define RPO (Recovery Point Objective)
-- [ ] Create disaster recovery plan
-- [ ] Test backup restoration
-- [ ] Document backup storage locations
 
 ---
 
-#### **19. SECURITY_CHECKLIST.md** 🔴 HIGH PRIORITY
+#### **19. SECURITY_CHECKLIST.md** ✅ COMPLETE
 - **Priority:** CRITICAL
 - **Owner:** Security Lead
-- **Effort:** 10 hours
-- **Deadline:** Week 5
-- **Contents:**
-  - OWASP Top 10 compliance
-  - Authentication security
-  - Authorization security
-  - Data encryption
-  - SSL/TLS configuration
-  - Input validation
-  - Output encoding
-  - Error handling
-  - Logging security
-  - Dependency scanning
-  - GDPR compliance
-  - Security testing results
+- **Location:** `/SECURITY_CHECKLIST.md`
+- **Contents delivered:** An OWASP Top 10 walkthrough grounded in this
+  session's actual findings — the class-level `@Roles()` authorization
+  bypass (`TESTING_STRATEGY.md`) is a real, verified instance of Broken
+  Access Control, not a hypothetical checklist item. Also verified
+  README's DPDP/privacy claims against actual code and found several
+  don't hold up (wellbeing data isn't actually restricted to a
+  counsellor role — there's no such role in the system at all; no
+  consent-capture flow or deletion endpoint exists). Confirms rate
+  limiting is fully built but attached to zero routes, confirms no real
+  secret is committed anywhere in the tracked tree (checked every
+  tracked `.env*` file directly), and ends with a concrete, ordered
+  pre-production checklist rather than a generic OWASP list.
 - **Audience:** Security team, all developers
-- **Status:** PARTIAL (in TECH_STACK.md)
+- **Status:** COMPLETE (2026-07-17)
 - **Dependencies:** Security audit complete
-
-**Pending Tasks:**
-- [ ] Create comprehensive security checklist
-- [ ] Document OWASP Top 10 compliance
-- [ ] List authentication security measures
-- [ ] Document encryption implementation
-- [ ] Create SSL/TLS configuration guide
-- [ ] Document input validation rules
-- [ ] Create security testing checklist
-- [ ] Document GDPR compliance procedures
 
 ---
 
@@ -563,10 +532,10 @@
 | 13 | TESTING_STRATEGY.md | ✅ | HIGH | QA Lead | 8 | Week 3 | 2 |
 | 14 | TEST_CASES.md | ✅ | HIGH | QA Lead | 20 | Week 3 | 2 |
 | 15 | LOAD_TEST_RESULTS.md | ✅ | MEDIUM | DevOps/QA | 4 | Week 4 | 2 |
-| 16 | INFRASTRUCTURE_SETUP.md | 🟡 | CRITICAL | DevOps | 8 | Week 5 | 3 |
-| 17 | MONITORING_SETUP.md | 🟡 | HIGH | DevOps | 6 | Week 5 | 3 |
-| 18 | BACKUP_RECOVERY.md | 🟡 | HIGH | DevOps | 6 | Week 5 | 3 |
-| 19 | SECURITY_CHECKLIST.md | 🔴 | CRITICAL | Security | 10 | Week 5 | 3 |
+| 16 | INFRASTRUCTURE_SETUP.md | ✅ | CRITICAL | DevOps | 8 | Week 5 | 3 |
+| 17 | MONITORING_SETUP.md | ✅ | HIGH | DevOps | 6 | Week 5 | 3 |
+| 18 | BACKUP_RECOVERY.md | ✅ | HIGH | DevOps | 6 | Week 5 | 3 |
+| 19 | SECURITY_CHECKLIST.md | ✅ | CRITICAL | Security | 10 | Week 5 | 3 |
 | 20 | ADMIN_GUIDE.md | 🟡 | MEDIUM | Product | 12 | Week 7 | 4 |
 | 21 | USER_GUIDES.md | 🟡 | MEDIUM | Tech Writer | 15 | Week 7 | 4 |
 | 22 | SUPPORT_PROCEDURES.md | 🟡 | MEDIUM | Support | 8 | Week 7 | 4 |
@@ -619,10 +588,10 @@ Week 8:
 |-------|-----------|-------|--------|
 | Phase 1 (Week 1-2) | 8 docs | 42 hours | ✅ 100% |
 | Phase 2 (Week 3-4) | 3 docs | 32 hours | ✅ 100% |
-| Phase 3 (Week 5-6) | 4 docs | 30 hours | 0% |
+| Phase 3 (Week 5-6) | 4 docs | 30 hours | ✅ 100% |
 | Phase 4 (Week 7-8) | 4 docs | 45 hours | 0% |
 | Phase 5-6 (Week 8-10) | 2 docs | 16 hours | 0% |
-| **TOTAL** | **25 docs** | **165 hours** | **~45%** (74/165h) |
+| **TOTAL** | **25 docs** | **165 hours** | **~63%** (104/165h) |
 
 **Effort per week:**
 - Week 1: 18 hours (CRITICAL)
@@ -653,14 +622,17 @@ Week 8:
 8. TEST_CASES.md (QA, 20h) ✅
 9. LOAD_TEST_RESULTS.md (DevOps/QA, 4h) ✅
 
-### 🟡 **MEDIUM - Week 5 (Next)**
-10. INFRASTRUCTURE_SETUP.md (DevOps, 8h)
-11. SECURITY_CHECKLIST.md (Security, 10h)
+### ✅ **Phase 3 Deployment & Operations (Complete)**
+10. INFRASTRUCTURE_SETUP.md (DevOps, 8h) ✅
+11. MONITORING_SETUP.md (DevOps, 6h) ✅
+12. BACKUP_RECOVERY.md (DevOps, 6h) ✅
+13. SECURITY_CHECKLIST.md (Security, 10h) ✅
 
-### 🟢 **TRAINING - Week 7-8**
-11. ADMIN_GUIDE.md (Product, 12h)
-12. USER_GUIDES.md (Tech Writer, 15h)
-13. TRAINING_PLAN.md (Trainer, 10h)
+### 🟢 **TRAINING - Week 7-8 (Next — needs product/UX input)**
+14. ADMIN_GUIDE.md (Product, 12h)
+15. USER_GUIDES.md (Tech Writer, 15h)
+16. TRAINING_PLAN.md (Trainer, 10h)
+17. SUPPORT_PROCEDURES.md (Support, 8h)
 
 ---
 
@@ -757,17 +729,22 @@ USER_GUIDES.md + ADMIN_GUIDE.md
 1. ✅ Review completed documents (TECH_STACK, DEPLOYMENT_GUIDE, ROADMAP)
 2. ✅ Phase 1 critical path shipped (ARCHITECTURE_GUIDE, DATABASE_SCHEMA, CODING_STANDARDS, API_DOCUMENTATION)
 3. ✅ Phase 2 testing docs shipped (TESTING_STRATEGY.md, TEST_CASES.md, LOAD_TEST_RESULTS.md) — the backend integration suite now actually passes (76/76) for the first time, a real authorization bypass and 16 other bugs were fixed, both CI workflows were repaired, and a real load test caught and fixed a health-check bug
-4. ⏳ Create document tracking board
-5. ⏳ Set up documentation review process
+4. ✅ Phase 3 deployment/ops docs shipped (INFRASTRUCTURE_SETUP.md, MONITORING_SETUP.md, BACKUP_RECOVERY.md, SECURITY_CHECKLIST.md) — a fully non-functional Prometheus monitoring stack was made to actually work end-to-end, three unreconciled deployment strategies were surfaced, a restore procedure was written from scratch, and several README security/DPDP claims were checked against real code and corrected
+5. ⏳ Create document tracking board
+6. ⏳ Set up documentation review process
 
-**Next up:** Phase 3 (Week 5-6) — INFRASTRUCTURE_SETUP.md,
-SECURITY_CHECKLIST.md, MONITORING_SETUP.md, BACKUP_RECOVERY.md.
+**Next up:** Phase 4 (Training & Support, Week 7-8) —
+ADMIN_GUIDE.md, USER_GUIDES.md, TRAINING_PLAN.md, SUPPORT_PROCEDURES.md.
+Unlike Phases 1-3, this phase is mostly product/UX content (screenshots,
+role-specific tutorials, support SLAs) rather than something derivable by
+reading and exercising the codebase — expect it to need real product
+input, not just more code archaeology.
 
 **This is your master checklist for building to pilot launch!**
 
 ---
 
-**Documentation Inventory Version:** 1.3
+**Documentation Inventory Version:** 1.4
 **Last Updated:** 2026-07-17
 **Next Review:** Weekly
-**Total Pages:** 25 documents, 165 hours effort (74h / ~45% complete)
+**Total Pages:** 25 documents, 165 hours effort (104h / ~63% complete)
