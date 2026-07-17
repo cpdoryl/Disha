@@ -1,24 +1,38 @@
 # Disha v2.0 - Documentation Inventory & Pending Tasks
 
-**Updated:** 2026-07-17 | **Status:** 23/25 documents complete
-**Total Documents Required:** 25 | **Completed:** 23 | **Pending:** 2
+**Updated:** 2026-07-17 | **Status:** 25/25 documents complete
+**Total Documents Required:** 25 | **Completed:** 25 | **Pending:** 0
 
-> Phases 1-4 are all fully done — see ✅ COMPLETED sections below. Phase 4
-> was written by actually logging into a running instance as every role
-> and clicking through it, which found (and fixed) two more real bugs:
-> `ryl_admin` silently got the wrong sidebar menu (linking to pages that
-> 404) due to a dead menu key nothing ever matched, and the
+> All 25 documents are now complete — see ✅ COMPLETED sections below.
+> Phase 4 was written by actually logging into a running instance as
+> every role and clicking through it, which found (and fixed) two more
+> real bugs: `ryl_admin` silently got the wrong sidebar menu (linking to
+> pages that 404) due to a dead menu key nothing ever matched, and the
 > dashboard/reports pages hung on an infinite spinner for any
 > schoolId-less user. It also surfaced that Student/Parent portal access
 > isn't a documentation gap — zero such accounts exist and the schema has
 > no way to create one — and flagged a direct conflict with
 > ROADMAP_TO_LAUNCH.md's pilot plan, which currently expects a "mix of
-> roles including student and parent." Only Phase 5-6 (LAUNCH_CHECKLIST.md,
-> OPERATIONS_RUNBOOK.md) remains.
+> roles including student and parent." Phase 5-6 (`LAUNCH_CHECKLIST.md`,
+> `OPERATIONS_RUNBOOK.md`) closed out the inventory: `LAUNCH_CHECKLIST.md`
+> synthesizes all 24 other documents into a go/no-go gate (4 real 🔴
+> blockers found, none of them new — all previously identified, just
+> never assembled into a single launch decision before now), and
+> `OPERATIONS_RUNBOOK.md` is the day-to-day operator reference, written to
+> point at existing procedures (`MONITORING_SETUP.md`,
+> `BACKUP_RECOVERY.md`, `SUPPORT_PROCEDURES.md`,
+> `INFRASTRUCTURE_SETUP.md`) rather than duplicate them, adding only what
+> didn't exist yet: a daily checklist, common ops commands, and an
+> on-call procedure sized honestly for a 50-100 user pilot.
+>
+> **The inventory itself is done. What it found is not "launch-ready" —
+> it's "accurately documented," including several real 🔴 blockers in
+> `LAUNCH_CHECKLIST.md` § Go/No-Go that still need a product/engineering
+> decision before Week 9.**
 
 ---
 
-## 📋 COMPLETED DOCUMENTS (✅ 23 of 25 total — these 8 pre-date this update; see Phase 1 / Phase 2 / Phase 3 / Phase 4 sections below for docs 9-23)
+## 📋 COMPLETED DOCUMENTS (✅ 25 of 25 total — these 8 pre-date this update; see Phase 1 / Phase 2 / Phase 3 / Phase 4 / Phase 5-6 sections below for docs 9-25)
 
 ### **1. TECH_STACK.md** ✅
 - **Status:** COMPLETE
@@ -413,65 +427,57 @@
 
 ---
 
-### **PHASE 5-6: Launch & Operations**
+### ✅ PHASE 5-6 COMPLETE: Launch & Operations
 
-#### **24. LAUNCH_CHECKLIST.md** 🟡 MEDIUM PRIORITY
+#### **24. LAUNCH_CHECKLIST.md** ✅ COMPLETE
 - **Priority:** HIGH
 - **Owner:** Project Manager
-- **Effort:** 4 hours
-- **Deadline:** Week 8
-- **Contents:**
-  - Pre-launch verification
-  - Launch day procedures
-  - Go-live checklist
-  - Rollback procedures
-  - Post-launch activities
-  - Success criteria
-  - Communication plan
-  - Issue escalation
+- **Location:** `/LAUNCH_CHECKLIST.md`
+- **Contents delivered:** A go/no-go gate, not a status report — every
+  item reflects verified reality synthesized from the other 24 documents
+  rather than restating them. Leads with § Go/No-Go: Real Blockers — 4
+  items marked 🔴 (student/parent pilot-role conflict from
+  `TRAINING_PLAN.md`/`USER_GUIDES.md`; rate limiting built but attached
+  to zero routes from `SECURITY_CHECKLIST.md`; cross-school tenant
+  isolation never audited; `security-quality.yml` never verified this
+  pass unlike every other CI/deploy workflow) and 2 marked 🟡 (backup
+  off-box upload optional, no load test against real business
+  endpoints). Also includes a Pre-Launch Verification Checklist
+  organized by Deployment/Testing/Monitoring/Backup/Support&Training,
+  a Launch Day Procedure, a Rollback Procedure (new — not previously
+  defined anywhere in the repo, references `BACKUP_RECOVERY.md` rather
+  than duplicating it), Success Criteria scoped to what's actually
+  deliverable, a Communication Plan, and Post-Launch Activities.
 - **Audience:** Launch team
-- **Status:** NOT STARTED
+- **Status:** COMPLETE (2026-07-17)
 - **Dependencies:** Deployment procedures complete
-
-**Pending Tasks:**
-- [ ] Create pre-launch checklist
-- [ ] Document launch day procedures
-- [ ] Create go-live checklist
-- [ ] Document rollback procedures
-- [ ] Define post-launch activities
-- [ ] Document success criteria
-- [ ] Create communication timeline
-- [ ] Add emergency contacts
 
 ---
 
-#### **25. OPERATIONS_RUNBOOK.md** 🟡 MEDIUM PRIORITY
+#### **25. OPERATIONS_RUNBOOK.md** ✅ COMPLETE
 - **Priority:** HIGH
 - **Owner:** Operations Lead
-- **Effort:** 12 hours
-- **Deadline:** Week 8
-- **Contents:**
-  - Daily operations procedures
-  - Maintenance procedures
-  - Incident response
-  - Common operations tasks
-  - Performance monitoring
-  - Scaling procedures
-  - Update procedures
-  - On-call procedures
+- **Location:** `/OPERATIONS_RUNBOOK.md`
+- **Contents delivered:** The day-to-day operator's reference — the last
+  document in the inventory. Deliberately thin where another document
+  already owns a procedure in depth (points at
+  `MONITORING_SETUP.md` § Monitoring Runbook, `BACKUP_RECOVERY.md`,
+  `SUPPORT_PROCEDURES.md` § Incident Response, `INFRASTRUCTURE_SETUP.md`
+  § High Availability rather than re-explaining them), and writes out in
+  full what didn't exist anywhere yet: a Daily Operations Checklist,
+  Common Operations Tasks (restart, tail logs, run migrations, re-seed,
+  rotate `JWT_SECRET`), Maintenance Procedures, a Scaling Procedures
+  section with an explicit trigger and vertical-before-horizontal
+  guidance, Update/Deploy Procedures per deployment target, an
+  Incident Response section adding operator-specific detail on top of
+  `SUPPORT_PROCEDURES.md`'s existing flow, and an On-Call Procedures
+  section (new) sized honestly for a 50-100 user pilot — business-hours
+  coverage only, no rotation tooling configured anywhere in the repo,
+  explicitly flagged as a starting point to revisit rather than a
+  permanent policy.
 - **Audience:** Operations team
-- **Status:** NOT STARTED
+- **Status:** COMPLETE (2026-07-17)
 - **Dependencies:** All systems deployed
-
-**Pending Tasks:**
-- [ ] Document daily operations checklist
-- [ ] Create maintenance schedule
-- [ ] Create incident response procedures
-- [ ] Document common operations tasks
-- [ ] Create performance monitoring guide
-- [ ] Document scaling procedures
-- [ ] Create update procedures
-- [ ] Document on-call procedures
 
 ---
 
@@ -502,8 +508,8 @@
 | 21 | USER_GUIDES.md | ✅ | MEDIUM | Tech Writer | 15 | Week 7 | 4 |
 | 22 | SUPPORT_PROCEDURES.md | ✅ | MEDIUM | Support | 8 | Week 7 | 4 |
 | 23 | TRAINING_PLAN.md | ✅ | MEDIUM | Trainer | 10 | Week 7 | 4 |
-| 24 | LAUNCH_CHECKLIST.md | 🟡 | HIGH | PM | 4 | Week 8 | 5 |
-| 25 | OPERATIONS_RUNBOOK.md | 🟡 | HIGH | Ops Lead | 12 | Week 8 | 6 |
+| 24 | LAUNCH_CHECKLIST.md | ✅ | HIGH | PM | 4 | Week 8 | 5-6 |
+| 25 | OPERATIONS_RUNBOOK.md | ✅ | HIGH | Ops Lead | 12 | Week 8 | 5-6 |
 
 ---
 
@@ -552,8 +558,8 @@ Week 8:
 | Phase 2 (Week 3-4) | 3 docs | 32 hours | ✅ 100% |
 | Phase 3 (Week 5-6) | 4 docs | 30 hours | ✅ 100% |
 | Phase 4 (Week 7-8) | 4 docs | 45 hours | ✅ 100% |
-| Phase 5-6 (Week 8-10) | 2 docs | 16 hours | 0% |
-| **TOTAL** | **25 docs** | **165 hours** | **~89%** (149/165h) |
+| Phase 5-6 (Week 8-10) | 2 docs | 16 hours | ✅ 100% |
+| **TOTAL** | **25 docs** | **165 hours** | **100%** (165/165h) |
 
 **Effort per week:**
 - Week 1: 18 hours (CRITICAL)
@@ -596,9 +602,9 @@ Week 8:
 16. TRAINING_PLAN.md (Trainer, 10h) ✅
 17. SUPPORT_PROCEDURES.md (Support, 8h) ✅
 
-### 🟡 **Phase 5-6 (Next)**
-18. LAUNCH_CHECKLIST.md (PM, 4h)
-19. OPERATIONS_RUNBOOK.md (Ops Lead, 12h)
+### ✅ **Phase 5-6 Launch & Operations (Complete)**
+18. LAUNCH_CHECKLIST.md (PM, 4h) ✅
+19. OPERATIONS_RUNBOOK.md (Ops Lead, 12h) ✅
 
 ---
 
@@ -697,18 +703,19 @@ USER_GUIDES.md + ADMIN_GUIDE.md
 3. ✅ Phase 2 testing docs shipped (TESTING_STRATEGY.md, TEST_CASES.md, LOAD_TEST_RESULTS.md) — the backend integration suite now actually passes (76/76) for the first time, a real authorization bypass and 16 other bugs were fixed, both CI workflows were repaired, and a real load test caught and fixed a health-check bug
 4. ✅ Phase 3 deployment/ops docs shipped (INFRASTRUCTURE_SETUP.md, MONITORING_SETUP.md, BACKUP_RECOVERY.md, SECURITY_CHECKLIST.md) — a fully non-functional Prometheus monitoring stack was made to actually work end-to-end, three unreconciled deployment strategies were surfaced, a restore procedure was written from scratch, and several README security/DPDP claims were checked against real code and corrected
 5. ✅ Phase 4 training/support docs shipped (ADMIN_GUIDE.md, USER_GUIDES.md, TRAINING_PLAN.md, SUPPORT_PROCEDURES.md) — written by actually logging into a running instance as every role; found and fixed two more real bugs (ryl_admin's dead sidebar menu, an infinite-loading-spinner bug), discovered Student/Parent login is a missing feature rather than a docs gap, and flagged a direct conflict with ROADMAP_TO_LAUNCH.md's pilot-role mix that needs a product decision before Week 9
-6. ⏳ Create document tracking board
-7. ⏳ Set up documentation review process
-8. 🔴 **Resolve the student/parent pilot-role conflict** flagged in TRAINING_PLAN.md before committing to ROADMAP_TO_LAUNCH.md's Phase 5 as currently scoped
+6. ✅ Phase 5-6 launch/operations docs shipped (LAUNCH_CHECKLIST.md, OPERATIONS_RUNBOOK.md) — the inventory is now 25/25 complete. LAUNCH_CHECKLIST.md synthesizes all 24 other documents into a single go/no-go gate (4 real 🔴 blockers, all previously found individually but never assembled into one launch decision); OPERATIONS_RUNBOOK.md is the day-to-day operator reference, cross-referencing rather than duplicating the existing monitoring/backup/support/infrastructure docs
+7. 🔴 **Resolve the student/parent pilot-role conflict** flagged in TRAINING_PLAN.md and restated in LAUNCH_CHECKLIST.md § Go/No-Go before committing to ROADMAP_TO_LAUNCH.md's Phase 5 as currently scoped — this is the single highest-priority open decision left in the entire inventory
+8. 🔴 **Work through the remaining LAUNCH_CHECKLIST.md § Go/No-Go items** (rate limiting attached to zero routes, tenant isolation never audited, `security-quality.yml` never verified) before Week 9
 
-**Next up:** Phase 5-6 (Launch & Operations) — LAUNCH_CHECKLIST.md,
-OPERATIONS_RUNBOOK.md. The last two documents in this inventory.
+**The documentation inventory is complete.** What remains is not more
+documentation — it's resolving the real product/engineering decisions
+`LAUNCH_CHECKLIST.md` § Go/No-Go surfaced along the way.
 
 **This is your master checklist for building to pilot launch!**
 
 ---
 
-**Documentation Inventory Version:** 1.5
+**Documentation Inventory Version:** 2.0
 **Last Updated:** 2026-07-17
 **Next Review:** Weekly
-**Total Pages:** 25 documents, 165 hours effort (149h / ~89% complete)
+**Total Pages:** 25 documents, 165 hours effort (165h / 100% complete)
