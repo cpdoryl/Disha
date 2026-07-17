@@ -24,9 +24,16 @@ jobs:
         run: |
           echo "=== Backend Dependencies ==="
           cd backend && npm audit --production 2>&1 || true
-          cd ../frontend/admin && npm audit --production 2>&1 || true
-          cd ../../mobile && npm audit --production 2>&1 || true
-          cd ../..
+          cd ..
+          # There is no frontend/admin or mobile/ directory in this repo —
+          # the real Next.js app lives at frontend/ (see frontend/Dockerfile),
+          # and mobile/ doesn't exist at all (mobile-ci.yml is path-gated on
+          # mobile/** and never actually triggers). The old frontend/admin
+          # and mobile paths here just failed their `cd` silently under
+          # `|| true` and scanned nothing.
+          echo "=== Frontend Dependencies ==="
+          cd frontend && npm audit --production 2>&1 || true
+          cd ..
 
       - name: Setup Python
         uses: actions/setup-python@v4
@@ -35,8 +42,21 @@ jobs:
 
       - name: Check Python dependencies
         run: |
-          pip install safety
-          cd extraction && safety check --json 2>&1 || true
+          # Pinned to the same version extraction/requirements.txt already
+          # lists as a dev dependency. Safety CLI 3.x requires a
+          # SafetyCLI cloud login for `safety check` to run at all
+          # (verified: an unpinned `pip install safety` here pulls 3.x and
+          # `safety check` fails immediately trying to fetch auth JWKS with
+          # no credentials configured) — pin to 2.x to keep this an
+          # unauthenticated, CI-friendly check.
+          pip install "safety==2.3.4"
+          cd extraction
+          # `-r requirements.txt` is required — without it, `safety check`
+          # scans the current Python environment (i.e. just `safety`
+          # itself), not this project's actual dependencies, and always
+          # reports "no vulnerabilities" regardless of what's in
+          # requirements.txt.
+          safety check -r requirements.txt --json 2>&1 || true
           cd ..
 
   codeql-analysis:
@@ -53,19 +73,25 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Initialize CodeQL
-        uses: github/codeql-action/init@v2
+        uses: github/codeql-action/init@v3
         with:
           languages: ${{ matrix.language }}
 
       - name: Autobuild
-        uses: github/codeql-action/autobuild@v2
+        uses: github/codeql-action/autobuild@v3
 
       - name: Perform CodeQL Analysis
-        uses: github/codeql-action/analyze@v2
+        uses: github/codeql-action/analyze@v3
 
   sonarcloud:
     runs-on: ubuntu-latest
     name: SonarCloud Code Quality
+    # No sonar-project.properties exists anywhere in this repo, and there's
+    # no evidence a SONARCLOUD_TOKEN secret has ever been configured for
+    # it — verified by searching the repo, not assumed. continue-on-error
+    # means this won't block merges, but as of this pass it will silently
+    # no-op every run rather than actually scan anything. Add
+    # sonar-project.properties and the secret before relying on this.
 
     steps:
       - name: Checkout code
@@ -83,6 +109,11 @@ jobs:
   lint-commits:
     runs-on: ubuntu-latest
     name: Lint Commit Messages
+    # This job only makes sense on pull_request events — the workflow's own
+    # `on:` trigger also runs it on push to main/develop, where
+    # github.event.pull_request is undefined, so `--from` below evaluates
+    # to empty and the step fails on every direct push. Gate it.
+    if: github.event_name == 'pull_request'
 
     steps:
       - name: Checkout code
@@ -99,6 +130,12 @@ jobs:
         run: npm install --save-dev @commitlint/cli @commitlint/config-conventional
 
       - name: Validate commit messages
+        # commitlint.config.js (repo root) was missing before this pass —
+        # without it, commitlint has no rules to check against and errors
+        # out immediately regardless of commit message content. Verified
+        # locally that this repo's actual commit style (e.g. "fix: ...",
+        # "docs: ...") passes @commitlint/config-conventional cleanly now
+        # that the config exists.
         run: npx commitlint --from ${{ github.event.pull_request.base.sha }} --to HEAD
         continue-on-error: true
 
@@ -116,11 +153,15 @@ jobs:
       - name: Build Docker images for scanning
         run: |
           docker buildx build --load -t disha-api:test ./backend
-          docker buildx build --load -t disha-admin:test ./frontend/admin
+          docker buildx build --load -t disha-admin:test ./frontend
           docker buildx build --load -t disha-extraction:test ./extraction
         continue-on-error: true
 
       - name: Run Trivy vulnerability scanner
+        # @master is a floating ref (not a pinned version/SHA) — same
+        # supply-chain concern as SonarCloud's action above. Left as-is
+        # since this repo can't currently reach the GitHub API to look up
+        # a real release tag to pin to; worth fixing when that's possible.
         uses: aquasecurity/trivy-action@master
         with:
           image-ref: disha-api:test
@@ -129,7 +170,7 @@ jobs:
         continue-on-error: true
 
       - name: Upload Trivy results to GitHub Security
-        uses: github/codeql-action/upload-sarif@v2
+        uses: github/codeql-action/upload-sarif@v3
         with:
           sarif_file: 'trivy-results.sarif'
         continue-on-error: true
@@ -137,6 +178,17 @@ jobs:
   accessibility:
     runs-on: ubuntu-latest
     name: Accessibility Audit (Frontend)
+    # frontend/admin never existed in this repo — the real Next.js app is
+    # at frontend/ (frontend/Dockerfile, frontend/package.json). Before
+    # this pass, "Install dependencies" and "Build application" below had
+    # no continue-on-error, so this job failed hard on every single run at
+    # `npm ci` in a nonexistent directory — the exact same frontend/admin
+    # bug already found and fixed in frontend-ci.yml this session, present
+    # here too. frontend/lighthouserc.json also didn't exist; added one
+    # (targets `/`, the only route reachable without an authenticated
+    # session) and verified it end-to-end: built the real app, started it,
+    # and ran a real Lighthouse accessibility audit against it locally —
+    # scored 0.98.
 
     steps:
       - name: Checkout code
@@ -147,22 +199,22 @@ jobs:
         with:
           node-version: '20'
           cache: 'npm'
-          cache-dependency-path: 'frontend/admin/package-lock.json'
+          cache-dependency-path: 'frontend/package-lock.json'
 
       - name: Install dependencies
         run: npm ci
-        working-directory: frontend/admin
+        working-directory: frontend
 
       - name: Build application
         run: npm run build
-        working-directory: frontend/admin
+        working-directory: frontend
         env:
           NODE_ENV: production
 
       - name: Run Lighthouse CI (Accessibility)
         uses: treosh/lighthouse-ci-action@v10
         with:
-          configPath: './frontend/admin/lighthouserc.json'
+          configPath: './frontend/lighthouserc.json'
           uploadArtifacts: true
           temporaryPublicStorage: true
         continue-on-error: true

@@ -259,13 +259,51 @@ junk data or a denial-of-service attempt without any rate limiting.
 
 ## Dependency & Container Scanning
 
-- `.github/workflows/security-quality.yml` exists (per `README.md`'s
-  badges) — **not verified working in this pass**, the way
-  `backend-ci.yml`/`frontend-ci.yml`/`deploy.yml` were found broken and
-  fixed (see `TESTING_STRATEGY.md`/`INFRASTRUCTURE_SETUP.md`). Given the
-  hit rate found in every other CI/infra file touched this session,
-  **do not assume this one works without checking it the same way** —
-  it's flagged here specifically so it isn't skipped.
+- ✅ **Fixed this pass.** `.github/workflows/security-quality.yml` had the
+  same hit rate as every other CI/infra file this session — checked it
+  the same way, found real bugs in 5 of its 6 jobs:
+  - `dependency-check`: referenced `frontend/admin` and `mobile/`
+    directories that don't exist anywhere in this repo (the real
+    frontend is at `frontend/`; `mobile/` doesn't exist at all) — both
+    `cd`s failed silently under `|| true` and scanned nothing. Also,
+    `pip install safety` (unpinned) pulls Safety CLI 3.x, which requires
+    a cloud login just to run `safety check` — verified locally: it
+    fails immediately trying to fetch auth JWKS with no credentials
+    configured. And the check never passed `-r requirements.txt`, so
+    even a working `safety check` was scanning the current Python
+    environment, not this project's dependencies. Fixed: correct
+    frontend path, dropped the nonexistent mobile scan, pinned to
+    `safety==2.3.4` (matching `extraction/requirements.txt`'s own listed
+    dev version) with `-r requirements.txt` added.
+  - `codeql-analysis` and `docker-scan`'s SARIF upload: used
+    `github/codeql-action/{init,autobuild,analyze,upload-sarif}@v2` —
+    GitHub has deprecated the v2 tags for this action. Bumped to `@v3`.
+  - `lint-commits`: ran on every `push` to main/develop (not just PRs),
+    where `github.event.pull_request.base.sha` is undefined — fails on
+    every direct push. Also had no `commitlint.config.js` anywhere in the
+    repo, so even on a real PR it had no rules to check against and
+    errored immediately regardless of commit content. Fixed: gated the
+    job to `pull_request` events only, added `commitlint.config.js` at
+    repo root (verified locally: this repo's actual commit style, e.g.
+    `fix: ...`/`docs: ...`, passes `@commitlint/config-conventional`
+    cleanly).
+  - `accessibility`: same `frontend/admin` bug as `dependency-check`,
+    except here "Install dependencies" and "Build application" had no
+    `continue-on-error`, so this job failed hard on every single run —
+    identical to the bug already found and fixed in `frontend-ci.yml`
+    this session. `frontend/lighthouserc.json` also didn't exist. Fixed
+    both; verified end-to-end by actually building the real app,
+    starting it, and running a real Lighthouse accessibility audit
+    against it locally (score: 0.98) before wiring the config in.
+  - `sonarcloud`: left functionally as-is, but confirmed no
+    `sonar-project.properties` exists anywhere in this repo and there's
+    no evidence a `SONARCLOUD_TOKEN` secret was ever configured — flagged
+    in a comment so it isn't mistaken for a working check; it currently
+    no-ops silently every run.
+  - Both `sonarcloud-github-action@master` and `trivy-action@master` use
+    a floating ref rather than a pinned version — flagged, not changed
+    (couldn't reach the GitHub API from this session to look up a real
+    tag to pin to).
 - `deploy.yml`'s `security-scan` job (Trivy container scan + `npm audit
   --production`) is real and was reviewed while fixing that file's other
   bugs (`INFRASTRUCTURE_SETUP.md`) — its own logic looked correct, unlike
@@ -312,13 +350,18 @@ this pass checked the wellbeing-access claim — several didn't hold up.
 
 Concrete, ordered by what this pass found to be actually missing:
 
-- [ ] Attach `RateLimitGuard` to `POST /api/v2/auth/login` and the public
-      `POST /api/v2/assessments/:id/submit` (see § Rate Limiting)
-- [ ] Verify `.github/workflows/security-quality.yml` actually runs and
-      passes — don't assume it, check it (see § Dependency Scanning)
-- [ ] Audit cross-school tenant isolation endpoint-by-endpoint (see
-      § Authorization) — the single highest-priority gap for multi-school
-      production use
+- [x] ✅ Attach `RateLimitGuard` to `POST /api/v2/auth/login` and `POST
+      /api/v2/auth/refresh` (see § Rate Limiting). **Still open, lower
+      priority:** the public `POST /api/v2/assessments/:id/submit`.
+- [x] ✅ Verify `.github/workflows/security-quality.yml` actually runs and
+      passes — checked it, found and fixed real bugs in 5 of 6 jobs (see
+      § Dependency Scanning above)
+- [x] ✅ Fixed the main cross-school tenant isolation gap for every
+      endpoint with a school identifier directly in the request (see
+      § Authorization). **Still open:** `:id`-based endpoints needing a
+      resource-owner lookup instead (student/staff detail routes,
+      wellbeing referral/intervention/incident endpoints — highest
+      remaining priority given data sensitivity).
 - [ ] Correct or implement the DPDP/wellbeing-access claims in `README.md`
       to match reality (see § DPDP / Privacy Compliance)
 - [ ] Migrate `any`-typed controller bodies (`student`, `school`, `staff`)

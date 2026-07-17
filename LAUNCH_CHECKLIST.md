@@ -27,7 +27,11 @@ underlying issue they reference.
 
 Resolve or explicitly accept each of these before Week 9 — don't let the
 checklist below distract from the handful of items that actually gate
-launch:
+launch. **Update:** 3 of the original 4 🔴 blockers were engineering gaps
+and are now fixed (rate limiting, tenant isolation, CI verification) —
+each verified live against real seeded data, not just code-reviewed. The
+remaining 🔴 is a product decision, not something further engineering
+work can resolve on its own:
 
 - [ ] 🔴 **Student/parent pilot-role conflict** (`TRAINING_PLAN.md`,
       `USER_GUIDES.md`): `ROADMAP_TO_LAUNCH.md`'s pilot plan calls for "a
@@ -67,11 +71,19 @@ launch:
       `organizationId`. Audit these before onboarding real schools with
       real (not demo) data if the pilot exercises those specific
       endpoints.
-- [ ] 🔴 **`.github/workflows/security-quality.yml` was never verified**
-      this pass, unlike every other CI/deploy workflow (all of which had
-      real bugs found and fixed — see `TESTING_STRATEGY.md`,
-      `INFRASTRUCTURE_SETUP.md`). Check it the same way before trusting
-      it as a merge gate.
+- [x] ✅ **Fixed:** `.github/workflows/security-quality.yml` was checked
+      the same way as every other CI/deploy workflow and had the same hit
+      rate — real bugs in 5 of its 6 jobs (nonexistent `frontend/admin`/
+      `mobile/` paths, deprecated CodeQL `@v2` actions, a Safety CLI
+      version that silently requires cloud auth, a commit-linter with no
+      config and a broken event guard, an accessibility job that failed
+      hard on every run). Fixed all of them; verified the Lighthouse
+      accessibility piece end-to-end by actually building and running the
+      real frontend and auditing it (score: 0.98). See
+      `SECURITY_CHECKLIST.md` § Dependency & Container Scanning for the
+      full list. SonarCloud is left flagged rather than fixed — no
+      `sonar-project.properties` or `SONARCLOUD_TOKEN` secret exists in
+      this repo to make it functional yet.
 - [ ] 🟡 **Backup off-box upload is optional/commented-out**
       (`BACKUP_RECOVERY.md`) — a backup that only lives on the same disk
       as the database isn't a real disaster-recovery mechanism. Enable it
