@@ -25,10 +25,19 @@
 > didn't exist yet: a daily checklist, common ops commands, and an
 > on-call procedure sized honestly for a 50-100 user pilot.
 >
-> **The inventory itself is done. What it found is not "launch-ready" —
-> it's "accurately documented," including several real 🔴 blockers in
-> `LAUNCH_CHECKLIST.md` § Go/No-Go that still need a product/engineering
-> decision before Week 9.**
+> **Update (same day):** all 4 of those 🔴 blockers have since been
+> resolved. Rate limiting is attached to login/refresh (verified live);
+> the cross-school tenant isolation leak — a real, proven data leak, not
+> theoretical — is closed for every endpoint with a school identifier
+> directly in the request (verified live); `security-quality.yml` was
+> checked the same way as every other CI workflow and had real bugs in 5
+> of 6 jobs, all fixed; and the pilot owner resolved the student/parent
+> role conflict by narrowing the pilot to `school_admin`/`teacher` only
+> (`ROADMAP_TO_LAUNCH.md` and `TRAINING_PLAN.md` updated to match). **The
+> inventory itself is done, and the launch-gating blockers it found are
+> now closed too** — only 2 🟡 lower-priority items and some narrower
+> follow-up gaps (documented in `SECURITY_CHECKLIST.md` and
+> `LAUNCH_CHECKLIST.md`) remain open.
 
 ---
 
@@ -448,6 +457,14 @@
   defined anywhere in the repo, references `BACKUP_RECOVERY.md` rather
   than duplicating it), Success Criteria scoped to what's actually
   deliverable, a Communication Plan, and Post-Launch Activities.
+  **Update (same day):** all 4 of the original 🔴 blockers are now
+  resolved — rate limiting attached and verified live, cross-school
+  tenant isolation leak closed and verified live, `security-quality.yml`
+  checked and fixed the same way as every other CI workflow, and the
+  student/parent pilot-role conflict resolved by the pilot owner
+  (narrowed to `school_admin`/`teacher`). See `LAUNCH_CHECKLIST.md` §
+  Go/No-Go for the current, up-to-date state — only the 2 🟡 items remain
+  open.
 - **Audience:** Launch team
 - **Status:** COMPLETE (2026-07-17)
 - **Dependencies:** Deployment procedures complete
@@ -704,12 +721,15 @@ USER_GUIDES.md + ADMIN_GUIDE.md
 4. ✅ Phase 3 deployment/ops docs shipped (INFRASTRUCTURE_SETUP.md, MONITORING_SETUP.md, BACKUP_RECOVERY.md, SECURITY_CHECKLIST.md) — a fully non-functional Prometheus monitoring stack was made to actually work end-to-end, three unreconciled deployment strategies were surfaced, a restore procedure was written from scratch, and several README security/DPDP claims were checked against real code and corrected
 5. ✅ Phase 4 training/support docs shipped (ADMIN_GUIDE.md, USER_GUIDES.md, TRAINING_PLAN.md, SUPPORT_PROCEDURES.md) — written by actually logging into a running instance as every role; found and fixed two more real bugs (ryl_admin's dead sidebar menu, an infinite-loading-spinner bug), discovered Student/Parent login is a missing feature rather than a docs gap, and flagged a direct conflict with ROADMAP_TO_LAUNCH.md's pilot-role mix that needs a product decision before Week 9
 6. ✅ Phase 5-6 launch/operations docs shipped (LAUNCH_CHECKLIST.md, OPERATIONS_RUNBOOK.md) — the inventory is now 25/25 complete. LAUNCH_CHECKLIST.md synthesizes all 24 other documents into a single go/no-go gate (4 real 🔴 blockers, all previously found individually but never assembled into one launch decision); OPERATIONS_RUNBOOK.md is the day-to-day operator reference, cross-referencing rather than duplicating the existing monitoring/backup/support/infrastructure docs
-7. 🔴 **Resolve the student/parent pilot-role conflict** flagged in TRAINING_PLAN.md and restated in LAUNCH_CHECKLIST.md § Go/No-Go before committing to ROADMAP_TO_LAUNCH.md's Phase 5 as currently scoped — this is the single highest-priority open decision left in the entire inventory
-8. 🔴 **Work through the remaining LAUNCH_CHECKLIST.md § Go/No-Go items** (rate limiting attached to zero routes, tenant isolation never audited, `security-quality.yml` never verified) before Week 9
+7. ✅ **Resolved the student/parent pilot-role conflict** — pilot owner decided to narrow the pilot to `school_admin`/`teacher` only rather than delay Week 9 for account-linking work. `ROADMAP_TO_LAUNCH.md` Phase 5 and `TRAINING_PLAN.md` updated to match.
+8. ✅ **Worked through every LAUNCH_CHECKLIST.md § Go/No-Go 🔴 item** — rate limiting attached to login/refresh and verified live, cross-school tenant isolation leak found, fixed, and verified live, `security-quality.yml` checked and fixed the same way as every other CI workflow. All 4 original blockers are now closed; only 2 🟡 lower-priority items remain (see `LAUNCH_CHECKLIST.md` § Go/No-Go).
 
-**The documentation inventory is complete.** What remains is not more
-documentation — it's resolving the real product/engineering decisions
-`LAUNCH_CHECKLIST.md` § Go/No-Go surfaced along the way.
+**The documentation inventory is complete, and every 🔴 Go/No-Go blocker
+it surfaced has been resolved.** What remains is the 2 🟡 lower-priority
+items in `LAUNCH_CHECKLIST.md` § Go/No-Go, plus the narrower follow-up
+items the deeper fixes themselves surfaced (e.g. the still-open
+resource-ID-based tenant-isolation gaps noted in `SECURITY_CHECKLIST.md`
+§ Authorization).
 
 **This is your master checklist for building to pilot launch!**
 

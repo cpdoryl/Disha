@@ -5,24 +5,23 @@
 
 ---
 
-## 🔴 Read This First: A Real Conflict With `ROADMAP_TO_LAUNCH.md`
+## ✅ Resolved: Pilot Scope Is `school_admin`/`teacher` Only
 
-`ROADMAP_TO_LAUNCH.md`'s Phase 5 pilot plan calls for selecting 50-100
-pilot users as "a mix of roles (admin, teacher, student, parent)." Verified
-against the actual running system (`USER_GUIDES.md` § Student & Parent
-Access): **there is currently no way to create a student or parent login
-account at all** — not a training gap, a missing feature. The `Student`
-database entity has no email/password fields and no link to a `User` row;
-building that account-linking model is unscoped product/engineering work.
+`ROADMAP_TO_LAUNCH.md`'s Phase 5 pilot plan originally called for
+selecting 50-100 pilot users as "a mix of roles (admin, teacher, student,
+parent)." Verified against the actual running system (`USER_GUIDES.md` §
+Student & Parent Access): **there is currently no way to create a student
+or parent login account at all** — not a training gap, a missing feature.
+The `Student` database entity has no email/password fields and no link to
+a `User` row; building that account-linking model is unscoped
+product/engineering work.
 
-**This training plan is scoped to what pilot users can actually be
-trained on today: `school_admin` and `teacher`.** Training a "mix of
-roles including student and parent" as currently planned in
-`ROADMAP_TO_LAUNCH.md` isn't deliverable without that feature work
-landing first. Raise this with whoever owns the pilot launch decision
-before committing to Week 9 as currently scoped — either narrow the pilot
-to admin/teacher roles, or push the student/parent account-linking work
-ahead of the training schedule below.
+**Decision (2026-07-17, pilot owner):** narrow the pilot to
+`school_admin`/`teacher` only rather than delay Week 9 for account-linking
+work. `ROADMAP_TO_LAUNCH.md` Phase 5 has been updated to match. This
+training plan was already scoped this way — no change needed here beyond
+this note. Student/parent access is a candidate for a post-pilot phase,
+not something to plan training around today.
 
 ---
 

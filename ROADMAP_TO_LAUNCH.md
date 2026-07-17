@@ -317,7 +317,12 @@ Final Checks:
   
 Pilot User Selection:
   ✅ Identify 50-100 users (early adopters)
-  ✅ Mix of roles (admin, teacher, student, parent)
+  ✅ school_admin and teacher roles only — student/parent login accounts
+     cannot be created in the current system (no User<->Student link in
+     the schema; see TRAINING_PLAN.md and USER_GUIDES.md). Scope
+     resolved 2026-07-17: launch the pilot with the two roles that are
+     actually buildable rather than delay Week 9 for account-linking
+     work. Revisit student/parent inclusion for a post-pilot phase.
   ✅ Geographic distribution
   ✅ Different school sizes
   

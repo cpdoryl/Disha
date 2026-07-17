@@ -27,21 +27,18 @@ underlying issue they reference.
 
 Resolve or explicitly accept each of these before Week 9 — don't let the
 checklist below distract from the handful of items that actually gate
-launch. **Update:** 3 of the original 4 🔴 blockers were engineering gaps
-and are now fixed (rate limiting, tenant isolation, CI verification) —
-each verified live against real seeded data, not just code-reviewed. The
-remaining 🔴 is a product decision, not something further engineering
-work can resolve on its own:
+launch. **Update:** all 4 original 🔴 blockers are now resolved — 3
+engineering gaps (rate limiting, tenant isolation, CI verification), each
+verified live against real seeded data, not just code-reviewed, and 1
+product decision (pilot role scope). Only the 🟡 items below remain open:
 
-- [ ] 🔴 **Student/parent pilot-role conflict** (`TRAINING_PLAN.md`,
-      `USER_GUIDES.md`): `ROADMAP_TO_LAUNCH.md`'s pilot plan calls for "a
-      mix of roles (admin, teacher, student, parent)" — verified against
-      the running system that student/parent accounts cannot currently
-      be created at all (no login fields on the `Student` entity, zero
-      such accounts in seed data). **Decide:** narrow the pilot to
-      `school_admin`/`teacher` only, or delay launch until account-linking
-      is built. This is the single highest-priority decision blocking an
-      accurate launch plan.
+- [x] ✅ **Resolved (2026-07-17, pilot owner decision):** narrowed the
+      pilot to `school_admin`/`teacher` only rather than delay Week 9 for
+      student/parent account-linking work (real feature work — no login
+      fields on the `Student` entity, zero such accounts possible in the
+      current schema). `ROADMAP_TO_LAUNCH.md` Phase 5 and
+      `TRAINING_PLAN.md` updated to match. Student/parent access is a
+      candidate for a post-pilot phase.
 - [x] ✅ **Fixed:** rate limiting is now attached to `POST
       /api/v2/auth/login` and `POST /api/v2/auth/refresh`
       (`SECURITY_CHECKLIST.md` § Rate Limiting) — verified live (429 with
@@ -206,9 +203,9 @@ actual system capability, not just aspirational targets:
 - **Functional:** every `school_admin`/`teacher` pilot user successfully
   completes the tasks in `TRAINING_PLAN.md` § Assessment Criteria
   unassisted within the first week
-- **Honest scope:** if the student/parent role conflict (see § Go/No-Go
-  above) wasn't resolved before launch, don't measure "student/parent
-  adoption" as a success metric — there's no such feature to adopt
+- **Honest scope:** the pilot was scoped to `school_admin`/`teacher` only
+  (see § Go/No-Go above) — don't measure "student/parent adoption" as a
+  success metric, there's no such feature in this pilot to adopt
 
 ---
 
@@ -233,6 +230,7 @@ actual system capability, not just aspirational targets:
   actually hit and compare against `SUPPORT_PROCEDURES.md` §
   Known Issues — update that list if new patterns emerge
 - **Post-pilot assessment** (`ROADMAP_TO_LAUNCH.md`): revisit the
-  Go/No-Go blockers above — did the student/parent conflict get
-  resolved, was rate limiting attached, was tenant isolation audited —
-  before any decision to scale beyond the pilot's 50-100 users
+  Go/No-Go blockers above — is student/parent access worth building for
+  the next phase, were the still-open items from the tenant-isolation
+  and rate-limiting fixes (see § Go/No-Go) closed out — before any
+  decision to scale beyond the pilot's 50-100 users
