@@ -31,6 +31,7 @@ export default function StudentsPage() {
 
   useEffect(() => {
     if (!user?.schoolId) return
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     fetchStudents()
   }, [user?.schoolId])
 
